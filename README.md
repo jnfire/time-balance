@@ -121,6 +121,31 @@ Ejemplos de uso
   1. Ejecuta `python3 control_horas.py`
   2. Selecciona opción `2`
 
+Tests
+-----
+Se incluye una suite de tests automatizados usando `unittest` en `tests/`.
+
+Para ejecutar la suite desde la raíz del proyecto:
+
+- macOS / Linux (zsh / bash):
+
+```bash
+python3 -m unittest discover -v
+```
+
+- Windows (cmd / PowerShell):
+
+```powershell
+python -m unittest discover -v
+```
+
+Los tests cubren:
+- `formatear_tiempo` con valores positivos, cero y negativos.
+- `calcular_saldo_total`.
+- Lectura/escritura de `ARCHIVO_DATOS` (carga, guardar y roundtrip).
+- Comportamiento de `registrar_jornada` ante sobrescritura (confirmar/cancelar).
+- Salida de `ver_historial` (muestra los últimos 5 registros).
+
 Buenas prácticas
 ----------------
 - Mantén `historial_horas.json` fuera del control de versiones si contiene datos personales o locales (añádelo al `.gitignore`) o añade una muestra de ejemplo en `examples/` en lugar del archivo real.
