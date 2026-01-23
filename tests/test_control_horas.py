@@ -2,12 +2,28 @@ import unittest
 import tempfile
 import os
 import io
-import json
 from unittest import mock
 
 import control_horas as ch
 
 class TestControlHoras(unittest.TestCase):
+    def setUp(self):
+        # Crear un directorio temporal y usarlo como cwd y como lugar del archivo de datos
+        self._orig_cwd = os.getcwd()
+        self._orig_archivo = getattr(ch, 'ARCHIVO_DATOS', None)
+        self.tmpdir = tempfile.TemporaryDirectory()
+        os.chdir(self.tmpdir.name)
+        # Archivo de datos en el tempdir
+        self.data_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
+        ch.ARCHIVO_DATOS = self.data_file
+
+    def tearDown(self):
+        # Restaurar cwd y ARCHIVO_DATOS
+        os.chdir(self._orig_cwd)
+        if self._orig_archivo is not None:
+            ch.ARCHIVO_DATOS = self._orig_archivo
+        self.tmpdir.cleanup()
+
     def test_formatear_tiempo_positive(self):
         self.assertEqual(ch.formatear_tiempo(125), "2h 5m")
 
