@@ -4,7 +4,7 @@ import os
 import json
 import glob
 
-import control_horas as ch
+import time_balance as ch
 
 class TestImportExport(unittest.TestCase):
     def setUp(self):

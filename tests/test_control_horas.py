@@ -4,7 +4,7 @@ import os
 import io
 from unittest import mock
 
-import control_horas as ch
+import time_balance as ch
 
 class TestControlHoras(unittest.TestCase):
     def setUp(self):

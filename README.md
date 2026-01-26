@@ -104,6 +104,15 @@ Las funciones públicas más relevantes (importables desde `time_balance` o desd
 
 Nota sobre import: en modo `merge` la entrada importada sobrescribe los registros en conflicto (la importación tiene preferencia sobre lo guardado localmente).
 
+Compatibilidad removida:
+- Ya no se incluye el shim `control_horas.py`. Importa directamente desde el paquete `time_balance` si necesitas usar la API desde scripts o tests. Por ejemplo:
+
+```py
+import time_balance as tb
+# usar tb.cargar_datos(), tb.guardar_datos(), tb.main(), etc.
+```
+
+
 Tests
 -----
 La suite de tests se puede ejecutar con:

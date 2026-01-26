@@ -3,8 +3,6 @@ import json
 from datetime import datetime, date
 import tempfile
 import shutil
-import argparse
-import sys
 
 # --- CONFIGURACIÓN ---
 HORAS_BASE = 7
@@ -270,49 +268,8 @@ def importar_historial(ruta_fuente, modo='merge', archivo_path=None):
 
 # ----------------- CLI / entry point -----------------
 
-def _cli_export(args):
-    try:
-        destino = exportar_historial(args.ruta, archivo_path=args.file)
-        print(f"Exportado en: {destino}")
-    except Exception as e:
-        print(f"Error al exportar: {e}")
-
-
-def _cli_import(args):
-    try:
-        res = importar_historial(args.ruta, modo=args.mode, archivo_path=args.file)
-        print(f"Importación completada. Entradas: {len(res)}")
-    except Exception as e:
-        print(f"Error al importar: {e}")
-
-
 def main():
-    parser = argparse.ArgumentParser(prog='time-balance', description='Herramienta de control de jornada')
-    subparsers = parser.add_subparsers(dest='command')
-
-    # export
-    p_export = subparsers.add_parser('export', help='Exportar historial a archivo JSON')
-    p_export.add_argument('ruta', help='Ruta destino para el JSON exportado')
-    p_export.add_argument('--file', help='Archivo de datos actual (opcional)')
-    p_export.set_defaults(func=_cli_export)
-
-    # import
-    p_import = subparsers.add_parser('import', help='Importar historial desde archivo JSON')
-    p_import.add_argument('ruta', help='Ruta del JSON a importar')
-    p_import.add_argument('--mode', choices=['merge', 'overwrite'], default='merge', help='Modo de import')
-    p_import.add_argument('--file', help='Archivo de datos destino (opcional)')
-    p_import.set_defaults(func=_cli_import)
-
-    # Si no hay args (modo interactivo), lanzamos la UI original
-    if len(sys.argv) > 1:
-        args = parser.parse_args()
-        if hasattr(args, 'func'):
-            args.func(args)
-        else:
-            parser.print_help()
-        return
-
-    # --- Interfaz interactiva previa ---
+    # Interfaz interactiva única (sin argparse ni subcomandos).
     while True:
         datos = cargar_datos()
         saldo_total = calcular_saldo_total(datos)
