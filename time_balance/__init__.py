@@ -218,6 +218,7 @@ def _crear_backup(archivo):
     try:
         shutil.copy2(archivo, f"{archivo}.bak")
     except Exception:
+        # Error al crear/actualizar la copia secundaria .bak; no es crítico, se ignora.
         pass
     return backup
 
