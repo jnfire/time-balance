@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='time-balance',
-    version='0.1.0',
+    version='0.1.1',
     description='Control sencillo de jornadas y saldo horario',
     packages=find_packages(exclude=("tests",)),
     # Entry point para el comando interactivo `time-balance`
