@@ -85,7 +85,7 @@ Archivos y configuración
 ------------------------
 - `historial_horas.json`: archivo JSON por defecto en el directorio de trabajo.
 - Resolución de la ruta del archivo de datos (prioridad):
-  1. Argumento explícito `--file` en los subcomandos (o `archivo_path` en las funciones API)
+  1. Argumento `archivo_path` en las funciones de la API
   2. Variable de entorno `HISTORIAL_PATH`
   3. `historial_horas.json` en el directorio actual (comportamiento por defecto)
 
