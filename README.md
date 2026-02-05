@@ -94,7 +94,7 @@ Archivos y configuración
 
 Uso programático (API)
 ----------------------
-Las funciones públicas más relevantes (importables desde `time_balance` o desde `control_horas` por compatibilidad) son:
+Las funciones públicas más relevantes (importables desde el paquete `time_balance`) son:
 
 - `cargar_datos(archivo_path=None)`
 - `guardar_datos(datos, archivo_path=None)`
