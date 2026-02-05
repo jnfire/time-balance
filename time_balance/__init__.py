@@ -202,6 +202,7 @@ def exportar_historial(ruta_destino, archivo_path=None):
             try:
                 os.remove(ruta_temp)
             except OSError:
+                # Ignoramos errores al eliminar el archivo temporal de limpieza.
                 pass
     return destino
 
