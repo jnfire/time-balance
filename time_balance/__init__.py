@@ -59,6 +59,7 @@ def guardar_datos(datos, archivo_path=None):
             try:
                 os.remove(ruta_temp)
             except OSError:
+                # Ignoramos errores al eliminar el archivo temporal: es solo limpieza "best effort".
                 pass
 
 
