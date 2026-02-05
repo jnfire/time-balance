@@ -71,16 +71,6 @@ time-balance import /ruta/mi_historial.json --mode merge
 time-balance import /ruta/mi_historial.json --mode overwrite
 ```
 
-Compatibilidad con el script original
--------------------------------------
-El repositorio mantiene `control_horas.py` como un shim/compatibilidad que reexporta la API del paquete `time_balance`. Si prefieres ejecutar el script directamente sin instalar, todavía puedes hacerlo:
-
-```bash
-python3 control_horas.py
-```
-
-pero la forma recomendada tras empaquetar es usar `time-balance`.
-
 Archivos y configuración
 ------------------------
 - `historial_horas.json`: archivo JSON por defecto en el directorio de trabajo.
