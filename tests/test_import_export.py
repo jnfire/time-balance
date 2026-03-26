@@ -69,7 +69,7 @@ class TestImportExport(unittest.TestCase):
             json.dump(fuente, f)
 
         # Import overwrite
-        res = ch.importar_historial(src_path, modo='overwrite')
+        ch.importar_historial(src_path, modo='overwrite')
 
         # Now backup should exist in tmpdir (archivo.bak.*)
         bak_pattern = self.dest_file + '.bak.*'

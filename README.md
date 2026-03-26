@@ -85,7 +85,7 @@ Archivos y configuración
 ------------------------
 - `historial_horas.json`: archivo JSON por defecto en el directorio de trabajo.
 - Resolución de la ruta del archivo de datos (prioridad):
-  1. Argumento explícito `--file` en los subcomandos (o `archivo_path` en las funciones API)
+  1. Argumento `archivo_path` en las funciones de la API
   2. Variable de entorno `HISTORIAL_PATH`
   3. `historial_horas.json` en el directorio actual (comportamiento por defecto)
 
@@ -94,7 +94,7 @@ Archivos y configuración
 
 Uso programático (API)
 ----------------------
-Las funciones públicas más relevantes (importables desde `time_balance` o desde `control_horas` por compatibilidad) son:
+Las funciones públicas más relevantes (importables desde el paquete `time_balance`) son:
 
 - `cargar_datos(archivo_path=None)`
 - `guardar_datos(datos, archivo_path=None)`

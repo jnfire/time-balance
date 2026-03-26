@@ -59,6 +59,7 @@ def guardar_datos(datos, archivo_path=None):
             try:
                 os.remove(ruta_temp)
             except OSError:
+                # Ignoramos errores al eliminar el archivo temporal: es solo limpieza "best effort".
                 pass
 
 
@@ -202,6 +203,7 @@ def exportar_historial(ruta_destino, archivo_path=None):
             try:
                 os.remove(ruta_temp)
             except OSError:
+                # Ignoramos errores al eliminar el archivo temporal de limpieza.
                 pass
     return destino
 
@@ -217,6 +219,7 @@ def _crear_backup(archivo):
     try:
         shutil.copy2(archivo, f"{archivo}.bak")
     except Exception:
+        # Error al crear/actualizar la copia secundaria .bak; no es crítico, se ignora.
         pass
     return backup
 
