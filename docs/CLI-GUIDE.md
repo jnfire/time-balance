@@ -106,12 +106,12 @@ Ingresa ruta de destino para exportar: /path/a/mi_export.json
     "2026-04-16": {
         "horas": 8,
         "minutos": 30,
-        "diferencia": 0.75
+        "diferencia": 45
     },
     "2026-04-15": {
         "horas": 7,
         "minutos": 45,
-        "diferencia": 0.0
+        "diferencia": 0
     }
 }
 ```

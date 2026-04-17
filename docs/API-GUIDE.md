@@ -41,8 +41,8 @@ Carga el historial de horas desde un archivo JSON.
 ```python
 datos = cargar_datos()
 print(datos)
-# {'2026-04-16': {'horas': 8, 'minutos': 30, 'diferencia': 0.75},
-#  '2026-04-15': {'horas': 7, 'minutos': 45, 'diferencia': 0.0}}
+# {'2026-04-16': {'horas': 8, 'minutos': 30, 'diferencia': 45},
+#  '2026-04-15': {'horas': 7, 'minutos': 45, 'diferencia': 0}}
 ```
 
 ### 2. `guardar_datos(datos, archivo_path=None)`
@@ -65,8 +65,8 @@ Guarda el historial en un archivo JSON de forma segura (operación atómica).
 
 ```python
 datos = {
-    '2026-04-16': {'horas': 8, 'minutos': 30, 'diferencia': 0.75},
-    '2026-04-15': {'horas': 7, 'minutos': 45, 'diferencia': 0.0}
+    '2026-04-16': {'horas': 8, 'minutos': 30, 'diferencia': 45},
+    '2026-04-15': {'horas': 7, 'minutos': 45, 'diferencia': 0}
 }
 guardar_datos(datos)
 print("✓ Datos guardados")
@@ -77,18 +77,18 @@ print("✓ Datos guardados")
 Convierte minutos a formato legible (ej: "2h 5m").
 
 **Parámetros:**
-- `minutos_totales` (int/float): Cantidad de minutos (puede ser positivo o negativo).
+- `minutos_totales` (int): Cantidad de minutos (puede ser positivo o negativo).
 
 **Retorna:**
-- `str`: Formato legible con signo (`+`/`-`), horas y minutos. Ej: `"+2h 5m"`, `"-1h 15m"`, `"0h 0m"`.
+- `str`: Formato legible; los valores negativos incluyen prefijo `-`, los positivos no incluyen `+`. Ej: `"2h 5m"`, `"-1h 15m"`, `"0h 0m"`.
 
 **Ejemplo:**
 
 ```python
-print(formatear_tiempo(125))      # "+2h 5m"
+print(formatear_tiempo(125))      # "2h 5m"
 print(formatear_tiempo(-75))      # "-1h 15m"
 print(formatear_tiempo(0))        # "0h 0m"
-print(formatear_tiempo(465))      # "+7h 45m"
+print(formatear_tiempo(465))      # "7h 45m"
 ```
 
 ### 4. `calcular_saldo_total(datos)`
@@ -99,7 +99,7 @@ Suma todas las diferencias diarias para obtener el saldo acumulado.
 - `datos` (dict): Diccionario del historial con estructura `{fecha: {..., diferencia}}`.
 
 **Retorna:**
-- `float`: Saldo total en minutos (puede ser positivo o negativo).
+- `int`: Saldo total en minutos (puede ser positivo o negativo).
 
 **Ejemplo:**
 
@@ -227,7 +227,7 @@ hoy = str(date.today())  # "2026-04-16"
 datos[hoy] = {
     'horas': 8,
     'minutos': 15,
-    'diferencia': 0.5  # minutos
+    'diferencia': 45  # minutos
 }
 
 # Guardar
@@ -322,12 +322,12 @@ print(ENV_HISTORIAL)      # "HISTORIAL_PATH"
     "2026-04-16": {
         "horas": 8,           # int: horas trabajadas
         "minutos": 30,        # int: minutos trabajados
-        "diferencia": 0.75    # float: minutos respecto a base (7h 45m = 465 minutos)
+        "diferencia": 45      # int: minutos respecto a base (7h 45m = 465 minutos)
     },
     "2026-04-15": {
         "horas": 7,
         "minutos": 45,
-        "diferencia": 0.0
+        "diferencia": 0
     }
 }
 ```

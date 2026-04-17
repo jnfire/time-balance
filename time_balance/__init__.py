@@ -3,6 +3,7 @@ import json
 from datetime import datetime, date
 import tempfile
 import shutil
+import errno
 
 # --- CONFIGURACIÓN ---
 HORAS_BASE = 7
@@ -47,19 +48,57 @@ def guardar_datos(datos, archivo_path=None):
 
     # Serializamos y escribimos a fichero temporal antes de reemplazar
     contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    fd, ruta_temp = tempfile.mkstemp(prefix="historial_", suffix=".json", dir=dir_dest or None)
+    # Aseguramos que el temporal se cree en el mismo directorio de destino
+    fd, ruta_temp = tempfile.mkstemp(prefix="historial_", suffix=".json", dir=dir_dest or ".")
     try:
+        # Escribimos y forzamos a disco el temporal antes de intentar el replace
         with os.fdopen(fd, 'w', encoding='utf-8') as tmpf:
             tmpf.write(contenido)
-        # Reemplazo atómico
-        os.replace(ruta_temp, archivo)
+            try:
+                tmpf.flush()
+                os.fsync(tmpf.fileno())
+            except Exception:
+                # Si fsync no está soportado en la plataforma, continuamos igualmente
+                pass
+
+        # Intentamos reemplazo atómico
+        try:
+            os.replace(ruta_temp, archivo)
+            # Intentamos fsync al directorio destino para asegurar persistencia del rename
+            try:
+                dirfd = os.open(os.path.dirname(archivo) or '.', os.O_RDONLY)
+                try:
+                    os.fsync(dirfd)
+                finally:
+                    os.close(dirfd)
+            except Exception:
+                pass
+        except OSError as e:
+            # En sistemas con filesystems diferentes, os.replace puede fallar con EXDEV.
+            # Como fallback hacemos copy + fsync del destino.
+            if getattr(e, 'errno', None) == errno.EXDEV:
+                shutil.copy2(ruta_temp, archivo)
+                try:
+                    # Forzar fsync en el archivo copiado
+                    with open(archivo, 'rb') as f:
+                        try:
+                            os.fsync(f.fileno())
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                try:
+                    os.remove(ruta_temp)
+                except OSError:
+                    pass
+            else:
+                raise
     finally:
-        # Aseguramos que no quede archivo temporal
-        if os.path.exists(ruta_temp):
+        # Limpieza best-effort del temporal si quedara
+        if 'ruta_temp' in locals() and os.path.exists(ruta_temp):
             try:
                 os.remove(ruta_temp)
             except OSError:
-                # Ignoramos errores al eliminar el archivo temporal: es solo limpieza "best effort".
                 pass
 
 
@@ -193,17 +232,43 @@ def exportar_historial(ruta_destino, archivo_path=None):
 
     # Escribimos de forma atómica
     contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    fd, ruta_temp = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dir_dest or None)
+    # Crear el temporal en el mismo directorio de destino para evitar EXDEV
+    fd, ruta_temp = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dir_dest or ".")
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as tmpf:
             tmpf.write(contenido)
-        os.replace(ruta_temp, destino)
+        try:
+            os.replace(ruta_temp, destino)
+            try:
+                dirfd = os.open(os.path.dirname(destino) or '.', os.O_RDONLY)
+                try:
+                    os.fsync(dirfd)
+                finally:
+                    os.close(dirfd)
+            except Exception:
+                pass
+        except OSError as e:
+            if getattr(e, 'errno', None) == errno.EXDEV:
+                shutil.copy2(ruta_temp, destino)
+                try:
+                    with open(destino, 'rb') as f:
+                        try:
+                            os.fsync(f.fileno())
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                try:
+                    os.remove(ruta_temp)
+                except OSError:
+                    pass
+            else:
+                raise
     finally:
-        if os.path.exists(ruta_temp):
+        if 'ruta_temp' in locals() and os.path.exists(ruta_temp):
             try:
                 os.remove(ruta_temp)
             except OSError:
-                # Ignoramos errores al eliminar el archivo temporal de limpieza.
                 pass
     return destino
 

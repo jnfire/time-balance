@@ -11,6 +11,9 @@ class TestControlHoras(unittest.TestCase):
         # Crear un directorio temporal y usarlo como cwd y como lugar del archivo de datos
         self._orig_cwd = os.getcwd()
         self._orig_archivo = getattr(ch, 'ARCHIVO_DATOS', None)
+        # Guardar y limpiar variable de entorno HISTORIAL_PATH para evitar que tests toquen rutas reales
+        self._orig_historial_path = os.environ.get('HISTORIAL_PATH')
+        os.environ.pop('HISTORIAL_PATH', None)
         self.tmpdir = tempfile.TemporaryDirectory()
         os.chdir(self.tmpdir.name)
         # Archivo de datos en el tempdir
@@ -22,6 +25,11 @@ class TestControlHoras(unittest.TestCase):
         os.chdir(self._orig_cwd)
         if self._orig_archivo is not None:
             ch.ARCHIVO_DATOS = self._orig_archivo
+        # Restaurar variable de entorno original
+        if self._orig_historial_path is not None:
+            os.environ['HISTORIAL_PATH'] = self._orig_historial_path
+        else:
+            os.environ.pop('HISTORIAL_PATH', None)
         self.tmpdir.cleanup()
 
     def test_formatear_tiempo_positive(self):

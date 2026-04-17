@@ -144,8 +144,8 @@ os.replace(tmp_path, archivo_datos)  # Operación atómica
 
 Beneficios:
 - Si el proceso se interrumpe durante la escritura, el archivo original permanece intacto
-- No hay riesgo de corrupción de datos
-- Funciona entre filesystems
+ - No hay riesgo de corrupción de datos cuando el temporal se crea en el mismo filesystem
+ - Atómico dentro del mismo filesystem; si el temporal se crea en otro dispositivo el rename puede fallar con EXDEV
 
 ### 2. **Backups Automáticos**
 
@@ -165,7 +165,7 @@ historial_horas.json.bak.20260416T111320  (backup versionado)
 def _validar_historial(datos):
     # Validar tipo dict
     # Validar todas las claves YYYY-MM-DD
-    # Validar estructura: horas, minutos, diferencia como int/float
+    # Validar estructura: horas, minutos y diferencia como int
     # Lanzar ValueError con mensaje específico si algo falla
 ```
 

@@ -11,6 +11,9 @@ class TestImportExport(unittest.TestCase):
         # directorio temporal por test
         self.tmpdir = tempfile.TemporaryDirectory()
         self.orig_archivo = getattr(ch, 'ARCHIVO_DATOS', None)
+        # Guardar y limpiar la variable de entorno para evitar flakes en CI
+        self._orig_historial_path = os.environ.get('HISTORIAL_PATH')
+        os.environ.pop('HISTORIAL_PATH', None)
         self.dest_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
         ch.ARCHIVO_DATOS = self.dest_file
 
@@ -18,6 +21,11 @@ class TestImportExport(unittest.TestCase):
         # restaurar
         if self.orig_archivo is not None:
             ch.ARCHIVO_DATOS = self.orig_archivo
+        # Restaurar variable de entorno
+        if self._orig_historial_path is not None:
+            os.environ['HISTORIAL_PATH'] = self._orig_historial_path
+        else:
+            os.environ.pop('HISTORIAL_PATH', None)
         self.tmpdir.cleanup()
 
     def test_exportar_historial_crea_archivo(self):
