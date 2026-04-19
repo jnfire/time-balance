@@ -1,179 +1,292 @@
 # time-balance
 
-Descripción
------------
-`time-balance` es una pequeña herramienta de consola en Python para registrar jornadas laborales diarias y calcular el saldo acumulado respecto a una jornada base. Guarda un historial simple en formato JSON (`historial_horas.json`) y muestra los últimos registros y el saldo acumulado.
+> Una pequeña herramienta de consola en Python para registrar jornadas laborales y calcular saldos acumulados.
 
-Características principales
--------------------------
-- Registro interactivo de horas y minutos por día.
-- Prevención de sobrescritura con confirmación del usuario.
-- Cálculo de la diferencia diaria respecto a una jornada base configurable.
-- Visualización de los últimos registros y del saldo total.
+## Tabla de Contenidos
 
-Requisitos
-----------
-- Python 3.8+ (solo usa módulos de la biblioteca estándar: `os`, `json`, `datetime`).
-- Sistema operativo: macOS / Linux / Windows (con soporte para ejecutar scripts Python).
+- [Descripción](#descripción)
+- [Características](#características-principales)
+- [Instalación](#instalación)
+- [Uso](#uso)
+- [Documentación](#documentación)
+- [Requisitos](#requisitos)
+- [Licencia](#licencia)
 
-Instalación
------------
-1. Clona o descarga el repositorio:
+## Descripción
 
-   git clone <url-del-repo>
+`time-balance` es una herramienta de consola minimalista para registrar jornadas laborales diarias y calcular el saldo acumulado respecto a una jornada base (7h 45m por defecto). 
 
-2. Entra en la carpeta del proyecto:
+Guarda un historial simple en formato JSON (`historial_horas.json`), es **100% Python con biblioteca estándar** (sin dependencias externas), y proporciona tanto una interfaz interactiva como una API programática.
 
-   cd time-balance
+## Características Principales
 
-3. (Opcional) crea y activa un entorno virtual:
+- ✅ **Registro interactivo** de horas y minutos por día
+- ✅ **Prevención de sobrescritura** con confirmación del usuario
+- ✅ **Cálculo automático** de la diferencia diaria respecto a jornada base
+- ✅ **Visualización clara** de últimos registros y saldo total
+- ✅ **Import/Export** para respaldar o restaurar datos
+- ✅ **Escritura segura** (operaciones atómicas, crash-safe)
+- ✅ **Backups automáticos** con versionamiento por timestamp
+- ✅ **Validación rigurosa** de datos importados
+- ✅ **100% portátil** - macOS, Linux, Windows
 
-   python3 -m venv .venv
-   source .venv/bin/activate   # macOS / Linux (zsh / bash)
-   .venv\Scripts\activate    # Windows (cmd/PowerShell)
+## Requisitos
 
-4. No hay dependencias externas requeridas; si más adelante se añaden, se listarán en `requirements.txt`.
+- **Python 3.8+** (solo usa módulos de la biblioteca estándar: `os`, `json`, `datetime`, `tempfile`, `shutil`)
+- **Sistema operativo**: macOS / Linux / Windows
 
-Uso
----
-Comandos habituales para iniciar la aplicación (desde la raíz del proyecto):
+## Instalación
 
-- macOS / Linux (zsh / bash):
-
-  python3 control_horas.py
-
-  o si tu sistema tiene `python` apuntando a Python 3:
-
-  python control_horas.py
-
-  También puedes ejecutar el script `iniciar.sh` si está disponible:
-
-  ./iniciar.sh
-
-- Windows (cmd / PowerShell):
-
-  python control_horas.py
-
-  o usar `iniciar.bat` haciendo doble clic o con:
-
-  iniciar.bat
-
-Interacción básica
-------------------
-1. Ejecuta el script.
-2. Selecciona "1. Registrar jornada" para añadir o corregir un día.
-3. Si el día ya existe, el script pide confirmación antes de sobrescribir:
-   `¿Quieres SOBREESCRIBIRLO? (s/n):` — responde `s` para sobrescribir.
-
-Explicación de archivos generados y datos
-----------------------------------------
-- `historial_horas.json`: archivo JSON en la raíz del proyecto que contiene el historial de registros. Estructura:
-
-  {
-      "YYYY-MM-DD": {
-          "horas": <int>,
-          "minutos": <int>,
-          "diferencia": <int>  // diferencia en minutos respecto a la jornada base
-      },
-      ...
-  }
-
-- Ejemplo de entrada en `historial_horas.json`:
-
-  {
-      "2026-01-20": {
-          "horas": 8,
-          "minutos": 0,
-          "diferencia": 15
-      },
-      "2026-01-19": {
-          "horas": 7,
-          "minutos": 30,
-          "diferencia": -15
-      }
-  }
-
-Notas para evitar sobrescribir datos
------------------------------------
-- El script ya detecta entradas duplicadas por fecha y solicita confirmación antes de sobrescribir. Aún así, para mayor seguridad:
-  1. Realiza copias de seguridad regulares del archivo: por ejemplo, copiar `historial_horas.json` a `historial_horas.json.bak` antes de cambios masivos.
-  2. Usa control de versiones (git) y no agregues `historial_horas.json` si prefieres mantener datos locales fuera del repositorio. Si quieres mantenerlo versionado, haz commits frecuentes.
-  3. Si prefieres mantener varios historiales, puedes modificar la constante `ARCHIVO_DATOS` en `control_horas.py` o introducir una variable de entorno (por ejemplo, `HISTORIAL_PATH`) para apuntar a otra ubicación.
-  4. Para automatizar backups, crea un script sencillo `scripts/backup.sh` o `scripts/backup.bat`.
-
-Configuración rápida y parámetros
---------------------------------
-- Jornada base por defecto:
-  - horas: definidas por `HORAS_BASE` (valor por defecto: 7)
-  - minutos: definidas por `MINUTOS_BASE` (valor por defecto: 45)
-  Cambia estos valores editando `control_horas.py` en las constantes al inicio del archivo.
-
-Ejemplos de uso
----------------
-- Registrar la jornada de hoy con 8h 0m:
-  1. Ejecuta `python3 control_horas.py`
-  2. Selecciona opción `1`
-  3. Presiona Enter para aceptar la fecha por defecto (hoy)
-  4. Introduce `8` para horas y `0` para minutos
-  5. Verás el mensaje de confirmación y la diferencia diaria
-
-- Ver últimos registros:
-  1. Ejecuta `python3 control_horas.py`
-  2. Selecciona opción `2`
-
-Tests
------
-Se incluye una suite de tests automatizados usando `unittest` en `tests/`.
-
-Para ejecutar la suite desde la raíz del proyecto:
-
-- macOS / Linux (zsh / bash):
+### 1. Clonar el Repositorio
 
 ```bash
+git clone <url-del-repo>
+cd time-balance
+```
+
+### 2. Crear Entorno Virtual (Opcional)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate   # macOS / Linux (zsh / bash)
+.venv\Scripts\activate      # Windows (cmd/PowerShell)
+```
+
+### 3. Instalar el Paquete
+
+```bash
+# En la raíz del proyecto
+python3 -m pip install -e .
+```
+
+Esto instalará el console script `time-balance` en el entorno. Si `pyproject.toml` / `setup.py` especifican requisitos, también se instalarán.
+
+## Uso
+
+### Interfaz Interactiva (Recomendado)
+
+Tras la instalación, ejecuta desde la terminal:
+
+```bash
+time-balance
+```
+
+Se mostrará un menú interactivo:
+
+```
+==================================================
+   SALDO TOTAL ACUMULADO: 0h 15m
+   (Base diaria: 7h 45m)
+==================================================
+
+Opciones:
+1. Registrar jornada (o corregir día)
+2. Ver últimos registros
+3. Exportar historial a archivo
+4. Importar historial desde archivo
+5. Salir
+
+Elige opción: _
+```
+
+**Opción 1: Registrar Jornada**
+
+```
+Ingresa fecha (YYYY-MM-DD) o presiona Enter para hoy [2026-04-16]: 
+Ingresa horas trabajadas: 8
+Ingresa minutos trabajados: 30
+✓ Jornada registrada
+```
+
+**Opción 2: Ver Últimos Registros**
+
+Muestra los 5 registros más recientes con saldo diario.
+
+**Opción 3: Exportar Historial**
+
+```
+Ingresa ruta de destino para exportar: ~/backup/mi_export.json
+✓ Historial exportado a: /Users/usuario/backup/mi_export.json
+```
+
+**Opción 4: Importar Historial**
+
+```
+Ingresa ruta de origen para importar: ~/backup/mi_export.json
+Elige modo de importación (merge/overwrite) [merge]: merge
+✓ Historial importado: 5 entradas procesadas
+```
+
+- **`merge`** (predeterminado): Combina datos; importados ganan en conflictos
+- **`overwrite`**: Reemplaza completamente (crea backup antes)
+
+**Opción 5: Salir**
+
+```
+¡Hasta mañana!
+```
+
+Para más detalles sobre el CLI interactivo, consulta la [Guía de CLI](docs/CLI-GUIDE.md).
+
+## Documentación
+
+La documentación completa está organizada en la carpeta `docs/`:
+
+| Documento | Propósito |
+|-----------|-----------|
+| [**CLI-GUIDE.md**](docs/CLI-GUIDE.md) | Guía detallada de la interfaz interactiva |
+| [**API-GUIDE.md**](docs/API-GUIDE.md) | Referencia de API para uso programático en Python |
+| [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) | Diseño interno, flujos de datos, decisiones de arquitectura |
+| [**CONTRIBUTING.md**](docs/CONTRIBUTING.md) | Guía para contribuidores |
+
+### Acceso Rápido
+
+- ¿Cómo uso la herramienta? → [CLI-GUIDE.md](docs/CLI-GUIDE.md)
+- ¿Cómo integro en mi código Python? → [API-GUIDE.md](docs/API-GUIDE.md)
+- ¿Cómo está organizado internamente? → [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- ¿Cómo contribuyo? → [CONTRIBUTING.md](docs/CONTRIBUTING.md)
+
+## Archivos y Configuración
+
+### Archivo de Datos
+
+El historial se guarda en **`historial_horas.json`** en el directorio actual (por defecto).
+
+Ejemplo de contenido:
+
+```json
+{
+    "2026-04-16": {
+        "horas": 8,
+        "minutos": 30,
+        "diferencia": 45
+    },
+    "2026-04-15": {
+        "horas": 7,
+        "minutos": 45,
+        "diferencia": 0
+    }
+}
+```
+
+### Resolución de Rutas
+
+La ubicación del archivo se resuelve con **3 niveles de prioridad**:
+
+1. **Argumento `archivo_path`** en funciones de la API (cuando se usan programáticamente)
+2. **Variable de entorno `HISTORIAL_PATH`** (si está definida)
+3. **`historial_horas.json`** en el directorio actual (comportamiento por defecto)
+
+**Ejemplo con variable de entorno:**
+
+```bash
+export HISTORIAL_PATH=~/.local/share/time-balance/historial_horas.json
+time-balance
+```
+
+### Backups Automáticos
+
+Las operaciones destructivas crean backups automáticos:
+
+- **`historial_horas.json.bak`** — Último backup (siempre actualizado)
+- **`historial_horas.json.bak.20260416T111320`** — Backup versionado con timestamp ISO
+
+Se generan durante operaciones `overwrite` para permitir recuperación en caso de error.
+
+### Escrituras Seguras
+
+Todas las escrituras son **atómicas** (crash-safe):
+- Se escribe a archivo temporal primero
+- Se realiza reemplazo atómico (`os.replace()`)
+- Si se interrumpe el proceso, el archivo original permanece intacto
+
+## Uso Programático (API)
+
+Para integrar `time-balance` en tu código Python:
+
+```python
+from time_balance import cargar_datos, guardar_datos, formatear_tiempo, calcular_saldo_total
+
+# Cargar historial
+datos = cargar_datos()
+
+# Acceder a datos
+saldo = calcular_saldo_total(datos)
+print(f"Saldo acumulado: {formatear_tiempo(saldo)}")
+
+# Registrar nuevo día
+from datetime import date
+hoy = str(date.today())
+datos[hoy] = {'horas': 8, 'minutos': 30, 'diferencia': 45}
+
+# Guardar cambios
+guardar_datos(datos)
+```
+
+### Funciones Disponibles
+
+| Función | Propósito |
+|---------|-----------|
+| `cargar_datos(archivo_path=None)` | Carga historial desde JSON |
+| `guardar_datos(datos, archivo_path=None)` | Guarda historial (atómico) |
+| `exportar_historial(ruta_destino, archivo_path=None)` | Exporta a archivo externo |
+| `importar_historial(ruta_fuente, modo='merge', archivo_path=None)` | Importa con validación |
+| `formatear_tiempo(minutos_totales)` | Convierte minutos a formato legible |
+| `calcular_saldo_total(datos)` | Suma diferencias diarias |
+
+Para documentación completa, consulta [API-GUIDE.md](docs/API-GUIDE.md).
+
+## Tests
+
+La suite de tests se ejecuta con:
+
+```bash
+# Ejecutar discovery (la carpeta `tests/` es un paquete, por lo que la forma
+# simple funciona correctamente):
 python3 -m unittest discover -v
 ```
 
-- Windows (cmd / PowerShell):
+Ejecutar un test concreto (ejemplos):
 
-```powershell
-python -m unittest discover -v
+```bash
+# Ejecutar todos los tests del módulo `tests.test_import_export`
+python -m unittest tests.test_import_export -v
+
+# Ejecutar un caso de prueba concreto dentro del módulo
+python -m unittest tests.test_import_export.TestImportExport.test_exportar_historial_crea_archivo -v
 ```
 
-Los tests cubren:
-- `formatear_tiempo` con valores positivos, cero y negativos.
-- `calcular_saldo_total`.
-- Lectura/escritura de `ARCHIVO_DATOS` (carga, guardar y roundtrip).
-- Comportamiento de `registrar_jornada` ante sobrescritura (confirmar/cancelar).
-- Salida de `ver_historial` (muestra los últimos 5 registros).
+**Cobertura:**
 
-Buenas prácticas
-----------------
-- Mantén `historial_horas.json` fuera del control de versiones si contiene datos personales o locales (añádelo al `.gitignore`) o añade una muestra de ejemplo en `examples/` en lugar del archivo real.
-- Haz backups antes de realizar cambios masivos o limpieza del historial.
-- Considera añadir argumentos de línea de comandos y/o soporte para variables de entorno para mayor flexibilidad.
+- **10 tests** de lógica principal (`tests/test_control_horas.py`)
+  - Formateo de tiempo, cálculo de saldo, I/O, detección de duplicados
+  
+- **4 tests** de import/export (`tests/test_import_export.py`)
+  - Exportación, modo merge, modo overwrite, backups, validación
 
-Preguntas frecuentes (FAQ)
---------------------------
-P: ¿Puedo cambiar la ubicación del archivo de historial?
-R: Sí. Modifica la constante `ARCHIVO_DATOS` en `control_horas.py` o extiende el script para leer una variable de entorno `HISTORIAL_PATH`.
+**Características de los tests:**
 
-P: ¿El script usa librerías externas?
-R: No, actualmente usa solo la biblioteca estándar de Python.
+- ✅ Cada test usa directorio temporal aislado (no toca archivos reales)
+- ✅ Validan correctitud de datos, operaciones atómicas, backups
+- ✅ Se ejecutan rapidamente (~0.015s)
 
-P: ¿Qué versión de Python necesito?
-R: Python 3.8 o superior es recomendado.
+## Mejoras Propuestas
 
-Contribuciones y mejoras propuestas
-----------------------------------
-- Añadir `examples/historial_horas.json` con datos de ejemplo.
-- Añadir un pequeño `requirements.txt` vacío o con notas si en el futuro hay dependencias.
-- Añadir una opción CLI para exportar/importar CSV y para cambiar la ruta del archivo de datos vía argumento o variable de entorno.
-- Añadir pruebas unitarias básicas para las funciones de cálculo (p. ej. `formatear_tiempo`, `calcular_saldo_total`).
+Posibles extensiones futuras (sin romper compatibilidad):
 
-Licencia
---------
-Añade la licencia que prefieras (por ejemplo MIT). Si quieres, puedo preparar un archivo `LICENSE` con texto MIT.
+- Soporte para XDG Base Directory (`~/.local/share/time-balance/`)
+- Exportación a CSV / Excel
+- Estadísticas y reportes (semanal, mensual, anual)
+- Sincronización con servicios en la nube
+- Integración con calendarios/agenda
+- Notificaciones y recordatorios
 
-Contacto
---------
-Incluye tu nombre o correo si quieres recibir contribuciones o reportes de errores.
+## Contribuciones
+
+Si encuentras bugs o tienes ideas de mejora, consulta [CONTRIBUTING.md](docs/CONTRIBUTING.md) para aprender cómo contribuir.
+
+## Licencia
+
+Este proyecto está bajo la licencia [GNU General Public License v3.0 (GPL-3.0)](LICENSE).
+
+El objetivo es fomentar el crecimiento colaborativo y garantizar que todas las mejoras derivadas sigan siendo de código abierto y beneficien a toda la comunidad. No se incentiva la creación de forks privativos.

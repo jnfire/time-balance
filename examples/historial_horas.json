@@ -1,0 +1,27 @@
+{
+    "2023-10-16": {
+        "horas": 8,
+        "minutos": 0,
+        "diferencia": 0
+    },
+    "2023-10-17": {
+        "horas": 8,
+        "minutos": 30,
+        "diferencia": 30
+    },
+    "2023-10-18": {
+        "horas": 7,
+        "minutos": 45,
+        "diferencia": -15
+    },
+    "2023-10-19": {
+        "horas": 9,
+        "minutos": 15,
+        "diferencia": 75
+    },
+    "2023-10-20": {
+        "horas": 6,
+        "minutos": 30,
+        "diferencia": -90
+    }
+}
