@@ -137,7 +137,7 @@ importar_historial(ruta_fuente, modo='merge'|'overwrite')
 ```python
 # Implementación en guardar_datos()
 fd, tmp_path = tempfile.mkstemp()
-with open(fd, 'w') as f:
+with os.fdopen(fd, 'w') as f:
     json.dump(datos, f)
 os.replace(tmp_path, archivo_datos)  # Operación atómica
 ```
