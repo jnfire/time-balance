@@ -204,8 +204,16 @@ def _validar_historial(datos):
     for fecha, info in datos.items():
         if not isinstance(fecha, str):
             raise ValueError("Las claves del historial deben ser strings con formato YYYY-MM-DD")
+
+        try:
+            datetime.strptime(fecha, "%Y-%m-%d")
+
+        except ValueError:
+            raise ValueError(f"Clave de fecha inválida: {fecha}. Debe tener formato YYYY-MM-DD")
+
         if not isinstance(info, dict):
             raise ValueError(f"Entrada para {fecha} debe ser un objeto con 'horas','minutos','diferencia'.")
+
         for key in ('horas', 'minutos', 'diferencia'):
             if key not in info:
                 raise ValueError(f"Entrada para {fecha} falta clave '{key}'")
