@@ -54,7 +54,7 @@ Guarda el historial en un archivo JSON de forma segura (operación atómica).
 - `archivo_path` (str, optional): Ruta donde guardar. Si es `None`, usa resolución de prioridades.
 
 **Retorna:**
-- `dict`: El mismo diccionario `datos` pasado como argumento.
+- `None`: Esta función guarda `datos` en disco y no retorna ningún valor.
 
 **Características de seguridad:**
 - Escribe a archivo temporal primero
