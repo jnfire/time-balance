@@ -235,10 +235,20 @@ def exportar_historial(ruta_destino, archivo_path=None):
     # Crear el temporal en el mismo directorio de destino para evitar EXDEV
     fd, ruta_temp = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dir_dest or ".")
     try:
+        # Escribimos y sincronizamos el temporal antes del rename para mayor robustez
         with os.fdopen(fd, 'w', encoding='utf-8') as tmpf:
             tmpf.write(contenido)
+            try:
+                tmpf.flush()
+                os.fsync(tmpf.fileno())
+            except Exception:
+                # Si fsync no está soportado en la plataforma, continuamos igualmente
+                pass
+
+        # Intentamos reemplazo atómico
         try:
             os.replace(ruta_temp, destino)
+            # Intentamos fsync al directorio destino para asegurar persistencia del rename
             try:
                 dirfd = os.open(os.path.dirname(destino) or '.', os.O_RDONLY)
                 try:
@@ -248,9 +258,12 @@ def exportar_historial(ruta_destino, archivo_path=None):
             except Exception:
                 pass
         except OSError as e:
+            # En sistemas con filesystems diferentes, os.replace puede fallar con EXDEV.
+            # Como fallback hacemos copy + fsync del destino.
             if getattr(e, 'errno', None) == errno.EXDEV:
                 shutil.copy2(ruta_temp, destino)
                 try:
+                    # Forzar fsync en el archivo copiado
                     with open(destino, 'rb') as f:
                         try:
                             os.fsync(f.fileno())
@@ -265,11 +278,13 @@ def exportar_historial(ruta_destino, archivo_path=None):
             else:
                 raise
     finally:
+        # Limpieza best-effort del temporal si quedara
         if 'ruta_temp' in locals() and os.path.exists(ruta_temp):
             try:
                 os.remove(ruta_temp)
             except OSError:
                 pass
+
     return destino
 
 
