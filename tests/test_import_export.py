@@ -10,17 +10,17 @@ class TestImportExport(unittest.TestCase):
     def setUp(self):
         # directorio temporal por test
         self.tmpdir = tempfile.TemporaryDirectory()
-        self.orig_archivo = getattr(ch, 'ARCHIVO_DATOS', None)
+        self.orig_archivo = getattr(ch.constants, 'ARCHIVO_DATOS', None)
         # Guardar y limpiar la variable de entorno para evitar flakes en CI
         self._orig_historial_path = os.environ.get('HISTORIAL_PATH')
         os.environ.pop('HISTORIAL_PATH', None)
         self.dest_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
-        ch.ARCHIVO_DATOS = self.dest_file
+        ch.constants.ARCHIVO_DATOS = self.dest_file
 
     def tearDown(self):
         # restaurar
         if self.orig_archivo is not None:
-            ch.ARCHIVO_DATOS = self.orig_archivo
+            ch.constants.ARCHIVO_DATOS = self.orig_archivo
         # Restaurar variable de entorno
         if self._orig_historial_path is not None:
             os.environ['HISTORIAL_PATH'] = self._orig_historial_path
@@ -55,7 +55,8 @@ class TestImportExport(unittest.TestCase):
             json.dump(fuente, f)
 
         # Importar en modo merge -> la fuente sobrescribe en conflicto
-        res = ch.importar_historial(src_path, modo='merge')
+        # Usamos la constante MODE_MERGE
+        res = ch.importar_historial(src_path, modo=ch.MODE_MERGE)
 
         # Comprobaciones
         self.assertIn('2026-01-03', res)
@@ -76,8 +77,8 @@ class TestImportExport(unittest.TestCase):
         with open(src_path, 'w', encoding='utf-8') as f:
             json.dump(fuente, f)
 
-        # Import overwrite
-        ch.importar_historial(src_path, modo='overwrite')
+        # Import overwrite usando la constante MODE_OVERWRITE
+        ch.importar_historial(src_path, modo=ch.MODE_OVERWRITE)
 
         # Now backup should exist in tmpdir (archivo.bak.*)
         bak_pattern = self.dest_file + '.bak.*'
@@ -93,7 +94,7 @@ class TestImportExport(unittest.TestCase):
         with open(src_path, 'w', encoding='utf-8') as f:
             f.write('{ invalid json')
         with self.assertRaises(ValueError):
-            ch.importar_historial(src_path, modo='overwrite')
+            ch.importar_historial(src_path, modo=ch.MODE_OVERWRITE)
 
 if __name__ == '__main__':
     unittest.main()

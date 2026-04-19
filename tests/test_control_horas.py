@@ -10,7 +10,8 @@ class TestControlHoras(unittest.TestCase):
     def setUp(self):
         # Crear un directorio temporal y usarlo como cwd y como lugar del archivo de datos
         self._orig_cwd = os.getcwd()
-        self._orig_archivo = getattr(ch, 'ARCHIVO_DATOS', None)
+        # Las constantes ahora viven en ch.constants
+        self._orig_archivo = getattr(ch.constants, 'ARCHIVO_DATOS', None)
         # Guardar y limpiar variable de entorno HISTORIAL_PATH para evitar que tests toquen rutas reales
         self._orig_historial_path = os.environ.get('HISTORIAL_PATH')
         os.environ.pop('HISTORIAL_PATH', None)
@@ -18,13 +19,13 @@ class TestControlHoras(unittest.TestCase):
         os.chdir(self.tmpdir.name)
         # Archivo de datos en el tempdir
         self.data_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
-        ch.ARCHIVO_DATOS = self.data_file
+        ch.constants.ARCHIVO_DATOS = self.data_file
 
     def tearDown(self):
         # Restaurar cwd y ARCHIVO_DATOS
         os.chdir(self._orig_cwd)
         if self._orig_archivo is not None:
-            ch.ARCHIVO_DATOS = self._orig_archivo
+            ch.constants.ARCHIVO_DATOS = self._orig_archivo
         # Restaurar variable de entorno original
         if self._orig_historial_path is not None:
             os.environ['HISTORIAL_PATH'] = self._orig_historial_path
@@ -48,7 +49,7 @@ class TestControlHoras(unittest.TestCase):
     def test_cargar_no_file(self):
         with tempfile.TemporaryDirectory() as d:
             fake = os.path.join(d, "nope.json")
-            ch.ARCHIVO_DATOS = fake
+            ch.constants.ARCHIVO_DATOS = fake
             self.assertEqual(ch.cargar_datos(), {})
 
     def test_cargar_invalid_json(self):
@@ -56,7 +57,7 @@ class TestControlHoras(unittest.TestCase):
             f.write("{ invalid json")
             fname = f.name
         try:
-            ch.ARCHIVO_DATOS = fname
+            ch.constants.ARCHIVO_DATOS = fname
             self.assertEqual(ch.cargar_datos(), {})
         finally:
             if os.path.exists(fname):
@@ -68,7 +69,7 @@ class TestControlHoras(unittest.TestCase):
         if os.path.exists(fname):
             os.remove(fname)
         try:
-            ch.ARCHIVO_DATOS = fname
+            ch.constants.ARCHIVO_DATOS = fname
             data = {"2026-01-01":{"horas":8,"minutos":0,"diferencia":15}}
             ch.guardar_datos(data)
             loaded = ch.cargar_datos()
@@ -82,7 +83,7 @@ class TestControlHoras(unittest.TestCase):
             fname = f.name
         if os.path.exists(fname):
             os.remove(fname)
-        ch.ARCHIVO_DATOS = fname
+        ch.constants.ARCHIVO_DATOS = fname
         datos = {"2026-01-01":{"horas":7,"minutos":0,"diferencia":-45}}
         # inputs: date, confirmation 'n' (cancel)
         with mock.patch('builtins.input', side_effect=["2026-01-01", "n"]):
@@ -95,7 +96,7 @@ class TestControlHoras(unittest.TestCase):
             fname = f.name
         if os.path.exists(fname):
             os.remove(fname)
-        ch.ARCHIVO_DATOS = fname
+        ch.constants.ARCHIVO_DATOS = fname
         datos = {"2026-01-01":{"horas":7,"minutos":0,"diferencia":-45}}
         # inputs: date, confirmation 's', horas '8', minutos '0'
         with mock.patch('builtins.input', side_effect=["2026-01-01", "s", "8", "0"]):
