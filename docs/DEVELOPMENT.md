@@ -1,142 +1,71 @@
-# Guía de API: Uso Programático
+# Developer Guide
 
-La librería `time-balance` está diseñada siguiendo una arquitectura modular que separa la lógica de negocio (Core) de los servicios de infraestructura (Storage/IO) y la interfaz de usuario (CLI).
+This guide provides technical details for developers who want to integrate with `time-balance` or contribute to its development.
 
-## Instalación para Desarrollo
+## Project Philosophy
+
+- **Standard Library Only**: No external dependencies allowed for the core functionality.
+- **Clean Code**: Descriptive naming, modularity, and high test coverage.
+- **Safety**: Atomic writes and defensive data validation.
+
+## Module Structure
+
+The project is organized into logical layers:
+
+### 1. Business Logic (`core.py`)
+Pure functions for time calculations.
+- `format_time(minutes)`: Returns strings like `"-1h 30m"`.
+- `calculate_total_balance(records)`: Sums differences from the data dictionary.
+
+### 2. Persistence (`storage.py`)
+Handles disk I/O and schema migrations.
+- `load_data(path)`: Returns a structured dict with `metadata` and `registros`.
+- `save_data(data, path)`: Atomic write via temporary files.
+
+### 3. Data Exchange (`io.py`)
+Logic for moving data between systems.
+- `export_history(dest)`: Exports the full structured JSON.
+- `import_history(src, mode)`: Validates and merges/overwrites data.
+
+### 4. User Interface (`cli.py`)
+The presentation layer using `argparse` and a loop-based menu.
+
+### 5. Internationalization (`i18n.py`)
+Simple translation engine. Uses `translate(key, lang)` to fetch strings.
+
+## Running Tests
+
+We use the standard `unittest` framework:
 
 ```bash
-# En la carpeta del proyecto
-python3 -m pip install -e .
+# Run all tests
+python3 -m unittest discover -v tests
 ```
 
-## Estructura de Importación
+## Adding a New Language
 
-Aunque todas las funciones principales están disponibles en el espacio de nombres principal, la API se organiza lógicamente en cuatro pilares:
+1. Open `time_balance/i18n.py`.
+2. Add a new entry to the `STRINGS` dictionary with the ISO 639-1 code (e.g., `"fr"` for French).
+3. Translate all keys from the `"en"` template.
+4. Update the `--lang` choices in `cli.py` (if needed, though it accepts any string).
 
-```python
-import time_balance as ch
+## Data Schema Reference
 
-# 1. Lógica de Negocio (Core)
-# ch.formatear_tiempo, ch.calcular_saldo_total
-
-# 2. Persistencia (Storage)
-# ch.cargar_datos, ch.guardar_datos
-
-# 3. Intercambio de Datos (IO)
-# ch.exportar_historial, ch.importar_historial
-
-# 4. Constantes de Configuración
-# ch.HORAS_BASE, ch.MODE_MERGE, etc.
-```
-
----
-
-## 1. Core API (Lógica de Negocio)
-
-Representa el corazón del sistema. Estas funciones son puras y se encargan de las reglas de cálculo y representación.
-
-### `formatear_tiempo(minutos_totales)`
-Convierte minutos a formato legible (ej: "2h 5m").
-
-**Ejemplo:**
-```python
-from time_balance import formatear_tiempo
-print(formatear_tiempo(125))  # "2h 5m"
-print(formatear_tiempo(-75))  # "-1h 15m"
-```
-
-### `calcular_saldo_total(datos)`
-Suma todas las diferencias diarias para obtener el saldo acumulado.
-
-**Ejemplo:**
-```python
-from time_balance import calcular_saldo_total
-saldo = calcular_saldo_total(datos)
-print(f"Saldo total: {saldo} minutos")
-```
-
----
-
-## 2. Persistence API (Almacenamiento)
-
-Gestiona la lectura y escritura del historial en disco garantizando la integridad de los datos.
-
-### `cargar_datos(archivo_path=None)`
-Carga el historial de horas desde un archivo JSON.
-- **`archivo_path`**: Opcional. Si es `None`, usa la resolución de prioridades (ENV > Default).
-
-### `guardar_datos(datos, archivo_path=None)`
-Guarda el historial de forma segura mediante **escritura atómica** (crash-safe).
-
-**Ejemplo de flujo de persistencia:**
-```python
-from time_balance import cargar_datos, guardar_datos
-
-datos = cargar_datos()
-# ... modificar datos ...
-guardar_datos(datos)
-```
-
----
-
-## 3. Data Exchange API (Import/Export)
-
-Funciones para mover datos entre el sistema y archivos externos con validación rigurosa.
-
-### `exportar_historial(ruta_destino, archivo_path=None)`
-Exporta el historial completo a un JSON externo.
-
-### `importar_historial(ruta_fuente, modo=MODE_MERGE, archivo_path=None)`
-Importa historial validando su estructura.
-- **Modos**: `MODE_MERGE` (combina) o `MODE_OVERWRITE` (reemplaza con backup).
-
-**Ejemplo de Importación:**
-```python
-from time_balance import importar_historial, MODE_MERGE
-
-try:
-    datos = importar_historial("~/backup.json", modo=MODE_MERGE)
-    print("✓ Datos sincronizados")
-except ValueError as e:
-    print(f"Error de validación: {e}")
-```
-
----
-
-## 4. Interactive API (CLI)
-
-Estas funciones están diseñadas para su uso en scripts interactivos, ya que solicitan entrada o imprimen en pantalla.
-
-- `registrar_jornada(datos, archivo_path=None)`: Inicia el flujo de entrada de horas por consola.
-- `ver_historial(datos)`: Imprime una tabla con los últimos 5 registros.
-- `solicitar_fecha()`: Función interactiva para validar fechas introducidas por el usuario.
-
----
-
-## Constantes y Configuración
-
-Centraliza la configuración del sistema para evitar "magic strings".
-
-| Constante | Valor por defecto | Descripción |
-|-----------|-------------------|-------------|
-| `HORAS_BASE` | `7` | Horas de la jornada base |
-| `MINUTOS_BASE` | `45` | Minutos de la jornada base |
-| `ARCHIVO_DATOS` | `"historial_horas.json"` | Archivo por defecto |
-| `MODE_MERGE` | `"merge"` | Modo de importación por mezcla |
-| `MODE_OVERWRITE` | `"overwrite"` | Modo de importación por reemplazo |
-
----
-
-## Estructura de Datos (Esquema JSON)
-
-El historial se representa como un diccionario donde la clave es la fecha (`YYYY-MM-DD`) y el valor es un objeto con la jornada:
-
-```python
+```json
 {
-    "2026-04-19": {
-        "horas": 8,           # int: horas reales
-        "minutos": 0,         # int: minutos reales
-        "diferencia": 15      # int: balance vs jornada base (465m)
+    "metadata": {
+        "project_name": "string",
+        "hours_base": "int",
+        "minutos_base": "int",
+        "version": "string",
+        "language": "string (en|es|auto)"
+    },
+    "registros": {
+        "YYYY-MM-DD": {
+            "horas": "int",
+            "minutos": "int",
+            "diferencia": "int (worked_minutes - base_minutes)"
+        }
     }
 }
 ```

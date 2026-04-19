@@ -8,108 +8,98 @@ import time_balance as ch
 
 class TestImportExport(unittest.TestCase):
     def setUp(self):
-        # directorio temporal por test
+        # directory per test
         self.tmpdir = tempfile.TemporaryDirectory()
         self.orig_archivo = getattr(ch.constants, 'ARCHIVO_DATOS', None)
-        # Guardar y limpiar la variable de entorno para evitar flakes en CI
+        # Clear env var to avoid CI flakes
         self._orig_historial_path = os.environ.get('HISTORIAL_PATH')
         os.environ.pop('HISTORIAL_PATH', None)
         self.dest_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
         ch.constants.ARCHIVO_DATOS = self.dest_file
 
     def tearDown(self):
-        # restaurar
         if self.orig_archivo is not None:
             ch.constants.ARCHIVO_DATOS = self.orig_archivo
-        # Restaurar variable de entorno
         if self._orig_historial_path is not None:
             os.environ['HISTORIAL_PATH'] = self._orig_historial_path
         else:
             os.environ.pop('HISTORIAL_PATH', None)
         self.tmpdir.cleanup()
 
-    def test_exportar_historial_crea_archivo(self):
-        # Preparar datos en archivo destino
+    def test_export_history_creates_file(self):
         datos = {
-            "metadata": {"project_name": "P1", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
-            "registros": {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+            "metadata": {"project_name": "P1", "hours_base": 7, "minutes_base": 45, "version": "1.0", "language": "auto"},
+            "records": {"2026-04-01": {"hours": 8, "minutes": 0, "difference": 15}}
         }
-        ch.guardar_datos(datos)
+        ch.save_data(datos)
 
-        # Exportar a un archivo concreto
         export_path = os.path.join(self.tmpdir.name, 'export.json')
-        written = ch.exportar_historial(export_path)
+        written = ch.export_history(export_path)
         self.assertTrue(os.path.exists(written))
         with open(written, 'r', encoding='utf-8') as f:
             contenido = json.load(f)
         self.assertEqual(contenido, datos)
 
-    def test_importar_merge_prefiere_fuente(self):
-        # Destino: tiene una fecha A y B
+    def test_import_merge_prefers_source(self):
         destino = {
-            "metadata": {"project_name": "Dest", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
-            "registros": {
-                "2026-01-01": {"horas": 7, "minutos": 0, "diferencia": -45},
-                "2026-01-02": {"horas": 6, "minutos": 30, "diferencia": -75}
+            "metadata": {"project_name": "Dest", "hours_base": 7, "minutes_base": 45, "version": "1.0", "language": "auto"},
+            "records": {
+                "2026-04-01": {"hours": 7, "minutes": 0, "difference": -45},
+                "2026-04-02": {"hours": 6, "minutes": 30, "difference": -75}
             }
         }
-        ch.guardar_datos(destino)
+        ch.save_data(destino)
 
-        # Fuente: tiene fecha A (conflicto) and C (nuevo) - Formato antiguo para testear compatibilidad
-        fuente_old = {
-            "2026-01-01": {"horas": 9, "minutos": 0, "diferencia": 75},
-            "2026-01-03": {"horas": 8, "minutos": 15, "diferencia": 30}
+        # Source: Correct v2 format
+        fuente_v2 = {
+            "metadata": {"project_name": "Source", "hours_base": 7, "minutes_base": 45, "version": "1.0"},
+            "records": {
+                "2026-04-01": {"hours": 9, "minutes": 0, "difference": 75},
+                "2026-04-03": {"hours": 8, "minutes": 15, "difference": 30}
+            }
         }
-        src_path = os.path.join(self.tmpdir.name, 'fuente.json')
+        src_path = os.path.join(self.tmpdir.name, 'source.json')
         with open(src_path, 'w', encoding='utf-8') as f:
-            json.dump(fuente_old, f)
+            json.dump(fuente_v2, f)
 
-        # Importar en modo merge -> la fuente sobrescribe en conflicto
-        res = ch.importar_historial(src_path, modo=ch.MODE_MERGE)
+        res = ch.import_history(src_path, mode=ch.MODE_MERGE)
 
-        # Comprobaciones
-        self.assertIn('2026-01-03', res["registros"])
-        self.assertEqual(res["registros"]['2026-01-01']['horas'], 9)  # valor de la fuente
-        # Y archivo destino refleja el merge
-        loaded = ch.cargar_datos()
-        self.assertEqual(loaded["registros"]['2026-01-01']['horas'], 9)
-        self.assertIn('2026-01-02', loaded["registros"])
+        self.assertIn('2026-04-03', res["records"])
+        self.assertEqual(res["records"]['2026-04-01']['hours'], 9)
+        loaded = ch.load_data()
+        self.assertEqual(loaded["records"]['2026-04-01']['hours'], 9)
+        self.assertIn('2026-04-02', loaded["records"])
 
-    def test_importar_overwrite_crea_backup_y_sobreescribe(self):
-        # Destino inicial
+    def test_import_overwrite_creates_backup(self):
         destino = {
-            "metadata": {"project_name": "Dest", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
-            "registros": {"2026-01-01": {"horas": 7, "minutos": 0, "diferencia": -45}}
+            "metadata": {"project_name": "Dest", "hours_base": 7, "minutes_base": 45, "version": "1.0", "language": "auto"},
+            "records": {"2026-04-01": {"hours": 7, "minutes": 0, "difference": -45}}
         }
-        ch.guardar_datos(destino)
+        ch.save_data(destino)
 
-        # Fuente nueva
         fuente = {
-            "metadata": {"project_name": "New", "horas_base": 8, "minutos_base": 0, "version": "1.0"},
-            "registros": {"2026-02-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+            "metadata": {"project_name": "New", "hours_base": 8, "minutes_base": 0, "version": "1.0", "language": "auto"},
+            "records": {"2026-05-01": {"hours": 8, "minutes": 0, "difference": 15}}
         }
-        src_path = os.path.join(self.tmpdir.name, 'fuente2.json')
+        src_path = os.path.join(self.tmpdir.name, 'source2.json')
         with open(src_path, 'w', encoding='utf-8') as f:
             json.dump(fuente, f)
 
-        # Import overwrite usando la constante MODE_OVERWRITE
-        ch.importar_historial(src_path, modo=ch.MODE_OVERWRITE)
+        ch.import_history(src_path, mode=ch.MODE_OVERWRITE)
 
-        # Now backup should exist in tmpdir (archivo.bak.*)
         bak_pattern = self.dest_file + '.bak.*'
         bak_files = glob.glob(bak_pattern)
-        self.assertTrue(len(bak_files) >= 1, f"No se encontró backup con patrón {bak_pattern}")
+        self.assertTrue(len(bak_files) >= 1)
 
-        # El archivo destino ahora debe ser igual a la fuente
-        loaded = ch.cargar_datos()
+        loaded = ch.load_data()
         self.assertEqual(loaded, fuente)
 
-    def test_importar_json_invalido_lanza(self):
+    def test_import_invalid_json_raises(self):
         src_path = os.path.join(self.tmpdir.name, 'bad.json')
         with open(src_path, 'w', encoding='utf-8') as f:
             f.write('{ invalid json')
         with self.assertRaises(ValueError):
-            ch.importar_historial(src_path, modo=ch.MODE_OVERWRITE)
+            ch.import_history(src_path, mode=ch.MODE_OVERWRITE)
 
 if __name__ == '__main__':
     unittest.main()

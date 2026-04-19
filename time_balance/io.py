@@ -8,122 +8,116 @@ from . import storage
 from . import constants
 
 
-def _validar_historial(datos):
-    """Valida la estructura básica del historial cargado """
-    if not isinstance(datos, dict):
-        raise ValueError("Historial debe ser un objeto/diccionario JSON")
+def validate_history(data):
+    """Validates basic history structure."""
+    if not isinstance(data, dict):
+        raise ValueError("History must be a JSON object/dict")
     
-    # Validar presencia de metadata y registros
-    if "metadata" not in datos or "registros" not in datos:
-        # Intentar validar como formato antiguo (esto permite importar archivos viejos)
-        for fecha, info in datos.items():
-            _validar_entrada_registro(fecha, info)
-        return
+    if "metadata" not in data or "records" not in data:
+        raise ValueError("History missing required structured keys (metadata, records)")
 
-    # Validar metadata
-    metadatos = datos["metadata"]
-    if not isinstance(metadatos, dict):
-        raise ValueError("Metadata debe ser un objeto")
-    for clave in ("project_name", "horas_base", "minutos_base"):
-        if clave not in metadatos:
-            raise ValueError(f"Metadata falta clave '{clave}'")
+    # Validate metadata
+    metadata = data["metadata"]
+    if not isinstance(metadata, dict):
+        raise ValueError("Metadata must be an object")
+    
+    required_meta = ("project_name", "hours_base", "minutes_base")
+    for key in required_meta:
+        if key not in metadata:
+            raise ValueError(f"Metadata missing required key: {key}")
 
-    # Validar registros
-    registros = datos["registros"]
-    if not isinstance(registros, dict):
-        raise ValueError("Registros debe ser un objeto")
-    for fecha, info in registros.items():
-        _validar_entrada_registro(fecha, info)
+    # Validate records
+    records = data["records"]
+    if not isinstance(records, dict):
+        raise ValueError("Records must be an object")
+    for date_key, info in records.items():
+        _validate_record_entry(date_key, info)
 
 
-def _validar_entrada_registro(fecha, info):
-    """Valida una única entrada de registro."""
-    if not isinstance(fecha, str):
-        raise ValueError("Las claves del historial deben ser strings con formato YYYY-MM-DD")
+def _validate_record_entry(date_key, info):
+    """Validates a single record entry."""
+    if not isinstance(date_key, str):
+        raise ValueError("History keys must be strings (YYYY-MM-DD)")
 
     try:
-        datetime.strptime(fecha, "%Y-%m-%d")
+        datetime.strptime(date_key, "%Y-%m-%d")
     except ValueError:
-        raise ValueError(f"Clave de fecha inválida: {fecha}. Debe tener formato YYYY-MM-DD")
+        raise ValueError(f"Invalid date key: {date_key}. Must be YYYY-MM-DD")
 
     if not isinstance(info, dict):
-        raise ValueError(f"Entrada para {fecha} debe ser un objeto con 'horas','minutos','diferencia'.")
+        raise ValueError(f"Entry for {date_key} must be an object with hour/minute data.")
 
-    for clave in ('horas', 'minutos', 'diferencia'):
-        if clave not in info:
-            raise ValueError(f"Entrada para {fecha} falta clave '{clave}'")
-        if not isinstance(info[clave], int):
-            raise ValueError(f"'{clave}' en {fecha} debe ser un entero")
+    required_keys = ('hours', 'minutes', 'difference')
+    for key in required_keys:
+        if key not in info:
+            raise ValueError(f"Entry for {date_key} is missing required key: {key}")
+        if not isinstance(info[key], int):
+            raise ValueError(f"'{key}' in {date_key} must be an integer")
 
 
-def exportar_historial(ruta_destino, archivo_path=None):
-    """Exporta el historial actual a la ruta indicada."""
-    datos = storage.cargar_datos(archivo_path)
-    destino = os.path.expanduser(ruta_destino)
-    destino = os.path.abspath(destino)
-    dir_dest = os.path.dirname(destino)
-    if dir_dest and not os.path.exists(dir_dest):
-        os.makedirs(dir_dest, exist_ok=True)
+def export_history(dest_path, file_path=None):
+    """Exports current history to external JSON."""
+    data = storage.load_data(file_path)
+    dest = os.path.expanduser(dest_path)
+    dest = os.path.abspath(dest)
+    dest_dir = os.path.dirname(dest)
+    if dest_dir and not os.path.exists(dest_dir):
+        os.makedirs(dest_dir, exist_ok=True)
 
-    contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    file_descriptor, ruta_temp = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dir_dest or ".")
+    content = json.dumps(data, indent=4, ensure_ascii=False)
+    file_descriptor, temp_path = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dest_dir or ".")
     try:
-        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as archivo_temporal:
-            archivo_temporal.write(contenido)
+        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as temp_file:
+            temp_file.write(content)
             try:
-                archivo_temporal.flush()
-                os.fsync(archivo_temporal.fileno())
+                temp_file.flush()
+                os.fsync(temp_file.fileno())
             except Exception:
                 pass
 
         try:
-            os.replace(ruta_temp, destino)
+            os.replace(temp_path, dest)
         except OSError as error:
             if getattr(error, 'errno', None) == errno.EXDEV:
-                shutil.copy2(ruta_temp, destino)
-                os.remove(ruta_temp)
+                shutil.copy2(temp_path, dest)
+                os.remove(temp_path)
             else:
                 raise
     finally:
-        if 'ruta_temp' in locals() and os.path.exists(ruta_temp):
+        if 'temp_path' in locals() and os.path.exists(temp_path):
             try:
-                os.remove(ruta_temp)
+                os.remove(temp_path)
             except OSError:
                 pass
 
-    return destino
+    return dest
 
 
-def importar_historial(ruta_fuente, modo=constants.MODE_MERGE, archivo_path=None):
-    """Importa un historial desde un archivo externo."""
-    fuente = os.path.expanduser(ruta_fuente)
-    fuente = os.path.abspath(fuente)
-    if not os.path.exists(fuente):
-        raise FileNotFoundError(f"Archivo de importación no existe: {fuente}")
+def import_history(source_path, mode=constants.MODE_MERGE, file_path=None):
+    """Imports history from external file."""
+    source = os.path.expanduser(source_path)
+    source = os.path.abspath(source)
+    if not os.path.exists(source):
+        raise FileNotFoundError(f"Import file not found: {source}")
 
     try:
-        with open(fuente, 'r', encoding='utf-8') as archivo_json:
-            datos_fuente = json.load(archivo_json)
+        with open(source, 'r', encoding='utf-8') as json_file:
+            source_data = json.load(json_file)
     except json.JSONDecodeError as error:
-        raise ValueError(f"JSON inválido en archivo de importación: {error}")
+        raise ValueError(f"Invalid JSON in import file: {error}")
 
-    _validar_historial(datos_fuente)
+    validate_history(source_data)
     
-    # Aseguramos que la fuente tenga formato nuevo tras validar
-    datos_fuente = storage._migrar_formato_antiguo(datos_fuente)
-
-    destino = storage._resolver_archivo(archivo_path)
-    if modo == constants.MODE_OVERWRITE:
-        storage._crear_backup(destino)
-        storage.guardar_datos(datos_fuente, destino)
-        return datos_fuente
-    elif modo == constants.MODE_MERGE:
-        storage._crear_backup(destino)
-        datos_actuales = storage.cargar_datos(destino)
-        # Merge de registros
-        datos_actuales["registros"].update(datos_fuente["registros"])
-        # Mantenemos los metadatos locales (el proyecto destino manda)
-        storage.guardar_datos(datos_actuales, destino)
-        return datos_actuales
+    target_path = storage._resolve_file_path(file_path)
+    if mode == constants.MODE_OVERWRITE:
+        storage._create_backup(target_path)
+        storage.save_data(source_data, target_path)
+        return source_data
+    elif mode == constants.MODE_MERGE:
+        storage._create_backup(target_path)
+        current_data = storage.load_data(target_path)
+        current_data["records"].update(source_data["records"])
+        storage.save_data(current_data, target_path)
+        return current_data
     else:
-        raise ValueError(f"Modo desconocido. Usa {constants.MODOS_IMPORTACION_VALIDOS}.")
+        raise ValueError(f"Unknown mode. Use {constants.MODOS_IMPORTACION_VALIDOS}.")

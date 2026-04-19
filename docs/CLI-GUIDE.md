@@ -1,244 +1,84 @@
-# Guía de Uso: Interfaz CLI Interactiva
+# Usage Guide: CLI Interface
 
-`time-balance` proporciona una interfaz interactiva de línea de comandos basada en menús. No hay argumentos de línea de comandos ni subcomandos.
+`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries.
 
-## Inicio de la Aplicación
+## Direct Commands (Fast Mode)
+
+You can query information without entering the interactive menu using flags:
+
+```bash
+# View current accumulated balance
+time-balance --status
+
+# List last 10 records
+time-balance --list 10
+
+# Force language (en/es)
+time-balance --lang en
+
+# Check version
+time-balance --version
+```
+
+## Interactive Interface
+
+To start the full control center:
 
 ```bash
 time-balance
 ```
 
-## Menú Principal
+### Main Menu
 
-Al ejecutar `time-balance`, verás el menú principal:
+The interface automatically detects your system language, but you can change it in the project configuration.
 
 ```
 ==================================================
-   SALDO TOTAL ACUMULADO: [balance acumulado]
-   (Base diaria: 7h 45m)
+   PROJECT: PROJECT NAME
+   TOTAL ACCUMULATED BALANCE: +2h 15m
+   (Daily base: 7h 45m)
 ==================================================
 
-Opciones:
-1. Registrar jornada (o corregir día)
-2. Ver últimos registros
-3. Exportar historial a archivo
-4. Importar historial desde archivo
-5. Salir
+Options:
+1. Register workday (or correct day)
+2. View recent records
+3. Configure project (name/hours)
+4. Export history to file
+5. Import history from file
+6. Exit
 
-Elige opción: _
+Choose option: _
 ```
 
-## Opciones Detalladas
+## Detailed Options
 
-### 1. Registrar Jornada
+### 1. Register Workday
+Allows you to record worked hours. If the day already exists, it will ask for confirmation to overwrite. It automatically calculates the difference against the base workday configured for **that project**.
 
-Permite registrar las horas trabajadas en un día o corregir un registro anterior.
+### 2. View Recent Records
+Displays a table with the 5 most recent records, including hours worked and the impact on the balance (positive or negative).
 
-**Flujo de interacción:**
+### 3. Configure Project
+Allows you to customize the project name and the base workday (hours/minutes) for the current file. This is saved in the JSON metadata.
 
-```
-Elige opción: 1
+### 4. Export History
+Creates a backup copy in structured JSON format at the path of your choice.
 
-Ingresa fecha (YYYY-MM-DD) o presiona Enter para hoy [2026-04-16]: 
-Ingresa horas trabajadas: 8
-Ingresa minutos trabajados: 30
-```
+### 5. Import History
+- **Merge Mode**: Combines external data with the current one. Imported data wins in case of a date conflict.
+- **Overwrite Mode**: Replaces the entire file (metadata and records) with the new one. It creates an automatic backup before proceeding.
 
-**Comportamiento:**
-- Si la fecha ya existe, solicita confirmación antes de sobrescribir
-- Calcula automáticamente la diferencia respecto a la jornada base (7h 45m)
-- Guarda los cambios en el archivo de historial
-- Retorna al menú principal
+## Environment Variables Configuration
 
-**Ejemplo de sobrescritura:**
-
-```
-¿El día 2026-04-16 ya existe (8h 30m, diferencia: +0h 45m). 
-¿Deseas sobrescribir? (s/n): s
-✓ Jornada registrada/actualizada
-```
-
-### 2. Ver Últimos Registros
-
-Muestra los 5 registros más recientes del historial.
-
-**Flujo de interacción:**
-
-```
-Elige opción: 2
-
-Últimos registros:
-2026-04-16: 8h 30m (diferencia: +0h 45m)
-2026-04-15: 7h 45m (diferencia: 0h 0m)
-2026-04-14: 6h 30m (diferencia: -1h 15m)
-2026-04-13: 9h 0m (diferencia: +1h 15m)
-2026-04-12: 8h 15m (diferencia: +0h 30m)
-```
-
-**Información mostrada:**
-- Fecha en formato YYYY-MM-DD
-- Horas y minutos trabajados
-- Diferencia respecto a la jornada base (positiva/negativa)
-
-### 3. Exportar Historial
-
-Crea una copia de tu historial completo en un archivo JSON externo.
-
-**Flujo de interacción:**
-
-```
-Elige opción: 3
-
-Ingresa ruta de destino para exportar: /path/a/mi_export.json
-✓ Historial exportado a: /path/a/mi_export.json
-```
-
-**Características:**
-- El archivo se crea con formato JSON
-- Si el archivo ya existe, se sobrescribe sin advertencia
-- Las rutas se pueden expresar con `~` (home directory)
-- Retorna la ruta absoluta del archivo creado
-
-**Formato del archivo exportado:**
-
-```json
-{
-    "2026-04-16": {
-        "horas": 8,
-        "minutos": 30,
-        "diferencia": 45
-    },
-    "2026-04-15": {
-        "horas": 7,
-        "minutos": 45,
-        "diferencia": 0
-    }
-}
-```
-
-### 4. Importar Historial
-
-Incorpora datos desde un archivo JSON externo.
-
-**Flujo de interacción:**
-
-```
-Elige opción: 4
-
-Ingresa ruta de origen para importar: /path/a/mi_export.json
-Elige modo de importación (merge/overwrite) [merge]: 
-✓ Historial importado: 5 entradas procesadas
-```
-
-**Modos de Importación:**
-
-#### Modo `merge` (predeterminado)
-```
-merge
-```
-- Combina el historial importado con el existente
-- **Los datos importados tienen preferencia** en caso de conflicto
-- Si una fecha existe en ambos, la versión importada sobrescribe la local
-- Recomendado para: restaurar datos sin perder registros locales recientes
-
-**Ejemplo:**
-```
-Local: {"2026-04-16": {...}, "2026-04-15": {...}}
-Importado: {"2026-04-16": {...}, "2026-04-14": {...}}
-Resultado: {"2026-04-16": {...(importado)}, "2026-04-15": {...}, "2026-04-14": {...}}
-```
-
-#### Modo `overwrite`
-```
-overwrite
-```
-- Reemplaza todo el historial con los datos importados
-- **Crea un backup automático** antes de la operación:
-  - `historial_horas.json.bak` (siempre actualizado)
-  - `historial_horas.json.bak.20260416T111320` (versión con timestamp)
-- El backup se puede usar para restaurar datos en caso de error
-- Recomendado para: migración completa de datos o restauración de backup
-
-### 5. Salir
-
-Cierra la aplicación y regresa al símbolo del sistema.
-
-```
-Elige opción: 5
-¡Hasta mañana!
-```
-
-## Resolución de Rutas
-
-Cuando se solicita una ruta (en exportar/importar):
-
-1. **Prioridad de búsqueda del archivo de datos** (usado internamente):
-   1. Argumento `archivo_path` en funciones de API
-   2. Variable de entorno `HISTORIAL_PATH`
-   3. `historial_horas.json` en el directorio actual (predeterminado)
-
-2. **Expansión de rutas:**
-   - Se expande `~` a tu directorio de inicio
-   - Soporta rutas relativas y absolutas
-
-**Ejemplo con variable de entorno:**
+You can centralize your history by defining the path in your shell configuration file (`.bashrc` or `.zshrc`):
 
 ```bash
-# Usa una ubicación personalizada para el historial
-export HISTORIAL_PATH=~/.local/share/time-balance/historial_horas.json
-time-balance
+export HISTORIAL_PATH="~/.config/time-balance/main_history.json"
 ```
 
-## Manejo de Errores
+---
 
-- **Fecha inválida:** Se pide reintentar con formato YYYY-MM-DD
-- **Entrada numérica inválida:** Se pide reintentar (solo números)
-- **Archivo JSON corrupto:** Se retorna un error específico
-- **Ruta de exportación no existente:** Se crea el archivo nuevo
-- **Ruta de importación no encontrada:** Se muestra error y se regresa al menú
-
-## Ejemplos Comunes
-
-### Workflow típico del día
-
-```bash
-$ time-balance
-
-# Opción 1: registrar horas del día
-Elige opción: 1
-Ingresa fecha (YYYY-MM-DD) o presiona Enter para hoy [2026-04-16]: 
-Ingresa horas trabajadas: 8
-Ingresa minutos trabajados: 15
-
-# Opción 2: ver el saldo actual
-Elige opción: 2
-# Muestra los últimos registros
-
-# Opción 5: salir
-Elige opción: 5
-```
-
-### Backup y Restauración
-
-```bash
-# Exportar (backup manual)
-$ time-balance
-Elige opción: 3
-Ingresa ruta de destino para exportar: ~/backups/historial_backup.json
-
-# ... más tarde, si es necesario ...
-
-# Restaurar completo
-$ time-balance
-Elige opción: 4
-Ingresa ruta de origen para importar: ~/backups/historial_backup.json
-Elige modo de importación (merge/overwrite) [merge]: overwrite
-# Se crea backup automático antes de restaurar
-```
-
-## Consejos
-
-- **Usa Enter** en el campo de fecha para registrar el día actual (más rápido)
-- **Exporta regularmente** para tener backups de seguridad externos
-- **Utiliza overwrite** solo cuando estés restaurando, usa **merge** para combinar datos
-- El **modo interactivo** previene sobrescrituras accidentales pidiendo confirmación
+## Usage Tips
+- Press **ENTER** in the date field to use today quickly.
+- Use `--status` in your automation scripts to see your balance when starting the terminal.
+- Export your data regularly if you are not using a synchronized folder.

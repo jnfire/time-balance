@@ -7,95 +7,87 @@ from datetime import datetime
 from . import constants
 
 
-def _resolver_archivo(archivo_path=None):
-    """Resuelve la ruta final del archivo de historial."""
-    if archivo_path:
-        ruta = archivo_path
+def _resolve_file_path(file_path=None):
+    """Resolves the final history file path."""
+    if file_path:
+        path = file_path
     elif constants.ENV_HISTORIAL in os.environ and os.environ[constants.ENV_HISTORIAL].strip():
-        ruta = os.environ[constants.ENV_HISTORIAL]
+        path = os.environ[constants.ENV_HISTORIAL]
     else:
-        ruta = constants.ARCHIVO_DATOS
+        path = constants.ARCHIVO_DATOS
 
-    ruta = os.path.expanduser(ruta)
-    return os.path.abspath(ruta)
-
-
-def _migrar_formato_antiguo(datos):
-    """Convierte el formato plano antiguo al nuevo formato estructurado."""
-    # Si ya tiene metadata, no hacemos nada
-    if isinstance(datos, dict) and "metadata" in datos:
-        return datos
-
-    # Si es un diccionario vacío o tiene fechas como claves, migramos
-    return {
-        "metadata": {
-            "project_name": "General",
-            "horas_base": constants.HORAS_BASE,
-            "minutos_base": constants.MINUTOS_BASE,
-            "version": "1.0"
-        },
-        "registros": datos if isinstance(datos, dict) else {}
-    }
+    path = os.path.expanduser(path)
+    return os.path.abspath(path)
 
 
-def cargar_datos(archivo_path=None):
-    """Carga el historial y asegura que tenga el formato estructurado."""
-    archivo = _resolver_archivo(archivo_path)
-    if not os.path.exists(archivo):
-        # Devolvemos un esqueleto nuevo si no hay archivo
-        return _migrar_formato_antiguo({})
+def load_data(file_path=None):
+    """Loads history from the structured JSON file."""
+    path = _resolve_file_path(file_path)
+    
+    # Return empty skeleton if file doesn't exist
+    if not os.path.exists(path):
+        return {
+            "metadata": {
+                "project_name": "General",
+                "hours_base": constants.HORAS_BASE,
+                "minutes_base": constants.MINUTOS_BASE,
+                "version": "1.0",
+                "language": "auto"
+            },
+            "records": {}
+        }
         
     try:
-        with open(archivo, "r", encoding="utf-8") as archivo_json:
-            datos = json.load(archivo_json)
-            return _migrar_formato_antiguo(datos)
+        with open(path, "r", encoding="utf-8") as json_file:
+            return json.load(json_file)
     except (ValueError, json.JSONDecodeError):
-        return _migrar_formato_antiguo({})
+        # On error, we return an empty structure
+        return load_data(file_path="/dev/null") # Simple way to get skeleton
 
 
-def guardar_datos(datos, archivo_path=None):
-    """Guarda el historial completo usando escritura atómica."""
-    archivo = _resolver_archivo(archivo_path)
-    dir_dest = os.path.dirname(archivo)
-    if dir_dest and not os.path.exists(dir_dest):
-        os.makedirs(dir_dest, exist_ok=True)
+def save_data(data, file_path=None):
+    """Saves complete history using atomic writing."""
+    path = _resolve_file_path(file_path)
+    dest_dir = os.path.dirname(path)
+    if dest_dir and not os.path.exists(dest_dir):
+        os.makedirs(dest_dir, exist_ok=True)
 
-    contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    file_descriptor, ruta_temp = tempfile.mkstemp(prefix="historial_", suffix=".json", dir=dir_dest or ".")
+    content = json.dumps(data, indent=4, ensure_ascii=False)
+    file_descriptor, temp_path = tempfile.mkstemp(prefix="history_", suffix=".json", dir=dest_dir or ".")
     try:
-        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as archivo_temporal:
-            archivo_temporal.write(contenido)
+        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as temp_file:
+            temp_file.write(content)
             try:
-                archivo_temporal.flush()
-                os.fsync(archivo_temporal.fileno())
+                temp_file.flush()
+                os.fsync(temp_file.fileno())
             except Exception:
                 pass
 
         try:
-            os.replace(ruta_temp, archivo)
+            os.replace(temp_path, path)
         except OSError as error:
             if getattr(error, 'errno', None) == errno.EXDEV:
-                shutil.copy2(ruta_temp, archivo)
-                os.remove(ruta_temp)
+                shutil.copy2(temp_path, path)
+                os.remove(temp_path)
             else:
                 raise
     finally:
-        if 'ruta_temp' in locals() and os.path.exists(ruta_temp):
+        if 'temp_path' in locals() and os.path.exists(temp_path):
             try:
-                os.remove(ruta_temp)
+                os.remove(temp_path)
             except OSError:
                 pass
 
 
-def _crear_backup(archivo):
-    """Crea un backup con timestamp del archivo dado si existe."""
-    if not os.path.exists(archivo):
+def _create_backup(file_path):
+    """Creates a timestamped backup of the given file."""
+    if not os.path.exists(file_path):
         return None
     timestamp = datetime.now().strftime('%Y%m%dT%H%M%S')
-    backup = f"{archivo}.bak.{timestamp}"
-    shutil.copy2(archivo, backup)
+    backup = f"{file_path}.bak.{timestamp}"
+    shutil.copy2(file_path, backup)
     try:
-        shutil.copy2(archivo, f"{archivo}.bak")
+        shutil.copy2(file_path, f"{file_path}.bak")
     except Exception:
         pass
     return backup

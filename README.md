@@ -1,98 +1,104 @@
 # time-balance 🕒
 
-> Una herramienta de terminal ligera y profesional para registrar tus jornadas laborales y controlar tu saldo acumulado de horas.
+> A lightweight, professional command-line tool to track your working hours and manage your accumulated balance.
+
+[Leer en español 🇪🇸](README.es.md)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-## Descripción
+## Description
 
-`time-balance` es una aplicación de consola diseñada para personas que necesitan llevar un control riguroso de su tiempo trabajado. Calcula automáticamente la diferencia diaria respecto a una jornada base (7h 45m por defecto) y mantiene un saldo acumulado para que siempre sepas si "debes" horas o tienes saldo a favor.
+`time-balance` is a CLI application designed for people who need rigorous control over their worked time. It automatically calculates the daily difference against a base workday (7h 45m by default) and maintains an accumulated balance so you always know if you "owe" hours or have a surplus.
 
 ---
 
-## Instalación rápida
+## Quick Installation
 
 ```bash
-# Clonar y entrar al directorio
-git clone <url-del-repo>
+# Clone and enter directory
+git clone <repo-url>
 cd time-balance
 
-# Instalar la aplicación
+# Install the application
 python3 -m pip install .
 ```
 
 ---
 
-## Uso de la aplicación
+## Usage
 
-### 1. Menú Interactivo (Recomendado)
-Simplemente ejecuta el comando para abrir el centro de control:
+### 1. Interactive Menu (Recommended)
+Simply run the command to open the control center:
 
 ```bash
 time-balance
 ```
 
-Desde aquí puedes registrar nuevas jornadas, ver tu historial reciente o importar/exportar tus datos.
+The interface automatically detects your system language (supports English and Spanish). You can register new days, view recent history, or import/export your data.
 
-### 2. Comandos Rápidos (Modo Directo)
-Si tienes prisa, puedes consultar tu estado sin entrar al menú:
+### 2. Quick Commands (Direct Mode)
+Consult your status without entering the menu:
 
 ```bash
-# Ver solo tu saldo acumulado actual
+# Show current accumulated balance only
 time-balance --status
 
-# Listar los últimos 10 días registrados
+# List last 10 recorded days
 time-balance --list 10
 
-# Consultar la versión instalada
+# Force a specific language
+time-balance --lang en
+
+# Check installed version
 time-balance --version
 ```
 
 ---
 
-## Características Principales
+## Key Features
 
-- ✅ **Registro ágil**: Introduce horas y minutos de forma sencilla.
-- ✅ **Seguridad ante todo**: Escritura atómica de datos y backups automáticos en operaciones críticas.
-- ✅ **Importación flexible**: Combina historiales de diferentes dispositivos (merge) o restaura copias completas.
-- ✅ **Sin dependencias**: 100% Python estándar. Funciona en Windows, macOS y Linux.
-- ✅ **Respetuoso con tus datos**: Todo se guarda localmente en un archivo JSON legible.
+- ✅ **Agile Registration**: Input hours and minutes easily.
+- ✅ **Safety First**: Atomic data writing and automatic backups for critical operations.
+- ✅ **Multi-language**: Seamlessly switch between English and Spanish.
+- ✅ **Flexible Import**: Merge histories from different devices or restore full copies.
+- ✅ **Zero Dependencies**: 100% Standard Python. Works on Windows, macOS, and Linux.
+- ✅ **Privacy-Focused**: All data is stored locally in a readable JSON file.
 
 ---
 
-## Configuración Avanzada
+## Advanced Configuration
 
-### Ubicación del historial
-Por defecto, la aplicación crea `historial_horas.json` en la carpeta actual. Si prefieres centralizarlo, define la variable de entorno:
+### History Location
+By default, the app creates `historial_horas.json` in the current folder. To centralize it, define the environment variable:
 
 ```bash
-export HISTORIAL_PATH="~/.config/time-balance/mi_historial.json"
+export HISTORIAL_PATH="~/.config/time-balance/my_history.json"
 ```
 
-### Jornada Base
-La aplicación usa por defecto **7h 45m**. Si tu jornada es diferente, puedes modificar las constantes en `time_balance/constants.py` y reinstalar.
+### Base Workday
+The app defaults to **7h 45m**. If your workday is different, you can modify the constants in `time_balance/constants.py` and reinstall, or configure it via the interactive menu.
 
 ---
 
-## Próximos Pasos (Roadmap) 🚀
+## Future Steps (Roadmap) 🚀
 
-Estamos trabajando para llevar `time-balance` al siguiente nivel:
+We are working to take `time-balance` to the next level:
 
-- 🗄️ **Migración a SQLite**: Evolucionar el almacenamiento interno a una base de datos robusta para mejorar la integridad y velocidad, manteniendo el formato JSON como estándar de importación/exportación.
-- 📂 **Gestión Multiproyecto**: Permitir la creación y cambio rápido entre diferentes contextos de trabajo desde una instalación centralizada.
-- ☁️ **Sincronización Inteligente**: Configuración simplificada de la ubicación de los datos para facilitar el uso en carpetas compartidas (Dropbox, iCloud, Drive) y copias de seguridad automáticas.
-- 🎨 **Interfaz Enriquecida**: Mejora visual de la terminal usando librerías modernas para ofrecer tablas más claras, colores y mejor usabilidad.
+- 🗄️ **SQLite Migration**: Evolving internal storage to a robust database for better integrity and speed, keeping JSON as the standard for import/export.
+- 📂 **Multi-project Management**: Switch between different work contexts from a single centralized installation.
+- ☁️ **Smart Sync**: Simplified data location settings for cloud folders (Dropbox, iCloud, Drive) and automatic backups.
+- 🎨 **Rich UI**: Enhanced terminal experience using modern libraries for clearer tables, colors, and better usability.
 
-*Se aceptan propuestas y contribuciones para seguir mejorando la herramienta.*
+---
 
-## Desarrollo y Contribuciones
+## Development and Contributions
 
-Si quieres contribuir o entender cómo funciona internamente:
-- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): Diseño y módulos del sistema.
-- [**DEVELOPMENT.md**](docs/DEVELOPMENT.md): Guía técnica para desarrolladores.
-- [**CONTRIBUTING.md**](docs/CONTRIBUTING.md): Cómo enviar mejoras.
+If you want to contribute or understand how it works internally:
+- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): System design and modules.
+- [**DEVELOPMENT.md**](docs/DEVELOPMENT.md): Technical guide for developers.
+- [**CONTRIBUTING.md**](docs/CONTRIBUTING.md): How to submit improvements and translations.
 
-## Licencia
+## License
 
-Este proyecto es Open Source bajo la licencia [GPL-3.0](LICENSE).
+This project is Open Source under the [GPL-3.0](LICENSE) license.
