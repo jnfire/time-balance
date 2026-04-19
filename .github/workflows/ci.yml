@@ -1,14 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - master
-      - main
-  pull_request:
-    branches:
-      - master
-      - main
+  # Ejecutar únicamente en Pull Requests; no ejecutar en push
+  pull_request: {}
 
 jobs:
   test:
