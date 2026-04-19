@@ -334,7 +334,7 @@ print(ENV_HISTORIAL)      # "HISTORIAL_PATH"
 
 - **horas**: Entero, rango típico 0-12
 - **minutos**: Entero, rango 0-59
-- **diferencia**: Float, diferencia en minutos respecto a jornada base (465 minutos)
+- **diferencia**: Entero, diferencia en minutos respecto a jornada base (465 minutos)
   - Positivo: más horas que la base
   - Negativo: menos horas que la base
   - Cero: exactamente la jornada base
