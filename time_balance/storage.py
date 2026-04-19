@@ -8,9 +8,7 @@ from . import constants
 
 
 def _resolver_archivo(archivo_path=None):
-    """Resuelve la ruta final del archivo de historial.
-    Prioridad: argumento > VARIABLE DE ENTORNO > ARCHIVO_DATOS (CWD)
-    """
+    """Resuelve la ruta final del archivo de historial."""
     if archivo_path:
         ruta = archivo_path
     elif constants.ENV_HISTORIAL in os.environ and os.environ[constants.ENV_HISTORIAL].strip():
@@ -22,74 +20,66 @@ def _resolver_archivo(archivo_path=None):
     return os.path.abspath(ruta)
 
 
+def _migrar_formato_antiguo(datos):
+    """Convierte el formato plano antiguo al nuevo formato estructurado."""
+    # Si ya tiene metadata, no hacemos nada
+    if isinstance(datos, dict) and "metadata" in datos:
+        return datos
+
+    # Si es un diccionario vacío o tiene fechas como claves, migramos
+    return {
+        "metadata": {
+            "project_name": "General",
+            "horas_base": constants.HORAS_BASE,
+            "minutos_base": constants.MINUTOS_BASE,
+            "version": "1.0"
+        },
+        "registros": datos if isinstance(datos, dict) else {}
+    }
+
+
 def cargar_datos(archivo_path=None):
-    """Carga el historial de días desde el archivo JSON."""
+    """Carga el historial y asegura que tenga el formato estructurado."""
     archivo = _resolver_archivo(archivo_path)
     if not os.path.exists(archivo):
-        return {}  # Retorna un diccionario vacío si no hay archivo
+        # Devolvemos un esqueleto nuevo si no hay archivo
+        return _migrar_formato_antiguo({})
+        
     try:
         with open(archivo, "r", encoding="utf-8") as f:
-            return json.load(f)
+            datos = json.load(f)
+            return _migrar_formato_antiguo(datos)
     except (ValueError, json.JSONDecodeError):
-        return {}
+        return _migrar_formato_antiguo({})
 
 
 def guardar_datos(datos, archivo_path=None):
-    """Guarda el historial completo en el archivo usando escritura atómica."""
+    """Guarda el historial completo usando escritura atómica."""
     archivo = _resolver_archivo(archivo_path)
     dir_dest = os.path.dirname(archivo)
     if dir_dest and not os.path.exists(dir_dest):
         os.makedirs(dir_dest, exist_ok=True)
 
-    # Serializamos y escribimos a fichero temporal antes de reemplazar
     contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    # Aseguramos que el temporal se cree en el mismo directorio de destino
     fd, ruta_temp = tempfile.mkstemp(prefix="historial_", suffix=".json", dir=dir_dest or ".")
     try:
-        # Escribimos y forzamos a disco el temporal antes de intentar el replace
         with os.fdopen(fd, 'w', encoding='utf-8') as tmpf:
             tmpf.write(contenido)
             try:
                 tmpf.flush()
                 os.fsync(tmpf.fileno())
             except Exception:
-                # Si fsync no está soportado en la plataforma, continuamos igualmente
                 pass
 
-        # Intentamos reemplazo atómico
         try:
             os.replace(ruta_temp, archivo)
-            # Intentamos fsync al directorio destino para asegurar persistencia del rename
-            try:
-                dirfd = os.open(os.path.dirname(archivo) or '.', os.O_RDONLY)
-                try:
-                    os.fsync(dirfd)
-                finally:
-                    os.close(dirfd)
-            except Exception:
-                pass
         except OSError as e:
-            # En sistemas con filesystems diferentes, os.replace puede fallar con EXDEV.
-            # Como fallback hacemos copy + fsync del destino.
             if getattr(e, 'errno', None) == errno.EXDEV:
                 shutil.copy2(ruta_temp, archivo)
-                try:
-                    # Forzar fsync en el archivo copiado
-                    with open(archivo, 'rb') as f:
-                        try:
-                            os.fsync(f.fileno())
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-                try:
-                    os.remove(ruta_temp)
-                except OSError:
-                    pass
+                os.remove(ruta_temp)
             else:
                 raise
     finally:
-        # Limpieza best-effort del temporal si quedara
         if 'ruta_temp' in locals() and os.path.exists(ruta_temp):
             try:
                 os.remove(ruta_temp)
@@ -104,10 +94,8 @@ def _crear_backup(archivo):
     ts = datetime.now().strftime('%Y%m%dT%H%M%S')
     backup = f"{archivo}.bak.{ts}"
     shutil.copy2(archivo, backup)
-    # También mantenemos/actualizamos archivo.bak simple
     try:
         shutil.copy2(archivo, f"{archivo}.bak")
     except Exception:
-        # Error al crear/actualizar la copia secundaria .bak; no es crítico, se ignora.
         pass
     return backup
