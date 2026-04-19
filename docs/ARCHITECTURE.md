@@ -2,7 +2,7 @@
 
 ## Visión General
 
-`time-balance` es una aplicación Python simplificada para registrar jornadas laborales y calcular saldos acumulados. Utiliza un enfoque mínimalista con almacenamiento en JSON y una interfaz interactiva de menú.
+`time-balance` es una aplicación de terminal para registrar jornadas laborales y gestionar el saldo horario acumulado. Está diseñada bajo principios de modularidad, integridad de datos y facilidad de uso.
 
 ## Estructura del Proyecto
 
@@ -13,307 +13,90 @@ time-balance/
 │   ├── __main__.py           # Punto de entrada para ejecución como módulo
 │   ├── constants.py          # Configuración y constantes centralizadas
 │   ├── core.py               # Lógica de negocio (formateo, cálculos)
-│   ├── storage.py            # Persistencia y resolución de rutas
+│   ├── storage.py            # Persistencia y migración de esquemas
 │   ├── io.py                 # Validación, importación y exportación
-│   └── cli.py                # Interfaz de usuario interactiva
+│   └── cli.py                # Interfaz de usuario y argumentos
 ├── tests/                    # Suite de tests modular
 │   ├── test_core.py
 │   ├── test_storage.py
 │   ├── test_io.py
 │   └── test_cli.py
 ├── docs/                     # Documentación
-│   ├── CLI-GUIDE.md
-│   ├── API-GUIDE.md
-│   ├── ARCHITECTURE.md       # Este archivo
-│   └── CONTRIBUTING.md
-├── examples/                 # Archivos de ejemplo
-│   └── historial_horas.json
-├── README.md                 # Documentación principal
-├── CHANGELOG.md              # Historial de cambios
-├── pyproject.toml            # Metadatos y configuración
-├── setup.py                  # Configuración setuptools
-├── historial_horas.json      # Archivo de datos (generado en runtime)
-└── .gitignore
+├── README.md                 # Guía de usuario
+└── CHANGELOG.md              # Historial de cambios
 ```
 
 ## Módulos y Componentes
 
-La lógica se divide en módulos especializados para mejorar la mantenibilidad y testabilidad:
+### 1. **`core.py` (Lógica de Negocio)**
+Contiene el "cerebro" matemático del sistema, independiente de la I/O.
+- `formatear_tiempo()`: Convierte minutos a formato legible +/- Xh Ym.
+- `calcular_saldo_total()`: Suma las diferencias de una lista de registros.
 
-### 1. **`constants.py` (Configuración)**
-Centraliza todos los valores estáticos y configuraciones del sistema, eliminando el uso de "magic strings":
-- Jornada base (`HORAS_BASE`, `MINUTOS_BASE`)
-- Nombres de archivos y variables de entorno
-- Definición de modos de importación (`MODE_MERGE`, `MODE_OVERWRITE`)
+### 2. **`storage.py` (Capa de Persistencia)**
+Gestiona el ciclo de vida del archivo de datos y la integridad física.
+- `cargar_datos()`: Carga el JSON y aplica **migración automática** al nuevo esquema estructurado.
+- `guardar_datos()`: Escritura **atómica** (crash-safe) mediante archivos temporales y reemplazo.
+- `_crear_backup()`: Genera respaldos versionados antes de operaciones críticas.
 
-### 2. **`core.py` (Lógica de Negocio)**
-El "cerebro" del sistema, contiene funciones puras de cálculo:
-- `formatear_tiempo(minutos_totales)`: Conversión a formato legible
-- `calcular_saldo_total(datos)`: Suma de diferencias acumuladas
-
-### 3. **`storage.py` (Persistencia)**
-Encargado de la comunicación con el sistema de archivos:
-- `_resolver_archivo()`: Lógica de resolución de rutas con prioridades
-- `cargar_datos()`: Carga segura de JSON
-- `guardar_datos()`: Escritura atómica garantizando integridad
-- `_crear_backup()`: Generación de respaldos versionados
+### 3. **`cli.py` (Capa de Presentación)**
+Maneja la interacción con el usuario final.
+- Soporta **argumentos de comando** (`--status`, `--list`, `--version`) para consultas rápidas.
+- Proporciona un **menú interactivo** para la gestión diaria.
+- Permite la configuración dinámica del proyecto (nombre y jornada base).
 
 ### 4. **`io.py` (Intercambio de Datos)**
-Lógica para mover datos entre el sistema y archivos externos:
-- `exportar_historial()`: Exportación a archivos JSON externos
-- `importar_historial()`: Importación con soporte para merge/overwrite
-- `_validar_historial()`: Validación rigurosa de la estructura de datos
+Lógica para importar y exportar historiales entre diferentes sistemas.
+- Validación rigurosa de esquemas JSON (soporta formatos legacy).
+- Soporte para mezcla de historiales (`merge`) o reemplazo total (`overwrite`).
 
-### 5. **`cli.py` (Interfaz de Usuario)**
-Implementa la capa de presentación y el flujo interactivo:
-- Menú principal y bucle de aplicación
-- Diálogos de entrada de datos y confirmaciones
-- Visualización de registros y saldos
+## Esquema de Datos (JSON)
 
-### 6. **`__init__.py` (Fachada)**
-Mantiene una API pública estable reexportando las funciones y constantes principales desde sus respectivos módulos. Define `__all__` para controlar la visibilidad.
+Cada proyecto se guarda con su propio contexto de configuración para permitir el multiproyecto futuro.
 
-## Flujo de Datos
-
-### Diagrama de Flujo General
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    main() - Loop Interactivo                │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                    ┌─────────┼─────────┐
-                    │         │         │
-                    ▼         ▼         ▼
-            ┌──────────┐ ┌────────┐ ┌──────────┐
-            │ Registrar│ │  Ver   │ │Exportar/I│
-            │ Jornada  │ │Histor. │ │ mportar  │
-            └──────────┘ └────────┘ └──────────┘
-                    │         │         │
-                    └─────────┼─────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │ cargar/guardar_datos│
-                    │   (JSON I/O)       │
-                    └────────────────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │ historial_horas.json│
-                    └────────────────────┘
+```json
+{
+    "metadata": {
+        "project_name": "Mi Proyecto",
+        "horas_base": 7,
+        "minutos_base": 45,
+        "version": "1.0"
+    },
+    "registros": {
+        "2026-04-19": {
+            "horas": 8,
+            "minutos": 0,
+            "diferencia": 15
+        }
+    }
+}
 ```
 
-### Flujo de Registrar Jornada
+## Flujos Principales
 
-```
-registrar_jornada()
-    ├─ solicitar_fecha()           → Validar YYYY-MM-DD
-    ├─ input horas/minutos         → Convertir a int
-    ├─ Verificar si existe
-    │  └─ Si existe → Pedir confirmación
-    ├─ Calcular diferencia
-    │  └─ diferencia = (horas*60 + minutos) - 465 (base)
-    ├─ Guardar en memoria
-    ├─ guardar_datos()
-    │  ├─ Crear archivo temporal
-    │  ├─ Escribir JSON
-    │  ├─ os.replace() - operación atómica
-    │  └─ Limpiar temporales
-    └─ Retornar a menú
-```
+### Registro de Jornada
+1. Se carga el archivo usando `storage.cargar_datos()`.
+2. Se extrae la jornada base desde `metadata`.
+3. El usuario introduce las horas trabajadas.
+4. Se calcula la diferencia: `trabajado - base`.
+5. Se guarda el objeto completo (metadatos + registros).
 
-### Flujo de Importación
+### Importación de Historial
+1. Se valida que el archivo fuente sea un JSON válido.
+2. Se normaliza al nuevo esquema si es antiguo.
+3. En modo `merge`, se actualizan solo los registros, respetando el nombre y jornada del proyecto local.
+4. En modo `overwrite`, se reemplaza el archivo completo (incluyendo configuración).
 
-```
-importar_historial(ruta_fuente, modo='merge'|'overwrite')
-    ├─ Cargar JSON desde ruta_fuente
-    ├─ _validar_historial() → Validar estructura
-    │  └─ Si inválido → Lanzar ValueError
-    │
-    ├─ Si modo='merge'
-    │  ├─ Combinar: datos_local.update(datos_importados)
-    │  └─ Los importados ganan en conflictos
-    │
-    ├─ Si modo='overwrite'
-    │  ├─ _crear_backup(archivo_actual)
-    │  │  ├─ Copiar a archivo_path.bak
-    │  │  └─ Copiar a archivo_path.bak.20260416T111320
-    │  └─ Reemplazar completamente
-    │
-    ├─ guardar_datos(resultado)
-    └─ Retornar datos actualizado
-```
+## Confiabilidad y Seguridad
 
-## Características de Confiabilidad
-
-### 1. **Escritura Atómica**
-
-```python
-# Implementación en guardar_datos()
-fd, tmp_path = tempfile.mkstemp()
-with os.fdopen(fd, 'w') as f:
-    json.dump(datos, f)
-os.replace(tmp_path, archivo_datos)  # Operación atómica
-```
-
-Beneficios:
-- Si el proceso se interrumpe durante la escritura, el archivo original permanece intacto
- - No hay riesgo de corrupción de datos cuando el temporal se crea en el mismo filesystem
- - Atómico dentro del mismo filesystem; si el temporal se crea en otro dispositivo el rename puede fallar con EXDEV
-
-### 2. **Backups Automáticos**
-
-```
-historial_horas.json              (archivo principal)
-historial_horas.json.bak          (último backup)
-historial_horas.json.bak.20260416T111320  (backup versionado)
-```
-
-- Se crean antes de operaciones destructivas (overwrite)
-- Timestamp ISO 8601 para orden cronológico
-- El archivo `.bak` se actualiza siempre con el más reciente
-
-### 3. **Validación de Datos**
-
-```python
-def _validar_historial(datos):
-    # Validar tipo dict
-    # Validar todas las claves YYYY-MM-DD
-    # Validar estructura: horas, minutos y diferencia como int
-    # Lanzar ValueError con mensaje específico si algo falla
-```
-
-### 4. **Manejo de Errores Resiliente**
-
-- JSON corrupto: `cargar_datos()` retorna `{}` vacío
-- Archivo faltante: Se crea uno nuevo en primera escritura
-- Entrada inválida: Bucles de reintentos en entrada interactiva
-- Rutas inválidas: Errores claros y permitir reintentar
-
-## Configuración
-
-### Constantes
-
-```python
-HORAS_BASE = 7          # Horas en jornada base
-MINUTOS_BASE = 45       # Minutos adicionales en jornada base
-ARCHIVO_DATOS = "historial_horas.json"  # Nombre por defecto
-ENV_HISTORIAL = "HISTORIAL_PATH"        # Variable de entorno
-```
-
-La jornada base es: **7 horas 45 minutos = 465 minutos**
-
-### Variables de Entorno
-
-```bash
-# Ubicación personalizada del historial
-export HISTORIAL_PATH="/home/usuario/.local/share/time-balance/historial.json"
-time-balance
-```
+- **Integridad**: Todas las escrituras son atómicas. Si el programa se cierra inesperadamente, los datos no se corrompen.
+- **Resiliencia**: Migración transparente de formatos antiguos.
+- **Privacidad**: Almacenamiento 100% local en texto plano (JSON).
 
 ## Testing
 
-### Estrategia de Testing
-
-- **Aislamiento**: Cada test usa `tempfile.TemporaryDirectory()`
-- **No toca archivos reales**: El repositorio `historial_horas.json` nunca se modifica
-- **Cobertura**: I/O, validación, cálculos, import/export, backups
-
-### Test Files
-
-- `tests/test_control_horas.py`: Tests de lógica principal (10 tests)
-- `tests/test_import_export.py`: Tests de import/export (4 tests)
-
-Ejecución:
-```bash
-# Ejecutar discovery (la carpeta `tests/` es un paquete, por lo que la forma
-# simple funciona correctamente):
-python3 -m unittest discover -v
-```
-
-Ejecutar un test concreto (útil durante desarrollo):
-
-```bash
-# Ejecutar todos los tests del módulo
-python -m unittest tests.test_import_export -v
-
-# Ejecutar un caso de prueba específico
-python -m unittest tests.test_import_export.TestImportExport.test_exportar_historial_crea_archivo -v
-```
-
-## Dependencias
-
-### Dependencias Incluidas en Python Estándar
-
-- `os`: Operaciones de filesystem, variables de entorno
-- `json`: Serialización/deserialización JSON
-- `datetime`: Manejo de fechas
-- `tempfile`: Archivos temporales para escritura segura
-- `shutil`: Copia de archivos con metadatos
-
-### Dependencias de Desarrollo
-
-- `unittest`: Testing (incorporado en Python)
-
-**No hay dependencias externas**. `time-balance` es 100% pure Python con biblioteca estándar.
-
-## Decisiones de Diseño
-
-### 1. **Almacenamiento en JSON en vez de Database**
-
-✅ Ventajas:
-- Portable, human-readable, fácil de respaldar
-- No requiere daemon o configuración extra
-- Fácil de sincronizar entre máquinas
-
-### 2. **Interfaz Interactiva (menú) en vez de Subcomandos**
-
-✅ Ventajas:
-- Previene errores de usuario (menú clara)
-- No requiere memorizar comandos
-- Más accesible para usuarios no técnicos
-
-### 3. **Operaciones Atómicas en Escritura**
-
-✅ Ventajas:
-- Garantiza integridad de datos
-- Resistente a fallos de energía
-- Seguro para ejecución concurrente
-
-### 4. **Validación Rigurosa en Import**
-
-✅ Ventajas:
-- Previene datos corrupto
-- Errores específicos y claros
-- Fácil depuración
-
-## Extensibilidad Futura
-
-Posibles mejoras sin romper compatibilidad:
-
-1. **Soporte para XDG Base Directory** (`~/.local/share/time-balance/`)
-2. **Exportación a formatos adicionales** (CSV, Excel)
-3. **Estadísticas y reportes** (semanal, mensual)
-4. **Sincronización en la nube**
-5. **Integración con calendar/agenda**
-6. **Notificaciones/reminders**
-
-## Performance
-
-- **Carga de datos**: O(1) - lectura simple de JSON
-- **Guardar datos**: O(n) - serialización JSON lineal
-- **Cálculo de saldo**: O(n) - suma de diferencias
-- **Displayar historial**: O(1) - últimos 5 registros (constante)
-
-Esperado para < 10,000 registros sin degradación perceptible.
-
-## Seguridad
-
-- **Datos locales**: Almacenados en archivo JSON accesible (usuario responsable de permisos)
-- **Sin autenticación**: Diseño local-first
-- **Sin networking**: No hay conexiones remotas por defecto
-- **Validación estricta**: Rechaza JSON malformados
-
-Se recomienda:
-- Usar permisos de archivo restrictivos (`chmod 600`) si es crítico
-- Hacer backups regulares
-- Si es necesario sincronizar, usar herramientas seguras (rsync, Syncthing, etc.)
+La suite de tests está dividida para coincidir con la arquitectura del paquete:
+- `test_core`: Valida algoritmos de cálculo.
+- `test_storage`: Valida persistencia, backups y migración de esquemas.
+- `test_io`: Valida importación/exportación y compatibilidad legacy.
+- `test_cli`: Valida la interfaz de usuario y los argumentos de comando.
