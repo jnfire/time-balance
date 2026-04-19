@@ -1,4 +1,6 @@
 import os
+import sys
+import argparse
 from datetime import date, datetime
 from . import constants
 from . import core
@@ -61,11 +63,18 @@ def registrar_jornada(datos, archivo_path=None):
     print(f"   Diferencia del día: {core.formatear_tiempo(diferencia)}")
 
 
-def ver_historial(datos):
+def ver_historial(datos, limite=5):
     """Muestra los últimos registros."""
-    print("\n--- Últimos 5 registros ---")
+    if limite > 0:
+        print(f"\n--- Últimos {limite} registros ---")
+    else:
+        print("\n--- Historial completo ---")
+        
     # Ordenamos las fechas de más reciente a más antigua
-    fechas_ordenadas = sorted(datos.keys(), reverse=True)[:5]
+    fechas_ordenadas = sorted(datos.keys(), reverse=True)
+    if limite > 0:
+        fechas_ordenadas = fechas_ordenadas[:limite]
+        
     if not fechas_ordenadas:
         print("No hay registros.")
 
@@ -79,8 +88,8 @@ def ver_historial(datos):
         print(f"{fecha} | Trab: {info['horas']}h {info['minutos']}m | Saldo: {diff_fmt}")
 
 
-def main():
-    # Interfaz interactiva única (sin argparse ni subcomandos).
+def menu_interactivo():
+    """Bucle del menú interactivo principal."""
     while True:
         datos = storage.cargar_datos()
         saldo_total = core.calcular_saldo_total(datos)
@@ -128,3 +137,39 @@ def main():
         elif opcion == "5":
             print("¡Hasta mañana!")
             break
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="time-balance: Herramienta sencilla para controlar tu saldo horario."
+    )
+    parser.add_argument(
+        "-s", "--status", action="store_true", help="Muestra solo el saldo total acumulado."
+    )
+    parser.add_argument(
+        "-l", "--list", type=int, nargs="?", const=5, help="Lista los últimos N registros (por defecto 5)."
+    )
+    parser.add_argument(
+        "--version", action="store_true", help="Muestra la versión de la aplicación."
+    )
+
+    args = parser.parse_args()
+
+    if args.version:
+        from . import __version__
+        print(f"time-balance v{__version__}")
+        return
+
+    datos = storage.cargar_datos()
+
+    if args.status:
+        saldo_total = core.calcular_saldo_total(datos)
+        print(f"Saldo acumulado: {core.formatear_tiempo(saldo_total)}")
+        return
+
+    if args.list is not None:
+        ver_historial(datos, limite=args.list)
+        return
+
+    # Si no hay argumentos, lanzamos el menú interactivo
+    menu_interactivo()

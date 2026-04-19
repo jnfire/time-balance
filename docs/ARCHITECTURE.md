@@ -9,11 +9,19 @@
 ```
 time-balance/
 ├── time_balance/              # Paquete principal
-│   └── __init__.py           # Módulo principal con toda la lógica
-├── tests/                    # Suite de tests
-│   ├── test_control_horas.py
-│   └── test_import_export.py
-├── docs/                     # Documentación (nuevo)
+│   ├── __init__.py           # Fachada (reexporta la API pública)
+│   ├── __main__.py           # Punto de entrada para ejecución como módulo
+│   ├── constants.py          # Configuración y constantes centralizadas
+│   ├── core.py               # Lógica de negocio (formateo, cálculos)
+│   ├── storage.py            # Persistencia y resolución de rutas
+│   ├── io.py                 # Validación, importación y exportación
+│   └── cli.py                # Interfaz de usuario interactiva
+├── tests/                    # Suite de tests modular
+│   ├── test_core.py
+│   ├── test_storage.py
+│   ├── test_io.py
+│   └── test_cli.py
+├── docs/                     # Documentación
 │   ├── CLI-GUIDE.md
 │   ├── API-GUIDE.md
 │   ├── ARCHITECTURE.md       # Este archivo
@@ -30,35 +38,40 @@ time-balance/
 
 ## Módulos y Componentes
 
-### `time_balance/__init__.py` (módulo principal)
+La lógica se divide en módulos especializados para mejorar la mantenibilidad y testabilidad:
 
-Contiene toda la lógica de la aplicación:
+### 1. **`constants.py` (Configuración)**
+Centraliza todos los valores estáticos y configuraciones del sistema, eliminando el uso de "magic strings":
+- Jornada base (`HORAS_BASE`, `MINUTOS_BASE`)
+- Nombres de archivos y variables de entorno
+- Definición de modos de importación (`MODE_MERGE`, `MODE_OVERWRITE`)
 
-#### 1. **Resolución de Rutas**
-- `_resolver_archivo(archivo_path=None)`: Implementa la lógica de prioridades para encontrar el archivo de datos
-  - Prioridad 1: Parámetro `archivo_path`
-  - Prioridad 2: Variable de entorno `HISTORIAL_PATH`
-  - Prioridad 3: `historial_horas.json` en directorio actual
+### 2. **`core.py` (Lógica de Negocio)**
+El "cerebro" del sistema, contiene funciones puras de cálculo:
+- `formatear_tiempo(minutos_totales)`: Conversión a formato legible
+- `calcular_saldo_total(datos)`: Suma de diferencias acumuladas
 
-#### 2. **I/O Segura**
-- `cargar_datos(archivo_path=None)`: Carga JSON con manejo seguro de errores
-- `guardar_datos(datos, archivo_path=None)`: Escritura atómica usando `tempfile` + `os.replace()`
-- `_crear_backup(archivo_path)`: Crea backups con timestamp e histórico
+### 3. **`storage.py` (Persistencia)**
+Encargado de la comunicación con el sistema de archivos:
+- `_resolver_archivo()`: Lógica de resolución de rutas con prioridades
+- `cargar_datos()`: Carga segura de JSON
+- `guardar_datos()`: Escritura atómica garantizando integridad
+- `_crear_backup()`: Generación de respaldos versionados
 
-#### 3. **Lógica de Negocio**
-- `formatear_tiempo(minutos_totales)`: Convierte minutos a formato legible
-- `calcular_saldo_total(datos)`: Suma diferencias diarias
-- `registrar_jornada(datos, archivo_path=None)`: Interfaz interactiva para registrar horas
-- `solicitar_fecha()`: Valida entrada de fecha con YYYY-MM-DD
-- `ver_historial(datos)`: Muestra últimos 5 registros
+### 4. **`io.py` (Intercambio de Datos)**
+Lógica para mover datos entre el sistema y archivos externos:
+- `exportar_historial()`: Exportación a archivos JSON externos
+- `importar_historial()`: Importación con soporte para merge/overwrite
+- `_validar_historial()`: Validación rigurosa de la estructura de datos
 
-#### 4. **Import/Export**
-- `exportar_historial(ruta_destino, archivo_path=None)`: Copia a JSON externo
-- `importar_historial(ruta_fuente, modo='merge', archivo_path=None)`: Importa y valida
-- `_validar_historial(datos)`: Valida estructura JSON importada
+### 5. **`cli.py` (Interfaz de Usuario)**
+Implementa la capa de presentación y el flujo interactivo:
+- Menú principal y bucle de aplicación
+- Diálogos de entrada de datos y confirmaciones
+- Visualización de registros y saldos
 
-#### 5. **Punto de Entrada**
-- `main()`: Loop interactivo del menú principal
+### 6. **`__init__.py` (Fachada)**
+Mantiene una API pública estable reexportando las funciones y constantes principales desde sus respectivos módulos. Define `__all__` para controlar la visibilidad.
 
 ## Flujo de Datos
 

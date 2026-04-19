@@ -51,5 +51,34 @@ class TestCLI(unittest.TestCase):
         count_dates = sum(1 for line in out.splitlines() if line.startswith("2026-"))
         self.assertEqual(count_dates, 5)
 
+    def test_cli_args_status(self):
+        datos = {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+        ch.guardar_datos(datos)
+        buf = io.StringIO()
+        with mock.patch('sys.stdout', buf):
+            with mock.patch('sys.argv', ['time-balance', '--status']):
+                ch.main()
+        out = buf.getvalue()
+        self.assertIn("Saldo acumulado: 0h 15m", out)
+
+    def test_cli_args_list(self):
+        datos = {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+        ch.guardar_datos(datos)
+        buf = io.StringIO()
+        with mock.patch('sys.stdout', buf):
+            with mock.patch('sys.argv', ['time-balance', '--list', '1']):
+                ch.main()
+        out = buf.getvalue()
+        self.assertIn("--- Últimos 1 registros ---", out)
+        self.assertIn("2026-01-01", out)
+
+    def test_cli_args_version(self):
+        buf = io.StringIO()
+        with mock.patch('sys.stdout', buf):
+            with mock.patch('sys.argv', ['time-balance', '--version']):
+                ch.main()
+        out = buf.getvalue()
+        self.assertIn(f"time-balance v{ch.__version__}", out)
+
 if __name__ == "__main__":
     unittest.main()
