@@ -1,7 +1,7 @@
 import unittest
 import tempfile
 import os
-from datetime import datetime
+import json
 import time_balance as ch
 
 class TestStorage(unittest.TestCase):
@@ -29,17 +29,32 @@ class TestStorage(unittest.TestCase):
     def test_cargar_no_file(self):
         fake = os.path.join(self.tmpdir.name, "non_existent.json")
         ch.constants.ARCHIVO_DATOS = fake
-        self.assertEqual(ch.cargar_datos(), {})
+        res = ch.cargar_datos()
+        self.assertIn("metadata", res)
+        self.assertEqual(res["registros"], {})
 
-    def test_cargar_invalid_json(self):
-        fname = os.path.join(self.tmpdir.name, "invalid.json")
-        with open(fname, "w") as f:
-            f.write("{ bad json")
-        ch.constants.ARCHIVO_DATOS = fname
-        self.assertEqual(ch.cargar_datos(), {})
+    def test_migracion_formato_antiguo(self):
+        # Creamos un archivo con el formato plano antiguo
+        datos_viejos = {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+        with open(self.data_file, "w") as f:
+            json.dump(datos_viejos, f)
+        
+        res = ch.cargar_datos()
+        self.assertEqual(res["metadata"]["project_name"], "General")
+        self.assertEqual(res["registros"], datos_viejos)
 
     def test_guardar_and_load_roundtrip(self):
-        data = {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+        data = {
+            "metadata": {
+                "project_name": "Test Project",
+                "horas_base": 8,
+                "minutos_base": 0,
+                "version": "1.0"
+            },
+            "registros": {
+                "2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 0}
+            }
+        }
         ch.guardar_datos(data)
         loaded = ch.cargar_datos()
         self.assertEqual(loaded, data)

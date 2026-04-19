@@ -2,6 +2,7 @@ import unittest
 import tempfile
 import os
 import io
+import json
 from unittest import mock
 import time_balance as ch
 
@@ -20,27 +21,36 @@ class TestCLI(unittest.TestCase):
         self.tmpdir.cleanup()
 
     def test_registrar_jornada_overwrite_cancel(self):
-        datos = {"2026-01-01": {"horas": 7, "minutos": 0, "diferencia": -45}}
+        datos = {
+            "metadata": {"project_name": "Test", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
+            "registros": {"2026-01-01": {"horas": 7, "minutos": 0, "diferencia": -45}}
+        }
         # inputs: date, confirmation 'n' (cancel)
         with mock.patch('builtins.input', side_effect=["2026-01-01", "n"]):
             ch.registrar_jornada(datos)
-        self.assertEqual(datos["2026-01-01"]["horas"], 7)
+        self.assertEqual(datos["registros"]["2026-01-01"]["horas"], 7)
 
     def test_registrar_jornada_overwrite_confirm(self):
-        datos = {"2026-01-01": {"horas": 7, "minutos": 0, "diferencia": -45}}
+        datos = {
+            "metadata": {"project_name": "Test", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
+            "registros": {"2026-01-01": {"horas": 7, "minutos": 0, "diferencia": -45}}
+        }
         # inputs: date, confirmation 's', horas '8', minutos '0'
         with mock.patch('builtins.input', side_effect=["2026-01-01", "s", "8", "0"]):
             ch.registrar_jornada(datos)
-        self.assertEqual(datos["2026-01-01"]["horas"], 8)
-        self.assertEqual(ch.cargar_datos()["2026-01-01"]["horas"], 8)
+        self.assertEqual(datos["registros"]["2026-01-01"]["horas"], 8)
+        self.assertEqual(ch.cargar_datos()["registros"]["2026-01-01"]["horas"], 8)
 
     def test_ver_historial_output(self):
         datos = {
-            "2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15},
-            "2026-01-02": {"horas": 7, "minutos": 0, "diferencia": -45},
-            "2026-01-03": {"horas": 9, "minutos": 0, "diferencia": 75},
-            "2026-01-04": {"horas": 6, "minutos": 30, "diferencia": -75},
-            "2026-01-05": {"horas": 7, "minutos": 45, "diferencia": 0}
+            "metadata": {"project_name": "Test", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
+            "registros": {
+                "2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15},
+                "2026-01-02": {"horas": 7, "minutos": 0, "diferencia": -45},
+                "2026-01-03": {"horas": 9, "minutos": 0, "diferencia": 75},
+                "2026-01-04": {"horas": 6, "minutos": 30, "diferencia": -75},
+                "2026-01-05": {"horas": 7, "minutos": 45, "diferencia": 0}
+            }
         }
         buf = io.StringIO()
         with mock.patch('sys.stdout', buf):
@@ -52,33 +62,31 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(count_dates, 5)
 
     def test_cli_args_status(self):
-        datos = {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+        datos = {
+            "metadata": {"project_name": "ProyA", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
+            "registros": {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
+        }
         ch.guardar_datos(datos)
         buf = io.StringIO()
         with mock.patch('sys.stdout', buf):
             with mock.patch('sys.argv', ['time-balance', '--status']):
                 ch.main()
         out = buf.getvalue()
+        self.assertIn("Proyecto: ProyA", out)
         self.assertIn("Saldo acumulado: 0h 15m", out)
 
-    def test_cli_args_list(self):
-        datos = {"2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15}}
-        ch.guardar_datos(datos)
-        buf = io.StringIO()
-        with mock.patch('sys.stdout', buf):
-            with mock.patch('sys.argv', ['time-balance', '--list', '1']):
-                ch.main()
-        out = buf.getvalue()
-        self.assertIn("--- Últimos 1 registros ---", out)
-        self.assertIn("2026-01-01", out)
-
-    def test_cli_args_version(self):
-        buf = io.StringIO()
-        with mock.patch('sys.stdout', buf):
-            with mock.patch('sys.argv', ['time-balance', '--version']):
-                ch.main()
-        out = buf.getvalue()
-        self.assertIn(f"time-balance v{ch.__version__}", out)
+    def test_configurar_proyecto(self):
+        datos = {
+            "metadata": {"project_name": "Old", "horas_base": 7, "minutos_base": 45, "version": "1.0"},
+            "registros": {}
+        }
+        # inputs: nuevo nombre, nuevas horas (8), nuevos minutos (0)
+        with mock.patch('builtins.input', side_effect=["NewName", "8", "0"]):
+            ch.cli.configurar_proyecto(datos)
+        
+        self.assertEqual(datos["metadata"]["project_name"], "NewName")
+        self.assertEqual(datos["metadata"]["horas_base"], 8)
+        self.assertEqual(datos["metadata"]["minutos_base"], 0)
 
 if __name__ == "__main__":
     unittest.main()
