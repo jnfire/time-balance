@@ -212,7 +212,19 @@ time-balance
 
 Ejecución:
 ```bash
+# Ejecutar discovery (la carpeta `tests/` es un paquete, por lo que la forma
+# simple funciona correctamente):
 python3 -m unittest discover -v
+```
+
+Ejecutar un test concreto (útil durante desarrollo):
+
+```bash
+# Ejecutar todos los tests del módulo
+python -m unittest tests.test_import_export -v
+
+# Ejecutar un caso de prueba específico
+python -m unittest tests.test_import_export.TestImportExport.test_exportar_historial_crea_archivo -v
 ```
 
 ## Dependencias

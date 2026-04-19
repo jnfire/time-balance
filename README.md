@@ -241,7 +241,19 @@ Para documentación completa, consulta [API-GUIDE.md](docs/API-GUIDE.md).
 La suite de tests se ejecuta con:
 
 ```bash
+# Ejecutar discovery (la carpeta `tests/` es un paquete, por lo que la forma
+# simple funciona correctamente):
 python3 -m unittest discover -v
+```
+
+Ejecutar un test concreto (ejemplos):
+
+```bash
+# Ejecutar todos los tests del módulo `tests.test_import_export`
+python -m unittest tests.test_import_export -v
+
+# Ejecutar un caso de prueba concreto dentro del módulo
+python -m unittest tests.test_import_export.TestImportExport.test_exportar_historial_crea_archivo -v
 ```
 
 **Cobertura:**

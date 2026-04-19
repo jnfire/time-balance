@@ -43,7 +43,21 @@ Esto instala el paquete en modo editable, permitiendo ver cambios inmediatamente
 ### 4. Ejecutar Tests
 
 ```bash
+# Ejecutar discovery (la carpeta `tests/` es un paquete, por lo que la forma
+# simple funciona correctamente):
 python3 -m unittest discover -v
+```
+
+#### Ejecutar un test concreto
+
+Si quieres ejecutar un único módulo o caso de prueba para depurar rápidamente:
+
+```bash
+# Ejecutar todos los tests del módulo
+python -m unittest tests.test_import_export -v
+
+# Ejecutar un caso de prueba específico
+python -m unittest tests.test_import_export.TestImportExport.test_exportar_historial_crea_archivo -v
 ```
 
 Todos los tests deben pasar antes de hacer commit.
@@ -71,7 +85,7 @@ Para cada cambio en funcionalidad:
 
 - Agrega tests nuevos en `tests/` si necesario
 - Actualiza tests existentes si cambias comportamiento
-- Todos los tests deben pasar: `python3 -m unittest discover -v`
+        - Todos los tests deben pasar: `python3 -m unittest discover -v`
 - Usa `tempfile.TemporaryDirectory()` para tests (no toques archivos reales)
 
 **Ejemplo de test:**
