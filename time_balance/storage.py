@@ -46,8 +46,8 @@ def cargar_datos(archivo_path=None):
         return _migrar_formato_antiguo({})
         
     try:
-        with open(archivo, "r", encoding="utf-8") as f:
-            datos = json.load(f)
+        with open(archivo, "r", encoding="utf-8") as archivo_json:
+            datos = json.load(archivo_json)
             return _migrar_formato_antiguo(datos)
     except (ValueError, json.JSONDecodeError):
         return _migrar_formato_antiguo({})
@@ -61,20 +61,20 @@ def guardar_datos(datos, archivo_path=None):
         os.makedirs(dir_dest, exist_ok=True)
 
     contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    fd, ruta_temp = tempfile.mkstemp(prefix="historial_", suffix=".json", dir=dir_dest or ".")
+    file_descriptor, ruta_temp = tempfile.mkstemp(prefix="historial_", suffix=".json", dir=dir_dest or ".")
     try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as tmpf:
-            tmpf.write(contenido)
+        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as archivo_temporal:
+            archivo_temporal.write(contenido)
             try:
-                tmpf.flush()
-                os.fsync(tmpf.fileno())
+                archivo_temporal.flush()
+                os.fsync(archivo_temporal.fileno())
             except Exception:
                 pass
 
         try:
             os.replace(ruta_temp, archivo)
-        except OSError as e:
-            if getattr(e, 'errno', None) == errno.EXDEV:
+        except OSError as error:
+            if getattr(error, 'errno', None) == errno.EXDEV:
                 shutil.copy2(ruta_temp, archivo)
                 os.remove(ruta_temp)
             else:
@@ -91,8 +91,8 @@ def _crear_backup(archivo):
     """Crea un backup con timestamp del archivo dado si existe."""
     if not os.path.exists(archivo):
         return None
-    ts = datetime.now().strftime('%Y%m%dT%H%M%S')
-    backup = f"{archivo}.bak.{ts}"
+    timestamp = datetime.now().strftime('%Y%m%dT%H%M%S')
+    backup = f"{archivo}.bak.{timestamp}"
     shutil.copy2(archivo, backup)
     try:
         shutil.copy2(archivo, f"{archivo}.bak")

@@ -75,6 +75,17 @@ La aplicación usa por defecto **7h 45m**. Si tu jornada es diferente, puedes mo
 
 ---
 
+## Próximos Pasos (Roadmap) 🚀
+
+Estamos trabajando para llevar `time-balance` al siguiente nivel:
+
+- 🗄️ **Migración a SQLite**: Evolucionar el almacenamiento interno a una base de datos robusta para mejorar la integridad y velocidad, manteniendo el formato JSON como estándar de importación/exportación.
+- 📂 **Gestión Multiproyecto**: Permitir la creación y cambio rápido entre diferentes contextos de trabajo desde una instalación centralizada.
+- ☁️ **Sincronización Inteligente**: Configuración simplificada de la ubicación de los datos para facilitar el uso en carpetas compartidas (Dropbox, iCloud, Drive) y copias de seguridad automáticas.
+- 🎨 **Interfaz Enriquecida**: Mejora visual de la terminal usando librerías modernas para ofrecer tablas más claras, colores y mejor usabilidad.
+
+*Se aceptan propuestas y contribuciones para seguir mejorando la herramienta.*
+
 ## Desarrollo y Contribuciones
 
 Si quieres contribuir o entender cómo funciona internamente:

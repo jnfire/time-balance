@@ -100,3 +100,27 @@ La suite de tests está dividida para coincidir con la arquitectura del paquete:
 - `test_storage`: Valida persistencia, backups y migración de esquemas.
 - `test_io`: Valida importación/exportación y compatibilidad legacy.
 - `test_cli`: Valida la interfaz de usuario y los argumentos de comando.
+
+## Extensibilidad Futura (Evolución Técnica)
+
+El sistema está diseñado para evolucionar hacia una solución de gestión de tiempo profesional:
+
+1. **Almacenamiento Relacional (SQLite)**:
+   - Migrar la persistencia interna de JSON a SQLite.
+   - Ventajas: Consultas complejas (estadísticas mensuales/anuales), integridad de datos y soporte concurrente.
+   - El formato JSON se mantendrá exclusivamente para flujos de importación y exportación (portabilidad).
+
+2. **Soporte Multiproyecto Centralizado**:
+   - Implementar un registro global de proyectos que permita cambiar de contexto sin cambiar de directorio.
+   - Ejemplo: `time-balance --project work` vs `time-balance --project freelance`.
+
+3. **Independencia del Directorio de Ejecución**:
+   - Adoptar estándares como XDG Base Directory para almacenar datos en rutas globales configurables.
+   - Permitir la ubicación de la base de datos en servicios de almacenamiento en la nube (Dropbox, Drive) para sincronización automática.
+
+4. **Modernización de la Interfaz (Rich UI)**:
+   - Integrar librerías como `rich` o `click` para mejorar la presentación de tablas, barras de progreso y colores.
+   - Mejorar la usabilidad del menú interactivo.
+
+5. **API de Estadísticas**:
+   - Desarrollar un motor de reportes para generar resúmenes automáticos por periodos de tiempo.

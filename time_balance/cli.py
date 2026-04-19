@@ -28,26 +28,26 @@ def solicitar_fecha():
 
 def configurar_proyecto(datos):
     """Permite configurar los metadatos del proyecto."""
-    meta = datos["metadata"]
+    metadatos = datos["metadata"]
     print("\n--- Configuración del Proyecto ---")
-    nuevo_nombre = input(f"Nombre del proyecto [{meta['project_name']}]: ").strip()
+    nuevo_nombre = input(f"Nombre del proyecto [{metadatos['project_name']}]: ").strip()
     if nuevo_nombre:
-        meta["project_name"] = nuevo_nombre
+        metadatos["project_name"] = nuevo_nombre
 
     try:
-        h = input(f"Horas base diaria [{meta['horas_base']}]: ").strip()
-        if h:
-            meta["horas_base"] = int(h)
-        m = input(f"Minutos base diaria [{meta['minutos_base']}]: ").strip()
-        if m:
-            meta["minutos_base"] = int(m)
+        horas_str = input(f"Horas base diaria [{metadatos['horas_base']}]: ").strip()
+        if horas_str:
+            metadatos["horas_base"] = int(horas_str)
+        minutos_str = input(f"Minutos base diaria [{metadatos['minutos_base']}]: ").strip()
+        if minutos_str:
+            metadatos["minutos_base"] = int(minutos_str)
     except ValueError:
         print("❌ Error: Introduce números enteros. Configuración no guardada.")
 
 
 def registrar_jornada(datos, archivo_path=None):
     fecha = solicitar_fecha()
-    meta = datos["metadata"]
+    metadatos = datos["metadata"]
     registros = datos["registros"]
 
     # --- CONTROL DE DUPLICADOS ---
@@ -68,7 +68,7 @@ def registrar_jornada(datos, archivo_path=None):
         return
 
     # Cálculos basados en la configuración del archivo
-    minutos_objetivo = (meta["horas_base"] * 60) + meta["minutos_base"]
+    minutos_objetivo = (metadatos["horas_base"] * 60) + metadatos["minutos_base"]
     minutos_trabajados = (horas * 60) + minutos
     diferencia = minutos_trabajados - minutos_objetivo
 
@@ -103,27 +103,27 @@ def ver_historial(datos, limite=5):
 
     for fecha in fechas_ordenadas:
         info = registros[fecha]
-        diff_fmt = core.formatear_tiempo(info['diferencia'])
+        diferencia_formateada = core.formatear_tiempo(info['diferencia'])
         # Añadimos un '+' visual si es positivo para que se vea mejor
         if info['diferencia'] > 0:
-            diff_fmt = "+" + diff_fmt
+            diferencia_formateada = "+" + diferencia_formateada
 
-        print(f"{fecha} | Trab: {info['horas']}h {info['minutos']}m | Saldo: {diff_fmt}")
+        print(f"{fecha} | Trab: {info['horas']}h {info['minutos']}m | Saldo: {diferencia_formateada}")
 
 
 def menu_interactivo():
     """Bucle del menú interactivo principal."""
     while True:
         datos = storage.cargar_datos()
-        meta = datos["metadata"]
+        metadatos = datos["metadata"]
         saldo_total = core.calcular_saldo_total(datos["registros"])
 
         os.system('cls' if os.name == 'nt' else 'clear')
 
         print("\n" + "="*50)
-        print(f"   PROYECTO: {meta['project_name'].upper()}")
+        print(f"   PROYECTO: {metadatos['project_name'].upper()}")
         print(f"   SALDO TOTAL ACUMULADO: {core.formatear_tiempo(saldo_total)}")
-        print(f"   (Base diaria: {meta['horas_base']}h {meta['minutos_base']}m)")
+        print(f"   (Base diaria: {metadatos['horas_base']}h {metadatos['minutos_base']}m)")
         print("="*50)
 
         print("\nOpciones:")
@@ -151,19 +151,18 @@ def menu_interactivo():
             try:
                 destino = io.exportar_historial(ruta)
                 print(f"\n✅ Exportado en: {destino}")
-            except Exception as e:
-                print(f"Error al exportar: {e}")
+            except Exception as error:
+                print(f"Error al exportar: {error}")
             input("\nPresiona ENTER para continuar...")
         elif opcion == "5":
             ruta = input("Ruta fuente a importar: ")
             modo_input = input(f"Modo ({constants.MODE_MERGE}/{constants.MODE_OVERWRITE}) [{constants.MODE_MERGE}]: ").strip().lower()
             modo = modo_input if modo_input else constants.MODE_MERGE
             try:
-                # El importador también debe manejar el nuevo formato
-                res = io.importar_historial(ruta, modo=modo)
-                print(f"\n✅ Importación completada. Entradas totales ahora: {len(res['registros'])}")
-            except Exception as e:
-                print(f"Error al importar: {e}")
+                resultado_importacion = io.importar_historial(ruta, modo=modo)
+                print(f"\n✅ Importación completada. Entradas totales ahora: {len(resultado_importacion['registros'])}")
+            except Exception as error:
+                print(f"Error al importar: {error}")
             input("\nPresiona ENTER para continuar...")
         elif opcion == "6":
             print("¡Hasta mañana!")
@@ -184,23 +183,22 @@ def main():
         "--version", action="store_true", help="Muestra la versión de la aplicación."
     )
 
-    args = parser.parse_args()
+    argumentos = parser.parse_args()
 
-    if args.version:
-        from . import __version__
-        print(f"time-balance v{__version__}")
+    if argumentos.version:
+        print(f"time-balance v{constants.VERSION}")
         return
 
     datos = storage.cargar_datos()
 
-    if args.status:
+    if argumentos.status:
         saldo_total = core.calcular_saldo_total(datos["registros"])
         print(f"Proyecto: {datos['metadata']['project_name']}")
         print(f"Saldo acumulado: {core.formatear_tiempo(saldo_total)}")
         return
 
-    if args.list is not None:
-        ver_historial(datos, limite=args.list)
+    if argumentos.list is not None:
+        ver_historial(datos, limite=argumentos.list)
         return
 
     # Si no hay argumentos, lanzamos el menú interactivo

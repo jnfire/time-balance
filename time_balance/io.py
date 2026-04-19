@@ -21,12 +21,12 @@ def _validar_historial(datos):
         return
 
     # Validar metadata
-    meta = datos["metadata"]
-    if not isinstance(meta, dict):
+    metadatos = datos["metadata"]
+    if not isinstance(metadatos, dict):
         raise ValueError("Metadata debe ser un objeto")
-    for key in ("project_name", "horas_base", "minutos_base"):
-        if key not in meta:
-            raise ValueError(f"Metadata falta clave '{key}'")
+    for clave in ("project_name", "horas_base", "minutos_base"):
+        if clave not in metadatos:
+            raise ValueError(f"Metadata falta clave '{clave}'")
 
     # Validar registros
     registros = datos["registros"]
@@ -49,11 +49,11 @@ def _validar_entrada_registro(fecha, info):
     if not isinstance(info, dict):
         raise ValueError(f"Entrada para {fecha} debe ser un objeto con 'horas','minutos','diferencia'.")
 
-    for key in ('horas', 'minutos', 'diferencia'):
-        if key not in info:
-            raise ValueError(f"Entrada para {fecha} falta clave '{key}'")
-        if not isinstance(info[key], int):
-            raise ValueError(f"'{key}' en {fecha} debe ser un entero")
+    for clave in ('horas', 'minutos', 'diferencia'):
+        if clave not in info:
+            raise ValueError(f"Entrada para {fecha} falta clave '{clave}'")
+        if not isinstance(info[clave], int):
+            raise ValueError(f"'{clave}' en {fecha} debe ser un entero")
 
 
 def exportar_historial(ruta_destino, archivo_path=None):
@@ -66,20 +66,20 @@ def exportar_historial(ruta_destino, archivo_path=None):
         os.makedirs(dir_dest, exist_ok=True)
 
     contenido = json.dumps(datos, indent=4, ensure_ascii=False)
-    fd, ruta_temp = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dir_dest or ".")
+    file_descriptor, ruta_temp = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dir_dest or ".")
     try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as tmpf:
-            tmpf.write(contenido)
+        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as archivo_temporal:
+            archivo_temporal.write(contenido)
             try:
-                tmpf.flush()
-                os.fsync(tmpf.fileno())
+                archivo_temporal.flush()
+                os.fsync(archivo_temporal.fileno())
             except Exception:
                 pass
 
         try:
             os.replace(ruta_temp, destino)
-        except OSError as e:
-            if getattr(e, 'errno', None) == errno.EXDEV:
+        except OSError as error:
+            if getattr(error, 'errno', None) == errno.EXDEV:
                 shutil.copy2(ruta_temp, destino)
                 os.remove(ruta_temp)
             else:
@@ -102,10 +102,10 @@ def importar_historial(ruta_fuente, modo=constants.MODE_MERGE, archivo_path=None
         raise FileNotFoundError(f"Archivo de importación no existe: {fuente}")
 
     try:
-        with open(fuente, 'r', encoding='utf-8') as f:
-            datos_fuente = json.load(f)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"JSON inválido en archivo de importación: {e}")
+        with open(fuente, 'r', encoding='utf-8') as archivo_json:
+            datos_fuente = json.load(archivo_json)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"JSON inválido en archivo de importación: {error}")
 
     _validar_historial(datos_fuente)
     

@@ -1,6 +1,5 @@
-__version__ = "0.2.0"
-
 from .constants import (
+    VERSION,
     HORAS_BASE,
     MINUTOS_BASE,
     ARCHIVO_DATOS,
@@ -30,7 +29,10 @@ from .cli import (
     main
 )
 
+__version__ = VERSION
+
 __all__ = [
+    'VERSION',
     'HORAS_BASE',
     'MINUTOS_BASE',
     'ARCHIVO_DATOS',
