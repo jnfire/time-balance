@@ -1,0 +1,26 @@
+{
+    "metadata": {
+        "project_name": "Example Project",
+        "hours_base": 7,
+        "minutes_base": 45,
+        "version": "1.0",
+        "language": "en"
+    },
+    "records": {
+        "2026-04-15": {
+            "hours": 8,
+            "minutes": 0,
+            "difference": 15
+        },
+        "2026-04-16": {
+            "hours": 7,
+            "minutes": 45,
+            "difference": 0
+        },
+        "2026-04-17": {
+            "hours": 6,
+            "minutes": 30,
+            "difference": -75
+        }
+    }
+}
