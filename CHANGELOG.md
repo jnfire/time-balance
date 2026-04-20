@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2026-04-19
+## [0.2.0] - 2026-04-20
 ### Added
 - **Globalization (i18n)**: Fully translated UI with automatic language detection (English and Spanish supported).
 - **Data Context**: Each history file now stores its own project name and base workday configuration.
@@ -15,10 +15,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - `README.md` and all documentation files migrated to English.
 - Updated project structure for better maintainability.
-- Atomic write improvements for cross-filesystem compatibility.
-
 ### Fixed
-- Legacy format migration (v0.1.x files are automatically upgraded to v0.2.0).
+- Fixed directory fsync for better crash-safety on atomic writes.
 
 ## [0.1.1] - 2026-01-26
 ### Changed

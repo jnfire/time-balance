@@ -40,45 +40,6 @@ class TestStorage(unittest.TestCase):
         self.assertIn("metadata", res)
         self.assertEqual(res["records"], {})
 
-    def test_load_legacy_v01_migration(self):
-        # Flat dictionary with Spanish keys (v0.1 format)
-        legacy_data = {
-            "2026-01-01": {"horas": 8, "minutos": 0, "diferencia": 15, "nota": "test"}
-        }
-        with open(self.data_file, "w", encoding="utf-8") as f:
-            json.dump(legacy_data, f)
-
-        res = ch.load_data()
-        self.assertIn("metadata", res)
-        self.assertIn("2026-01-01", res["records"])
-        record = res["records"]["2026-01-01"]
-        self.assertEqual(record["hours"], 8)
-        self.assertEqual(record["minutes"], 0)
-        self.assertEqual(record["difference"], 15)
-        self.assertEqual(record["comment"], "test")
-
-    def test_load_spanish_keys_migration_v02(self):
-        # Structured but with Spanish keys in metadata and records
-        spanish_data = {
-            "metadata": {
-                "project_name": "Test",
-                "hours_base": 7,
-                "minutos_base": 45,
-                "idioma": "es"
-            },
-            "records": {
-                "2026-04-01": {"horas": 8, "minutos": 0, "diferencia": 15}
-            }
-        }
-        with open(self.data_file, "w", encoding="utf-8") as f:
-            json.dump(spanish_data, f)
-
-        res = ch.load_data()
-        self.assertEqual(res["metadata"]["minutes_base"], 45)
-        self.assertEqual(res["metadata"]["language"], "es")
-        self.assertEqual(res["records"]["2026-04-01"]["hours"], 8)
-        self.assertEqual(res["records"]["2026-04-01"]["difference"], 15)
-
     def test_save_and_load_roundtrip(self):
 
         data = {

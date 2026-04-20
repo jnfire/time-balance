@@ -13,7 +13,7 @@ time-balance/
 │   ├── __main__.py           # Entry point for module execution
 │   ├── constants.py          # Centralized configuration and constants
 │   ├── core.py               # Business logic (formatting, calculations)
-│   ├── storage.py            # Persistence and schema migrations
+│   ├── storage.py            # Persistence and atomic storage
 │   ├── io.py                 # Validation, import, and export
 │   ├── cli.py                # User interface and arguments
 │   └── i18n.py               # Internationalization system
@@ -36,7 +36,7 @@ Contains the mathematical "brain" of the system, independent of I/O.
 
 ### 2. **`storage.py` (Persistence Layer)**
 Manages the history file lifecycle and physical integrity.
-- `load_data()`: Loads JSON and applies **automatic migration** to the new structured schema.
+- `load_data()`: Loads JSON from the structured history file.
 - `save_data()`: **Atomic** (crash-safe) writing using temporary files and replacement.
 - `_create_backup()`: Generates versioned backups before critical operations.
 
@@ -48,7 +48,7 @@ Handles final user interaction.
 
 ### 4. **`io.py` (Data Exchange)**
 Logic to import and export histories between different systems.
-- Rigorous JSON schema validation (supports legacy formats).
+- Rigorous JSON schema validation.
 - Support for history merging (`merge`) or total replacement (`overwrite`).
 
 ### 5. **`i18n.py` (Internationalization)**
@@ -82,15 +82,14 @@ Each project is saved with its own configuration context to allow future multi-p
 ## Reliability and Safety
 
 - **Integrity**: All writes are atomic. If the program closes unexpectedly, data is not corrupted.
-- **Resilience**: Transparent migration of old formats.
 - **Privacy**: 100% local storage in plain text (JSON).
 
 ## Testing
 
 The test suite is divided to match the package architecture:
 - `test_core`: Validates calculation algorithms.
-- `test_storage`: Validates persistence, backups, and schema migration.
-- `test_io`: Validates import/export and legacy compatibility.
+- `test_storage`: Validates persistence and backups.
+- `test_io`: Validates import/export logic.
 - `test_cli`: Validates UI and command arguments.
 
 ## Future Extensibility (Technical Evolution)

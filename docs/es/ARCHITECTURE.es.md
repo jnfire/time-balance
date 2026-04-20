@@ -13,7 +13,7 @@ time-balance/
 │   ├── __main__.py           # Punto de entrada para ejecución como módulo
 │   ├── constants.py          # Configuración y constantes centralizadas
 │   ├── core.py               # Lógica de negocio (formateo, cálculos)
-│   ├── storage.py            # Persistencia y migración de esquemas
+│   ├── storage.py            # Persistencia y almacenamiento atómico
 │   ├── io.py                 # Validación, importación y exportación
 │   ├── cli.py                # Interfaz de usuario y argumentos
 │   └── i18n.py               # Sistema de internacionalización
@@ -35,8 +35,8 @@ Contiene el "cerebro" matemático del sistema, independiente de la I/O.
 - `calculate_total_balance()`: Suma las diferencias de una lista de registros.
 
 ### 2. **`storage.py` (Capa de Persistencia)**
-Gestiona el ciclo de vida del archivo de datos y la integridad física.
-- `load_data()`: Carga el JSON y aplica **migración automática** al nuevo esquema en inglés.
+Gestiona el ciclo de vida del archivo de datos e integridad física.
+- `load_data()`: Carga el JSON estructurado del historial.
 - `save_data()`: Escritura **atómica** (crash-safe) mediante archivos temporales.
 - `_create_backup()`: Genera respaldos versionados antes de operaciones críticas.
 
@@ -48,7 +48,7 @@ Maneja la interacción con el usuario final.
 
 ### 4. **`io.py` (Intercambio de Datos)**
 Lógica para importar y exportar historiales entre diferentes sistemas.
-- Validación rigurosa de esquemas JSON (soporta formatos antiguos).
+- Validación rigurosa de esquemas JSON.
 - Soporte para mezcla de historiales (`merge`) o reemplazo total (`overwrite`).
 
 ### 5. **`i18n.py` (Internacionalización)**
@@ -80,15 +80,14 @@ Cada proyecto se guarda con su propio contexto de configuración. Las claves se 
 ## Confiabilidad y Seguridad
 
 - **Integridad**: Todas las escrituras son atómicas. Si el programa se cierra inesperadamente, los datos no se corrompen.
-- **Resiliencia**: Migración transparente de formatos antiguos (incluyendo claves en español).
 - **Privacidad**: Almacenamiento 100% local en texto plano (JSON).
 
 ## Testing
 
 La suite de tests está dividida para coincidir con la arquitectura del paquete:
 - `test_core`: Valida algoritmos de cálculo.
-- `test_storage`: Valida persistencia, backups y migración de esquemas.
-- `test_io`: Valida importación/exportación y compatibilidad legacy.
+- `test_storage`: Valida persistencia y backups.
+- `test_io`: Valida la lógica de importación/exportación.
 - `test_cli`: Valida la interfaz de usuario y los argumentos de comando.
 
 ## Extensibilidad Futura (Evolución Técnica)

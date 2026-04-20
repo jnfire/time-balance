@@ -18,7 +18,7 @@ Pure functions for time calculations.
 - `calculate_total_balance(records)`: Sums differences from the data dictionary.
 
 ### 2. Persistence (`storage.py`)
-Handles disk I/O and schema migrations.
+Handles disk I/O and atomic writing.
 - `load_data(path)`: Returns a structured dict with `metadata` and `records`.
 - `save_data(data, path)`: Atomic write via temporary files.
 

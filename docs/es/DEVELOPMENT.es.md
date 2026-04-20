@@ -18,7 +18,7 @@ Funciones puras para cálculos de tiempo.
 - `calculate_total_balance(records)`: Suma diferencias del diccionario de datos.
 
 ### 2. Persistencia (`storage.py`)
-Gestiona E/S de disco y migración de esquemas.
+Gestiona E/S de disco y escritura atómica.
 - `load_data(path)`: Devuelve un diccionario estructurado con `metadata` y `records`.
 - `save_data(data, path)`: Escritura atómica mediante archivos temporales.
 
