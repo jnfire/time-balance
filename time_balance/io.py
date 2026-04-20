@@ -9,7 +9,7 @@ from . import constants
 
 
 def validate_history(data):
-    """Validates basic history structure."""
+    """Validates basic history structure and metadata types."""
     if not isinstance(data, dict):
         raise ValueError("History must be a JSON object/dict")
     
@@ -25,6 +25,20 @@ def validate_history(data):
     for key in required_meta:
         if key not in metadata:
             raise ValueError(f"Metadata missing required key: {key}")
+
+    # Type and range validation for base time
+    hours_base = metadata["hours_base"]
+    minutes_base = metadata["minutes_base"]
+
+    if not isinstance(hours_base, int) or isinstance(hours_base, bool):
+        raise ValueError("Metadata 'hours_base' must be an integer")
+    if hours_base < 0:
+        raise ValueError("Metadata 'hours_base' must be greater than or equal to 0")
+
+    if not isinstance(minutes_base, int) or isinstance(minutes_base, bool):
+        raise ValueError("Metadata 'minutes_base' must be an integer")
+    if minutes_base < 0 or minutes_base > 59:
+        raise ValueError("Metadata 'minutes_base' must be between 0 and 59")
 
     # Validate records
     records = data["records"]
@@ -56,23 +70,23 @@ def _validate_record_entry(date_key, info):
 
 
 def export_history(dest_path, file_path=None):
-    """Exports current history to external JSON."""
+    """Exports current history to external JSON with atomic safety."""
     data = storage.load_data(file_path)
     dest = os.path.expanduser(dest_path)
     dest = os.path.abspath(dest)
-    dest_dir = os.path.dirname(dest)
-    if dest_dir and not os.path.exists(dest_dir):
+    dest_dir = os.path.dirname(dest) or "."
+    if dest_dir != "." and not os.path.exists(dest_dir):
         os.makedirs(dest_dir, exist_ok=True)
 
     content = json.dumps(data, indent=4, ensure_ascii=False)
-    file_descriptor, temp_path = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dest_dir or ".")
+    fd, temp_path = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dest_dir)
     try:
-        with os.fdopen(file_descriptor, 'w', encoding='utf-8') as temp_file:
+        with os.fdopen(fd, 'w', encoding='utf-8') as temp_file:
             temp_file.write(content)
+            temp_file.flush()
             try:
-                temp_file.flush()
                 os.fsync(temp_file.fileno())
-            except Exception:
+            except OSError:
                 pass
 
         try:
@@ -83,6 +97,17 @@ def export_history(dest_path, file_path=None):
                 os.remove(temp_path)
             else:
                 raise
+
+        # Best-effort directory fsync
+        try:
+            dir_fd = os.open(dest_dir, os.O_RDONLY)
+            try:
+                os.fsync(dir_fd)
+            finally:
+                os.close(dir_fd)
+        except (AttributeError, OSError):
+            pass
+
     finally:
         if 'temp_path' in locals() and os.path.exists(temp_path):
             try:
@@ -120,4 +145,4 @@ def import_history(source_path, mode=constants.MODE_MERGE, file_path=None):
         storage.save_data(current_data, target_path)
         return current_data
     else:
-        raise ValueError(f"Unknown mode. Use {constants.MODOS_IMPORTACION_VALIDOS}.")
+        raise ValueError(f"Unknown mode. Use {constants.VALID_IMPORT_MODES}.")

@@ -1,12 +1,12 @@
 from .constants import (
     VERSION,
-    HORAS_BASE,
-    MINUTOS_BASE,
-    ARCHIVO_DATOS,
+    BASE_HOURS,
+    BASE_MINUTES,
+    DATA_FILE,
     ENV_HISTORIAL,
     MODE_MERGE,
     MODE_OVERWRITE,
-    MODOS_IMPORTACION_VALIDOS
+    VALID_IMPORT_MODES
 )
 from .core import (
     format_time,
@@ -33,13 +33,13 @@ __version__ = VERSION
 
 __all__ = [
     'VERSION',
-    'HORAS_BASE',
-    'MINUTOS_BASE',
-    'ARCHIVO_DATOS',
+    'BASE_HOURS',
+    'BASE_MINUTES',
+    'DATA_FILE',
     'ENV_HISTORIAL',
     'MODE_MERGE',
     'MODE_OVERWRITE',
-    'MODOS_IMPORTACION_VALIDOS',
+    'VALID_IMPORT_MODES',
     'format_time',
     'calculate_total_balance',
     'load_data',

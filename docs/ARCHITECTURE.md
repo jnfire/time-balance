@@ -65,15 +65,15 @@ Each project is saved with its own configuration context to allow future multi-p
     "metadata": {
         "project_name": "My Project",
         "hours_base": 7,
-        "minutos_base": 45,
+        "minutes_base": 45,
         "version": "1.0",
         "language": "auto"
     },
-    "registros": {
+    "records": {
         "2026-04-19": {
             "hours": 8,
-            "minutos": 0,
-            "diferencia": 15
+            "minutes": 0,
+            "difference": 15
         }
     }
 }

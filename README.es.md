@@ -70,10 +70,10 @@ time-balance --version
 ## Configuración Avanzada
 
 ### Ubicación del historial
-Por defecto, la aplicación crea `historial_horas.json` en la carpeta actual. Si prefieres centralizarlo, define la variable de entorno:
+Por defecto, la aplicación crea `historial_hours.json` en la carpeta actual. Si prefieres centralizarlo, define la variable de entorno:
 
 ```bash
-export HISTORIAL_PATH="~/.config/time-balance/mi_historial.json"
+export HISTORIAL_PATH="~/.config/mi_historial.json"
 ```
 
 ### Jornada Base

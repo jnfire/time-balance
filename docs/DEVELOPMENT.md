@@ -19,7 +19,7 @@ Pure functions for time calculations.
 
 ### 2. Persistence (`storage.py`)
 Handles disk I/O and schema migrations.
-- `load_data(path)`: Returns a structured dict with `metadata` and `registros`.
+- `load_data(path)`: Returns a structured dict with `metadata` and `records`.
 - `save_data(data, path)`: Atomic write via temporary files.
 
 ### 3. Data Exchange (`io.py`)
@@ -47,7 +47,7 @@ python3 -m unittest discover -v tests
 1. Open `time_balance/i18n.py`.
 2. Add a new entry to the `STRINGS` dictionary with the ISO 639-1 code (e.g., `"fr"` for French).
 3. Translate all keys from the `"en"` template.
-4. Update the `--lang` choices in `cli.py` (if needed, though it accepts any string).
+4. Update the `--lang` choices list in `cli.py` to include the new language code.
 
 ## Data Schema Reference
 
@@ -56,15 +56,15 @@ python3 -m unittest discover -v tests
     "metadata": {
         "project_name": "string",
         "hours_base": "int",
-        "minutos_base": "int",
+        "minutes_base": "int",
         "version": "string",
         "language": "string (en|es|auto)"
     },
-    "registros": {
+    "records": {
         "YYYY-MM-DD": {
-            "horas": "int",
-            "minutos": "int",
-            "diferencia": "int (worked_minutes - base_minutes)"
+            "hours": "int",
+            "minutes": "int",
+            "difference": "int (worked_minutes - base_minutes)"
         }
     }
 }

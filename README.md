@@ -70,7 +70,7 @@ time-balance --version
 ## Advanced Configuration
 
 ### History Location
-By default, the app creates `historial_horas.json` in the current folder. To centralize it, define the environment variable:
+By default, the app creates `historial_hours.json` in the current folder. To centralize it, define the environment variable:
 
 ```bash
 export HISTORIAL_PATH="~/.config/time-balance/my_history.json"

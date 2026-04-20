@@ -10,16 +10,16 @@ class TestImportExport(unittest.TestCase):
     def setUp(self):
         # directory per test
         self.tmpdir = tempfile.TemporaryDirectory()
-        self.orig_archivo = getattr(ch.constants, 'ARCHIVO_DATOS', None)
+        self.orig_archivo = getattr(ch.constants, 'DATA_FILE', None)
         # Clear env var to avoid CI flakes
         self._orig_historial_path = os.environ.get('HISTORIAL_PATH')
         os.environ.pop('HISTORIAL_PATH', None)
-        self.dest_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
-        ch.constants.ARCHIVO_DATOS = self.dest_file
+        self.dest_file = os.path.join(self.tmpdir.name, 'history.json')
+        ch.constants.DATA_FILE = self.dest_file
 
     def tearDown(self):
         if self.orig_archivo is not None:
-            ch.constants.ARCHIVO_DATOS = self.orig_archivo
+            ch.constants.DATA_FILE = self.orig_archivo
         if self._orig_historial_path is not None:
             os.environ['HISTORIAL_PATH'] = self._orig_historial_path
         else:

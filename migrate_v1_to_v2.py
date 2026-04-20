@@ -64,5 +64,5 @@ def migrate(file_path):
     print(f"   New format saved at: {file_path}")
 
 if __name__ == "__main__":
-    path = sys.argv[1] if len(sys.argv) > 1 else "historial_horas.json"
+    path = sys.argv[1] if len(sys.argv) > 1 else "historial_hours.json"
     migrate(path)

@@ -11,13 +11,13 @@ class TestCLI(unittest.TestCase):
         self.tmpdir = tempfile.TemporaryDirectory()
         self._orig_cwd = os.getcwd()
         os.chdir(self.tmpdir.name)
-        self._orig_archivo = ch.constants.ARCHIVO_DATOS
-        self.data_file = os.path.join(self.tmpdir.name, 'historial_horas.json')
-        ch.constants.ARCHIVO_DATOS = self.data_file
+        self._orig_archivo = ch.constants.DATA_FILE
+        self.data_file = os.path.join(self.tmpdir.name, 'history.json')
+        ch.constants.DATA_FILE = self.data_file
 
     def tearDown(self):
         os.chdir(self._orig_cwd)
-        ch.constants.ARCHIVO_DATOS = self._orig_archivo
+        ch.constants.DATA_FILE = self._orig_archivo
         self.tmpdir.cleanup()
 
     def test_register_day_overwrite_cancel(self):

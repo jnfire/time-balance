@@ -47,7 +47,7 @@ python3 -m unittest discover -v tests
 1. Abre `time_balance/i18n.py`.
 2. Añade una nueva entrada al diccionario `STRINGS` con el código ISO 639-1 (ej. `"fr"` para francés).
 3. Traduce todas las claves basándote en la plantilla `"en"`.
-4. El sistema lo detectará automáticamente o mediante el flag `--lang`.
+4. Actualiza la lista de opciones de `--lang` en `cli.py` para incluir el nuevo código de idioma.
 
 ## Referencia del Esquema de Datos
 
@@ -56,7 +56,7 @@ python3 -m unittest discover -v tests
     "metadata": {
         "project_name": "string",
         "hours_base": "int",
-        "minutos_base": "int",
+        "minutes_base": "int",
         "version": "string",
         "language": "string (en|es|auto)"
     },

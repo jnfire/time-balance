@@ -63,7 +63,7 @@ Cada proyecto se guarda con su propio contexto de configuración. Las claves se 
     "metadata": {
         "project_name": "Mi Proyecto",
         "hours_base": 7,
-        "minutos_base": 45,
+        "minutes_base": 45,
         "version": "1.0",
         "language": "auto"
     },

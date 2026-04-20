@@ -1,5 +1,4 @@
 import os
-import sys
 import argparse
 from datetime import date, datetime
 from . import constants
@@ -45,6 +44,13 @@ def configure_project(data, lang="en"):
             metadata["minutes_base"] = int(minutes_str)
     except ValueError:
         print(translate("error_integers", lang=lang))
+
+    new_lang = input(translate("language_prompt", lang=lang, current=metadata.get('language', 'auto'))).strip().lower()
+    if new_lang:
+        if new_lang in ("en", "es", "auto"):
+            metadata["language"] = new_lang
+        else:
+            print(translate("invalid_language", lang=lang))
 
 
 def register_day(data, file_path=None, lang="en"):
@@ -100,13 +106,16 @@ def view_history(data, limit=5, lang="en"):
     if not sorted_dates:
         print(translate("no_records", lang=lang))
 
+    work_label = translate("work_label", lang=lang)
+    bal_label = translate("balance_short_label", lang=lang)
+
     for work_date in sorted_dates:
         info = records[work_date]
         time_fmt = core.format_time(info['difference'])
         if info['difference'] > 0:
             time_fmt = "+" + time_fmt
 
-        print(f"{work_date} | Work: {info['hours']}h {info['minutes']}m | Bal: {time_fmt}")
+        print(f"{work_date} | {work_label}: {info['hours']}h {info['minutes']}m | {bal_label}: {time_fmt}")
 
 
 def interactive_menu():

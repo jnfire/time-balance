@@ -1,5 +1,4 @@
 import locale
-import os
 
 # --- TRANSLATIONS ---
 
@@ -11,7 +10,7 @@ STRINGS = {
         "base_day_label": "Daily base",
         "option_1": "1. Register workday (or correct day)",
         "option_2": "2. View recent records",
-        "option_3": "3. Configure project (name/hours)",
+        "option_3": "3. Configure project (name/hours/lang)",
         "option_4": "4. Export history to file",
         "option_5": "5. Import history from file",
         "option_6": "6. Exit",
@@ -38,6 +37,8 @@ STRINGS = {
         "project_name_prompt": "Project name [{current}]: ",
         "base_hours_prompt": "Daily base hours [{current}]: ",
         "base_minutes_prompt": "Daily base minutes [{current}]: ",
+        "language_prompt": "System language (en/es/auto) [{current}]: ",
+        "invalid_language": "❌ Invalid language. Please use 'en', 'es', or 'auto'.",
         "export_dest_prompt": "Destination path (e.g.: /path/my_export.json): ",
         "export_success": "\n✅ Exported to: {path}",
         "export_error": "Error exporting: {error}",
@@ -46,7 +47,9 @@ STRINGS = {
         "import_success": "\n✅ Import completed. Total entries now: {count}",
         "import_error": "Error importing: {error}",
         "status_project": "Project: {name}",
-        "status_balance": "Accumulated balance: {balance}"
+        "status_balance": "Accumulated balance: {balance}",
+        "work_label": "Work",
+        "balance_short_label": "Bal"
     },
     "es": {
         "menu_title": "CENTRO DE CONTROL",
@@ -55,7 +58,7 @@ STRINGS = {
         "base_day_label": "Base diaria",
         "option_1": "1. Registrar jornada (o corregir día)",
         "option_2": "2. Ver últimos registros",
-        "option_3": "3. Configurar proyecto (nombre/jornada)",
+        "option_3": "3. Configurar proyecto (nombre/jornada/idioma)",
         "option_4": "4. Exportar historial a archivo",
         "option_5": "5. Importar historial desde archivo",
         "option_6": "6. Salir",
@@ -82,6 +85,8 @@ STRINGS = {
         "project_name_prompt": "Nombre del proyecto [{current}]: ",
         "base_hours_prompt": "Horas base diaria [{current}]: ",
         "base_minutes_prompt": "Minutos base diaria [{current}]: ",
+        "language_prompt": "Idioma del sistema (en/es/auto) [{current}]: ",
+        "invalid_language": "❌ Idioma inválido. Por favor, usa 'en', 'es' o 'auto'.",
         "export_dest_prompt": "Ruta destino (ej: /ruta/mi_export.json): ",
         "export_success": "\n✅ Exportado en: {path}",
         "export_error": "Error al exportar: {error}",
@@ -90,14 +95,21 @@ STRINGS = {
         "import_success": "\n✅ Importación completada. Entradas totales ahora: {count}",
         "import_error": "Error al importar: {error}",
         "status_project": "Proyecto: {name}",
-        "status_balance": "Saldo acumulado: {balance}"
+        "status_balance": "Saldo acumulado: {balance}",
+        "work_label": "Trabajo",
+        "balance_short_label": "Bal"
     }
 }
 
 def get_system_language():
-    """Detects system language, defaults to English."""
+    """Detects system language using modern locale API, defaults to English."""
     try:
-        lang_code, _ = locale.getdefaultlocale()
+        # Preferred modern way to get language code
+        lang_code, _ = locale.getlocale()
+        if not lang_code:
+             # Fallback to preferred encoding logic or environment
+            lang_code = locale.getdefaultlocale()[0]
+            
         if lang_code and lang_code.startswith("es"):
             return "es"
     except Exception:
