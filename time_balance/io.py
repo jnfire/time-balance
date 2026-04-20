@@ -65,7 +65,7 @@ def _validate_record_entry(date_key, info):
     for key in required_keys:
         if key not in info:
             raise ValueError(f"Entry for {date_key} is missing required key: {key}")
-        if not isinstance(info[key], int):
+        if not isinstance(info[key], int) or isinstance(info[key], bool):
             raise ValueError(f"'{key}' in {date_key} must be an integer")
 
 
