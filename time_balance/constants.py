@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 # --- PATH CONFIGURATION ---
 def get_data_dir() -> pathlib.Path:

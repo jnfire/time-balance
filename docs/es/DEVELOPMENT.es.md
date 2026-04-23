@@ -4,9 +4,8 @@ Esta guía proporciona detalles técnicos para desarrolladores que deseen contri
 
 ## Filosofía del Proyecto
 
-- **Solo Biblioteca Estándar**: El core y la persistencia deben depender únicamente de librerías nativas de Python (como `sqlite3`).
-- **Clean Code**: Naming descriptivo (mínimo 3 caracteres), modularidad y alta cobertura de tests.
-- **Transaccionalidad**: Todas las escrituras en la base de datos deben ser consistentes y seguras.
+- **Librería Estándar para el Core**: El core y la persistencia dependen únicamente de librerías nativas de Python (como `sqlite3`).
+- **UI Profesional**: Se utiliza `rich` para proporcionar una interfaz de terminal moderna, legible y visualmente atractiva.
 
 ## Estructura de Capas
 

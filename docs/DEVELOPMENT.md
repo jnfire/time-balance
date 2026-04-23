@@ -4,9 +4,8 @@ This guide provides technical details for developers who want to contribute to v
 
 ## Project Philosophy
 
-- **Standard Library Only**: The core and persistence must rely solely on native Python libraries (like `sqlite3`).
-- **Clean Code**: Descriptive naming (minimum 3 characters), modularity, and high test coverage.
-- **Transactionality**: All database writes must be consistent and secure.
+- **Standard Library Core**: The business logic and persistence rely solely on native Python libraries.
+- **Professional UI**: Uses `rich` to provide a modern, readable, and visually appealing terminal interface.
 
 ## Layer Structure
 
