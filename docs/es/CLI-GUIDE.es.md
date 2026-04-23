@@ -1,17 +1,20 @@
 # Guía de Uso: Interfaz CLI
 
-`time-balance` ofrece una interfaz dual: un menú interactivo para el uso diario y comandos directos para consultas rápidas.
+`time-balance` ofrece una interfaz dual: un menú interactivo para el uso diario y comandos directos para consultas rápidas. En la versión 0.3.0, la aplicación es **global** y soporta **múltiples proyectos**.
 
 ## Comandos Directos (Modo Rápido)
 
-Puedes consultar información sin entrar al menú interactivo usando flags:
+Puedes consultar información o realizar acciones sin entrar al menú interactivo usando flags:
 
 ```bash
-# Ver el saldo acumulado actual
+# Ver el saldo acumulado del proyecto activo
 time-balance --status
 
-# Listar los últimos 10 registros
+# Listar los últimos 10 registros del proyecto activo
 time-balance --list 10
+
+# Migrar un archivo JSON de legado a un nuevo proyecto global
+time-balance --migrate ./ruta/al/historial.json
 
 # Forzar idioma (en/es)
 time-balance --lang en
@@ -30,11 +33,11 @@ time-balance
 
 ### Menú Principal
 
-La interfaz detecta automáticamente el idioma de tu sistema, pero puedes cambiarlo en la configuración.
+La interfaz detecta automáticamente el idioma de tu sistema. Muestra el estado del **proyecto activo**.
 
 ```
 ==================================================
-   PROYECTO: NOMBRE DEL PROYECTO
+   PROYECTO: MI PROYECTO DE TRABAJO
    SALDO TOTAL ACUMULADO: +2h 15m
    (Base diaria: 7h 45m)
 ==================================================
@@ -42,7 +45,7 @@ La interfaz detecta automáticamente el idioma de tu sistema, pero puedes cambia
 Opciones:
 1. Registrar jornada (o corregir día)
 2. Ver últimos registros
-3. Configurar proyecto (nombre/jornada)
+3. Gestionar proyectos (cambiar/crear/editar)
 4. Exportar historial a archivo
 5. Importar historial desde archivo
 6. Salir
@@ -53,32 +56,31 @@ Elige opción: _
 ## Opciones Detalladas
 
 ### 1. Registrar Jornada
-Permite anotar las horas trabajadas. Si el día ya existe, pedirá confirmación para sobrescribir. Calcula automáticamente la diferencia respecto a la jornada base configurada para **ese proyecto**.
+Permite anotar las horas trabajadas para una fecha (por defecto hoy). Calcula la diferencia respecto a la jornada base del **proyecto activo actual**.
 
 ### 2. Ver Últimos Registros
-Muestra una tabla con los 5 registros más recientes, incluyendo las horas trabajadas y el impacto en el saldo (positivo o negativo).
+Muestra los últimos 5 registros (o los que especifiques) para el proyecto activo.
 
-### 3. Configurar Proyecto
-Permite personalizar el nombre del proyecto y la jornada base (horas/minutos) para el archivo actual. Esto se guarda en los metadatos del JSON.
+### 3. Gestionar Proyectos
+Abre un submenú para:
+- **Cambiar de proyecto**: Cambiar cuál es el proyecto activo a nivel global.
+- **Crear nuevo proyecto**: Inicializar un nuevo contexto de trabajo con su propia jornada base.
+- **Editar proyecto**: Cambiar el nombre o la jornada base del proyecto actual.
 
 ### 4. Exportar Historial
-Crea una copia de seguridad en formato JSON estructurado en la ruta que elijas.
+Exporta los datos del proyecto activo a un archivo JSON estructurado.
 
 ### 5. Importar Historial
-- **Modo Merge**: Combina datos externos con los actuales. Los datos importados ganan en caso de conflicto de fecha.
-- **Modo Overwrite**: Reemplaza todo el archivo (metadatos y registros) por el nuevo. Crea un backup automático antes de proceder.
-
-## Configuración Mediante Variables de Entorno
-
-Puedes centralizar tu historial definiendo la ruta en tu archivo de configuración de shell (`.bashrc` o `.zshrc`):
-
-```bash
-export HISTORIAL_PATH="~/.config/time-balance/main_history.json"
-```
+Importa datos desde un archivo JSON hacia el **proyecto activo actual**.
+- **Modo Merge**: Añade nuevos registros y actualiza los existentes.
+- **Modo Overwrite**: Borra todos los registros actuales antes de importar.
 
 ---
 
-## Consejos de Uso
-- Presiona **ENTER** en el campo de fecha para usar hoy rápidamente.
-- Usa `--status` en tus scripts de automatización para ver tu saldo al iniciar la terminal.
-- Exporta tus datos regularmente si no usas una carpeta sincronizada.
+## Persistencia de Datos
+Los datos se guardan en una base de datos SQLite centralizada. Ya no necesitas preocuparte por archivos `historial_hours.json` en las carpetas de tus proyectos, a menos que quieras exportarlos o migrarlos.
+
+### Rutas por Defecto
+- **macOS**: `~/Library/Application Support/time-balance/`
+- **Linux**: `~/.local/share/time-balance/`
+- **Windows**: `%APPDATA%/time-balance/`

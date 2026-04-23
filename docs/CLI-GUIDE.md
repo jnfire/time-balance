@@ -1,17 +1,20 @@
 # Usage Guide: CLI Interface
 
-`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries.
+`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries. In version 0.3.0, the application is **global** and supports **multiple projects**.
 
 ## Direct Commands (Fast Mode)
 
-You can query information without entering the interactive menu using flags:
+You can query information or perform actions without entering the interactive menu using flags:
 
 ```bash
-# View current accumulated balance
+# View current accumulated balance of the active project
 time-balance --status
 
-# List last 10 records
+# List last 10 records of the active project
 time-balance --list 10
+
+# Migrate a legacy JSON history file to a new global project
+time-balance --migrate ./path/to/history.json
 
 # Force language (en/es)
 time-balance --lang en
@@ -30,11 +33,11 @@ time-balance
 
 ### Main Menu
 
-The interface automatically detects your system language, but you can change it in the project configuration.
+The interface automatically detects your system language. It shows the status of the **active project**.
 
 ```
 ==================================================
-   PROJECT: PROJECT NAME
+   PROJECT: MY WORK PROJECT
    TOTAL ACCUMULATED BALANCE: +2h 15m
    (Daily base: 7h 45m)
 ==================================================
@@ -42,7 +45,7 @@ The interface automatically detects your system language, but you can change it 
 Options:
 1. Register workday (or correct day)
 2. View recent records
-3. Configure project (name/hours)
+3. Manage projects (switch/create/edit)
 4. Export history to file
 5. Import history from file
 6. Exit
@@ -53,32 +56,31 @@ Choose option: _
 ## Detailed Options
 
 ### 1. Register Workday
-Allows you to record worked hours. If the day already exists, it will ask for confirmation to overwrite. It automatically calculates the difference against the base workday configured for **that project**.
+Record worked hours for a specific date (defaults to today). It calculates the difference against the base workday of the **current active project**.
 
 ### 2. View Recent Records
-Displays a table with the 5 most recent records, including hours worked and the impact on the balance (positive or negative).
+Displays the last 5 records (or as many as specified) for the active project.
 
-### 3. Configure Project
-Allows you to customize the project name and the base workday (hours/minutes) for the current file. This is saved in the JSON metadata.
+### 3. Manage Projects
+Opens a submenu to:
+- **Switch project**: Change which project is currently active globally.
+- **Create new project**: Initialize a new work context with its own base workday.
+- **Edit project**: Change the name or base workday of the current project.
 
 ### 4. Export History
-Creates a backup copy in structured JSON format at the path of your choice.
+Exports the active project's data to a structured JSON file.
 
 ### 5. Import History
-- **Merge Mode**: Combines external data with the current one. Imported data wins in case of a date conflict.
-- **Overwrite Mode**: Replaces the entire file (metadata and records) with the new one. It creates an automatic backup before proceeding.
-
-## Environment Variables Configuration
-
-You can centralize your history by defining the path in your shell configuration file (`.bashrc` or `.zshrc`):
-
-```bash
-export HISTORIAL_PATH="~/.config/time-balance/main_history.json"
-```
+Imports data from a JSON file into the **current active project**.
+- **Merge Mode**: Adds new records and updates existing ones.
+- **Overwrite Mode**: Clears all current records before importing.
 
 ---
 
-## Usage Tips
-- Press **ENTER** in the date field to use today quickly.
-- Use `--status` in your automation scripts to see your balance when starting the terminal.
-- Export your data regularly if you are not using a synchronized folder.
+## Data Persistence
+Data is stored in a centralized SQLite database. You no longer need to worry about `historial_hours.json` files in your project folders unless you want to export or migrate them.
+
+### Default Paths
+- **macOS**: `~/Library/Application Support/time-balance/`
+- **Linux**: `~/.local/share/time-balance/`
+- **Windows**: `%APPDATA%/time-balance/`

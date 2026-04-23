@@ -2,7 +2,6 @@ from .constants import (
     VERSION,
     BASE_HOURS,
     BASE_MINUTES,
-    DATA_FILE,
     ENV_HISTORIAL,
     MODE_MERGE,
     MODE_OVERWRITE,
@@ -13,14 +12,13 @@ from .core import (
     calculate_total_balance
 )
 from .storage import (
+    db,
     load_data,
-    save_data,
-    _resolve_file_path,
-    _create_backup
+    save_data
 )
 from .io import (
     export_history,
-    import_history
+    read_history_file
 )
 from .cli import (
     request_date,
@@ -35,17 +33,17 @@ __all__ = [
     'VERSION',
     'BASE_HOURS',
     'BASE_MINUTES',
-    'DATA_FILE',
     'ENV_HISTORIAL',
     'MODE_MERGE',
     'MODE_OVERWRITE',
     'VALID_IMPORT_MODES',
     'format_time',
     'calculate_total_balance',
+    'db',
     'load_data',
     'save_data',
     'export_history',
-    'import_history',
+    'read_history_file',
     'request_date',
     'register_day',
     'view_history',

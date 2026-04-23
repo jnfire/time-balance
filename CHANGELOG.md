@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-04-24
+### Added
+- **Global Installation**: The app now stores data in standard system paths (XDG compliant), making it truly global.
+- **SQLite Backend**: Replaced JSON storage with SQLite for improved performance and data integrity.
+- **Multi-project Support**: New project management menu allows creating, switching, and editing multiple work contexts.
+- **Migration Tool**: New `--migrate <file.json>` command to import legacy history files into the new system.
+- **Active Project Context**: The application now remembers the last used project globally.
+
+### Changed
+- Refactored `storage.py` to use `DatabaseManager`.
+- Updated `cli.py` to support project management submenus.
+- Decoupled `io.py` from storage logic for better testability.
+
 ## [0.2.0] - 2026-04-20
 ### Added
 - **Globalization (i18n)**: Fully translated UI with automatic language detection (English and Spanish supported).
