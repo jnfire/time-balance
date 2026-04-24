@@ -245,14 +245,14 @@ def config_menu(lang="en"):
                 try:
                     source_data = io.read_history_file(path)
                     
-                    # Invalidate balance cache before import
-                    db.reset_project_balance(active_id)
-                    
                     if mode == constants.MODE_OVERWRITE:
-                        with db._get_connection() as conn:
-                            conn.execute("DELETE FROM records WHERE project_id = ?", (active_id,))
+                        db.clear_project_records(active_id)
+                    else:
+                        # Only reset cache if merging (overwrite already sets balance to 0)
+                        db.reset_project_balance(active_id)
                     
                     count = 0
+
                     for date_str, info in source_data['records'].items():
                         db.upsert_record(active_id, date_str, info['hours'], info['minutes'], info['difference'])
                         count += 1
@@ -369,8 +369,37 @@ def interactive_menu():
                 break
         except KeyboardInterrupt:
             console.print(f"\n\n[yellow] {translate('op_cancelled', lang=lang)} [/yellow]")
-            Prompt.ask(translate('press_enter', lang=lang), console=console)
+            break
 
+
+def migrate_from_json(path: str, lang: str):
+    """Migrates records from a legacy JSON file to the SQLite database."""
+    try:
+        source_data = io.read_history_file(path)
+        metadata = source_data.get("metadata", {})
+        
+        console.print(f"\n[bold cyan]{translate('import_header', lang=lang, date=path)}[/bold cyan]")
+        
+        # 1. Create the project
+        project_name = metadata.get("project_name", f"Imported {date.today()}")
+        h = metadata.get("hours_base", constants.BASE_HOURS)
+        m = metadata.get("minutes_base", constants.BASE_MINUTES)
+        
+        new_id = db.create_project(project_name, h, m)
+        db.set_active_project_id(new_id)
+        
+        # 2. Insert records
+        count = 0
+        records = source_data.get("records", {})
+        for date_str, info in records.items():
+            db.upsert_record(new_id, date_str, info['hours'], info['minutes'], info['difference'])
+            count += 1
+            
+        console.print(f"[bold green]{translate('import_success', lang=lang, count=count)}[/bold green]")
+        console.print(f"   {translate('project_label', lang=lang)}: [bold]{project_name}[/bold] (ID: {new_id})")
+        
+    except Exception as err:
+        console.print(f"[bold red]{translate('import_error', lang=lang, error=err)}[/bold red]")
 
 
 def main():

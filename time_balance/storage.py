@@ -1,6 +1,7 @@
 import sqlite3
 import pathlib
 import os
+import contextlib
 from typing import List, Dict, Optional, Any
 from . import constants
 
@@ -13,9 +14,16 @@ class DatabaseManager:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._initialize_database()
 
-    def _get_connection(self) -> sqlite3.Connection:
-        """Returns a standard sqlite3 connection."""
-        return sqlite3.connect(self.db_path)
+    @contextlib.contextmanager
+    def _get_connection(self):
+        """Context manager that yields a database connection, handling transactions and closing."""
+        connection = sqlite3.connect(self.db_path)
+        try:
+            # The connection object itself is a context manager for transactions
+            with connection:
+                yield connection
+        finally:
+            connection.close()
 
     def _initialize_database(self):
         """Creates the necessary tables if they do not exist and handles migrations."""
@@ -23,23 +31,18 @@ class DatabaseManager:
             cursor = connection.cursor()
             
             # Projects table: configuration for different work contexts
+            # We include total_balance directly here as per review feedback
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
                     base_hours INTEGER NOT NULL,
                     base_minutes INTEGER NOT NULL,
+                    total_balance INTEGER DEFAULT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
 
-            # Migration: Add total_balance if it doesn't exist
-            try:
-                cursor.execute("ALTER TABLE projects ADD COLUMN total_balance INTEGER DEFAULT NULL")
-            except sqlite3.OperationalError:
-                # Column already exists
-                pass
-            
             # Records table: daily time registrations
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS records (
@@ -62,17 +65,19 @@ class DatabaseManager:
                     value TEXT
                 )
             """)
-            
-            connection.commit()
 
             # Seed initial data if empty
             cursor.execute("SELECT COUNT(*) FROM projects")
             if cursor.fetchone()[0] == 0:
-                self.create_project("General", constants.BASE_HOURS, constants.BASE_MINUTES)
+                # We don't use self.create_project here to keep it within the same connection/transaction
+                cursor.execute(
+                    "INSERT INTO projects (name, base_hours, base_minutes) VALUES (?, ?, ?)",
+                    ("General", constants.BASE_HOURS, constants.BASE_MINUTES)
+                )
                 # Set the first project as active by default
                 cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('active_project_id', '1')")
                 cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('language', 'auto')")
-                connection.commit()
+
 
     def create_project(self, name: str, base_hours: int, base_minutes: int) -> int:
         """Creates a new project and returns its ID."""
@@ -163,8 +168,7 @@ class DatabaseManager:
                 SET total_balance = total_balance - ? + ? 
                 WHERE id = ? AND total_balance IS NOT NULL
             """, (old_difference, difference, project_id))
-            
-            connection.commit()
+
 
     def delete_record(self, project_id: int, record_date: str):
         """Deletes a record and updates project total balance cache."""
@@ -188,8 +192,15 @@ class DatabaseManager:
                 SET total_balance = total_balance - ? 
                 WHERE id = ? AND total_balance IS NOT NULL
             """, (difference, project_id))
-            
-            connection.commit()
+
+
+    def clear_project_records(self, project_id: int):
+        """Removes all records for a project and resets its balance cache."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
+            cursor.execute("UPDATE projects SET total_balance = 0 WHERE id = ?", (project_id,))
+
 
     def get_records(self, project_id: int, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
         """Returns records for a specific project, sorted by date descending with pagination support."""
@@ -242,7 +253,6 @@ class DatabaseManager:
             total = result if result is not None else 0
             
             cursor.execute("UPDATE projects SET total_balance = ? WHERE id = ?", (total, project_id))
-            connection.commit()
             return total
 
     def reset_project_balance(self, project_id: int):
@@ -250,7 +260,7 @@ class DatabaseManager:
         with self._get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("UPDATE projects SET total_balance = NULL WHERE id = ?", (project_id,))
-            connection.commit()
+
 
     def count_records(self, project_id: int) -> int:
         """Returns the total number of records for a specific project."""

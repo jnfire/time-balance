@@ -55,6 +55,9 @@ time-balance --status
 
 # Listar los últimos 10 registros del proyecto activo
 time-balance --list 10
+
+# Migrar un historial antiguo en formato JSON
+time-balance --migrate ./ruta/al/archivo.json
 ```
 
 ---

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-04-24
+
+### Fixed
+- **NameError in Migration**: Fixed missing `migrate_from_json` function reported in code review.
+- **SQLite Connection Leaks**: Implemented a robust context manager in `DatabaseManager` to ensure all database connections are properly closed after use.
+- **Redundant Schema Alterations**: Integrated `total_balance` directly into the initial table creation for cleaner database initialization.
+- **Smooth Exit Flow**: Improved `KeyboardInterrupt` handling to exit immediately without requiring extra prompts.
+
+### Changed
+- **Higher-Level Storage API**: Refactored CLI code to use `DatabaseManager` methods instead of raw SQL queries for better separation of concerns.
+
 ## [0.4.1] - 2026-04-24
 
 ### Added
