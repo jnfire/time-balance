@@ -102,191 +102,138 @@ def register_day(lang="en"):
     console.print(f"   {translate('day_diff', lang=lang, diff=core.format_time(difference))}")
 
 
-def view_history(limit=5, lang="en"):
-    """Displays records for the active project in a rich table."""
+def view_history(limit=None, lang="en"):
+    """Displays records for the active project. If limit is None, it enters interactive pagination."""
     active_id = db.get_active_project_id()
-    records = db.get_records(active_id, limit=limit if limit > 0 else None)
     
-    if limit > 0:
-        title = translate("recent_records_header", lang=lang, limit=limit)
-    else:
-        title = translate("full_history_header", lang=lang)
+    if limit is not None:
+        # Static mode for CLI --list argument
+        records = db.get_records(active_id, limit=limit if limit > 0 else None)
+        if not records:
+            console.print(f"\n[yellow]{translate('no_records', lang=lang)}[/yellow]")
+            return
         
-    if not records:
-        console.print(f"\n[yellow]{translate('no_records', lang=lang)}[/yellow]")
+        title = translate("full_history_header", lang=lang) if limit <= 0 else translate("recent_records_header", lang=lang, limit=limit)
+        table = Table(title=f"\n[bold]{title}[/bold]", box=box.SIMPLE_HEAD, header_style="bold cyan")
+        table.add_column("Date", style="dim", justify="center")
+        table.add_column(translate("work_label", lang=lang), justify="right")
+        table.add_column(translate("balance_short_label", lang=lang), justify="right")
+
+        for record in records:
+            time_fmt = core.format_time(record['difference'])
+            color = "green" if record['difference'] >= 0 else "red"
+            if record['difference'] > 0:
+                time_fmt = f"+{time_fmt}"
+            table.add_row(record['date'], f"{record['hours']}h {record['minutes']}m", f"[{color}]{time_fmt}[/{color}]")
+        console.print(table)
         return
 
-    table = Table(title=f"\n[bold]{title}[/bold]", box=box.SIMPLE_HEAD, header_style="bold magenta")
-    table.add_column("Date", style="cyan", justify="center")
-    table.add_column(translate("work_label", lang=lang), justify="right")
-    table.add_column(translate("balance_short_label", lang=lang), justify="right")
-
-    for record in records:
-        time_fmt = core.format_time(record['difference'])
-        color = "green" if record['difference'] >= 0 else "red"
-        if record['difference'] > 0:
-            time_fmt = f"+{time_fmt}"
-        
-        table.add_row(
-            record['date'],
-            f"{record['hours']}h {record['minutes']}m",
-            f"[{color}]{time_fmt}[/{color}]"
-        )
-    
-    console.print(table)
-
-
-def manage_projects(lang="en"):
-    """Submenu for multi-project management with rich styling."""
+    # Interactive Pagination mode
+    page_size = 10
+    current_page = 0
     while True:
+        total_count = db.count_records(active_id)
+        if total_count == 0:
+            console.print(f"\n[yellow]{translate('no_records', lang=lang)}[/yellow]")
+            Prompt.ask(translate('press_enter', lang=lang), console=console)
+            break
+
+        total_pages = (total_count + page_size - 1) // page_size
+        offset = current_page * page_size
+        records = db.get_records(active_id, limit=page_size, offset=offset)
+
         console.clear()
-        projects = db.get_projects()
-        active_id = db.get_active_project_id()
+        title = translate("full_history_header", lang=lang)
+        table = Table(title=f"\n[bold]{title}[/bold]", box=box.SIMPLE_HEAD, header_style="bold cyan")
+        table.add_column("Date", style="dim", justify="center")
+        table.add_column(translate("work_label", lang=lang), justify="right")
+        table.add_column(translate("balance_short_label", lang=lang), justify="right")
 
-        table = Table(title=f"\n[bold]{translate('projects_menu_header', lang=lang)}[/bold]", box=box.DOUBLE_EDGE)
-        table.add_column("ID", justify="center", style="dim")
-        table.add_column("Name", style="bold green")
-        table.add_column("Base", justify="center")
-        table.add_column("Active", justify="center")
-
-        for p in projects:
-            is_active = "[bold cyan]●[/bold cyan]" if p['id'] == active_id else ""
-            table.add_row(str(p['id']), p['name'], f"{p['base_hours']}h {p['base_minutes']}m", is_active)
+        for record in records:
+            time_fmt = core.format_time(record['difference'])
+            color = "green" if record['difference'] >= 0 else "red"
+            if record['difference'] > 0:
+                time_fmt = f"+{time_fmt}"
+            
+            table.add_row(
+                record['date'],
+                f"{record['hours']}h {record['minutes']}m",
+                f"[{color}]{time_fmt}[/{color}]"
+            )
         
         console.print(table)
-            
-        console.print(f"\n[bold cyan]1.[/bold cyan] {translate('switch_project', lang=lang)}")
-        console.print(f"[bold cyan]2.[/bold cyan] {translate('create_project', lang=lang)}")
-        console.print(f"[bold cyan]3.[/bold cyan] {translate('edit_project', lang=lang)}")
-        console.print(f"[bold cyan]4.[/bold cyan] {translate('back', lang=lang)}")
+        console.print(f"\n {translate('pagination_info', lang=lang, current=current_page+1, total=total_pages, count=total_count)}")
         
-        choice = Prompt.ask(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4"], console=console)
+        choices = ["v"]
+        nav_msg = f"\n [bold cyan]V.[/bold cyan] {translate('pagination_back', lang=lang)}"
+        if current_page < total_pages - 1:
+            nav_msg += f"  [bold cyan]N.[/bold cyan] {translate('pagination_next', lang=lang)}"
+            choices.append("n")
+        if current_page > 0:
+            nav_msg += f"  [bold cyan]P.[/bold cyan] {translate('pagination_prev', lang=lang)}"
+            choices.append("p")
         
-        if choice == "1":
-            target_id = Prompt.ask(translate("enter_project_id", lang=lang), console=console)
-            if target_id.isdigit() and any(p['id'] == int(target_id) for p in projects):
-                db.set_active_project_id(int(target_id))
-            else:
-                console.print(f"[bold red]{translate('invalid_option', lang=lang)}[/bold red]")
-                Prompt.ask(translate("press_enter", lang=lang), console=console)
-        elif choice == "2":
-            name = Prompt.ask(translate("project_name_prompt", lang=lang, current="New"), console=console).strip()
-            if name:
-                try:
-                    h = int(Prompt.ask(translate("base_hours_prompt", lang=lang, current=constants.BASE_HOURS), default=str(constants.BASE_HOURS), console=console))
-                    m = int(Prompt.ask(translate("base_minutes_prompt", lang=lang, current=constants.BASE_MINUTES), default=str(constants.BASE_MINUTES), console=console))
-                    new_id = db.create_project(name, h, m)
-                    db.set_active_project_id(new_id)
-                except ValueError:
-                    console.print(f"[bold red]{translate('error_integers', lang=lang)}[/bold red]")
-                    Prompt.ask(translate("press_enter", lang=lang), console=console)
-        elif choice == "3":
-            p = db.get_project_by_id(active_id)
-            name = Prompt.ask(translate("project_name_prompt", lang=lang, current=p['name']), default=p['name'], console=console).strip()
-            try:
-                h = int(Prompt.ask(translate("base_hours_prompt", lang=lang, current=p['base_hours']), default=str(p['base_hours']), console=console))
-                m = int(Prompt.ask(translate("base_minutes_prompt", lang=lang, current=p['base_minutes']), default=str(p['base_minutes']), console=console))
-                
-                db.update_project(active_id, name, h, m)
-                
-                lang_opt = Prompt.ask(
-                    translate("language_prompt", lang=lang, current=db.get_setting("language", "auto")),
-                    choices=["en", "es", "auto"],
-                    default="auto",
-                    console=console
-                ).strip().lower()
-                db.set_setting("language", lang_opt)
-            except ValueError:
-                console.print(f"[bold red]{translate('error_integers', lang=lang)}[/bold red]")
-                Prompt.ask(translate("press_enter", lang=lang), console=console)
-        elif choice == "4":
+        console.print(nav_msg)
+        choice = Prompt.ask("", choices=choices, show_choices=False, console=console).lower()
+        
+        if choice == "n":
+            current_page += 1
+        elif choice == "p":
+            current_page -= 1
+        elif choice == "v":
             break
 
 
-def migrate_from_json(file_path, lang="en"):
-    """Migrates records from a legacy JSON file using rich feedback."""
-    try:
-        source_data = io.read_history_file(file_path)
-        records = source_data.get("records", {})
-        metadata = source_data.get("metadata", {})
-        
-        name = metadata.get('project_name', f"Migrated_{datetime.now().strftime('%Y%m%d')}")
-        try:
-            project_id = db.create_project(
-                name, 
-                metadata.get('hours_base', constants.BASE_HOURS),
-                metadata.get('minutes_base', constants.BASE_MINUTES)
-            )
-        except Exception: 
-            project_id = db.get_active_project_id()
-            name = db.get_project_by_id(project_id)['name']
-            
-        count = 0
-        for date_str, info in records.items():
-            db.upsert_record(project_id, date_str, info['hours'], info['minutes'], info['difference'])
-            count += 1
-            
-        console.print(f"[bold green]{translate('migration_success', lang=lang, count=count, name=name)}[/bold green]")
-    except Exception as e:
-        console.print(f"[bold red]{translate('migration_error', lang=lang, error=str(e))}[/bold red]")
-
-
-def interactive_menu():
-    """Main interactive menu loop with rich grouping."""
+def config_menu(lang="en"):
+    """Submenu for project-specific and global configuration."""
     while True:
-        lang = get_current_lang()
         active_id = db.get_active_project_id()
         project = db.get_project_by_id(active_id)
-        total_balance = db.get_total_balance(active_id)
-
+        
         console.clear()
-        render_dashboard(project, total_balance, lang)
-
-        console.print(f"\n[bold magenta]>> {translate('daily_header', lang=lang)}[/bold magenta]")
-        console.print(f" [bold cyan]1.[/bold cyan] {translate('option_1', lang=lang)[3:]}")
-        console.print(f" [bold cyan]2.[/bold cyan] {translate('option_2', lang=lang)[3:]}")
-
-        console.print(f"\n[bold magenta]>> {translate('config_header_menu', lang=lang)}[/bold magenta]")
-        console.print(f" [bold cyan]3.[/bold cyan] {translate('option_3', lang=lang)[3:]}")
-
-        console.print(f"\n[bold magenta]>> {translate('data_header', lang=lang)}[/bold magenta]")
-        console.print(f" [bold cyan]4.[/bold cyan] {translate('option_4', lang=lang)[3:]}")
-        console.print(f" [bold cyan]5.[/bold cyan] {translate('option_5', lang=lang)[3:]}")
-
-        console.print(f"\n[bold magenta]>> {translate('option_6', lang=lang)[3:]}[/bold magenta]")
-        console.print(f" [bold cyan]6.[/bold cyan] {translate('option_6', lang=lang)[3:]}")
-
-        option = Prompt.ask(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5", "6"], show_choices=False, console=console)
-
-        if option == "1":
-            register_day(lang=lang)
-            Prompt.ask(translate('press_enter', lang=lang), console=console)
-        elif option == "2":
-            view_history(lang=lang)
-            Prompt.ask(translate('press_enter', lang=lang), console=console)
-        elif option == "3":
-            manage_projects(lang=lang)
-        elif option == "4":
-            path = Prompt.ask(translate('export_dest_prompt', lang=lang), console=console).strip()
-            if path:
-                try:
-                    records = db.get_records(active_id)
-                    data_to_export = {
-                        "metadata": {
-                            "project_name": project['name'],
-                            "hours_base": project['base_hours'],
-                            "minutes_base": project['base_minutes'],
-                            "version": "1.0",
-                            "language": db.get_setting("language", "auto")
-                        },
-                        "records": {r['date']: {'hours': r['hours'], 'minutes': r['minutes'], 'difference': r['difference']} for r in records}
-                    }
-                    dest = io.export_history(data_to_export, path)
-                    console.print(f"[bold green]{translate('export_success', lang=lang, path=dest)}[/bold green]")
-                except Exception as err:
-                    console.print(f"[bold red]{translate('export_error', lang=lang, error=err)}[/bold red]")
-                Prompt.ask(translate('press_enter', lang=lang), console=console)
-        elif option == "5":
+        console.print(f"\n[bold cyan]--- {translate('option_3_clean', lang=lang).upper()} ---[/bold cyan]")
+        
+        # Display current configuration
+        console.print(f"\n [dim]{translate('project_label', lang=lang)}:[/dim] [bold]{project['name']}[/bold]")
+        console.print(f" [dim]{translate('base_day_label', lang=lang)}:[/dim] [bold]{project['base_hours']}h {project['base_minutes']}m[/bold]")
+        console.print(f" [dim]Language:[/dim] [bold]{db.get_setting('language', 'auto')}[/bold]")
+        
+        console.print(f"\n[bold dim]>> {translate('config_section_project', lang=lang)}[/bold dim]")
+        console.print(f" [bold cyan]1.[/bold cyan] {translate('config_option_edit_name', lang=lang)}")
+        console.print(f" [bold cyan]2.[/bold cyan] {translate('config_option_edit_base', lang=lang)}")
+        console.print(f" [bold cyan]3.[/bold cyan] {translate('config_option_lang', lang=lang)}")
+        
+        console.print(f"\n[bold dim]>> {translate('config_section_data', lang=lang)}[/bold dim]")
+        console.print(f" [bold cyan]4.[/bold cyan] {translate('config_option_import', lang=lang)}")
+        console.print(f" [bold cyan]5.[/bold cyan] {translate('config_option_export', lang=lang)}")
+        
+        console.print(f"\n [bold cyan]V.[/bold cyan] {translate('config_option_back', lang=lang)}")
+        
+        choice = Prompt.ask(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5", "v"], show_choices=False, console=console).lower()
+        
+        if choice == "1":
+            new_name = Prompt.ask(translate("project_name_prompt", lang=lang, current=project['name']), default=project['name'], console=console).strip()
+            if new_name:
+                db.update_project(active_id, new_name, project['base_hours'], project['base_minutes'])
+        elif choice == "2":
+            try:
+                h = int(Prompt.ask(translate("base_hours_prompt", lang=lang, current=project['base_hours']), default=str(project['base_hours']), console=console))
+                m = int(Prompt.ask(translate("base_minutes_prompt", lang=lang, current=project['base_minutes']), default=str(project['base_minutes']), console=console))
+                db.update_project(active_id, project['name'], h, m)
+            except ValueError:
+                console.print(f"[bold red]{translate('error_integers', lang=lang)}[/bold red]")
+                Prompt.ask(translate("press_enter", lang=lang), console=console)
+        elif choice == "3":
+            lang_opt = Prompt.ask(
+                translate("language_prompt", lang=lang, current=db.get_setting("language", "auto")),
+                choices=["en", "es", "auto"],
+                default="auto",
+                console=console
+            ).strip().lower()
+            db.set_setting("language", lang_opt)
+            # Update local lang for immediate feedback
+            lang = lang_opt if lang_opt != "auto" else get_system_language()
+        elif choice == "4":
             path = Prompt.ask(translate('import_src_prompt', lang=lang), console=console).strip()
             if path:
                 mode = Prompt.ask(
@@ -309,9 +256,113 @@ def interactive_menu():
                 except Exception as err:
                     console.print(f"[bold red]{translate('import_error', lang=lang, error=err)}[/bold red]")
                 Prompt.ask(translate('press_enter', lang=lang), console=console)
-        elif option == "6":
+        elif choice == "5":
+            path = Prompt.ask(translate('export_dest_prompt', lang=lang), console=console).strip()
+            if path:
+                try:
+                    records = db.get_records(active_id)
+                    data_to_export = {
+                        "metadata": {
+                            "project_name": project['name'],
+                            "hours_base": project['base_hours'],
+                            "minutes_base": project['base_minutes'],
+                            "version": "1.0",
+                            "language": db.get_setting("language", "auto")
+                        },
+                        "records": {r['date']: {'hours': r['hours'], 'minutes': r['minutes'], 'difference': r['difference']} for r in records}
+                    }
+                    dest = io.export_history(data_to_export, path)
+                    console.print(f"[bold green]{translate('export_success', lang=lang, path=dest)}[/bold green]")
+                except Exception as err:
+                    console.print(f"[bold red]{translate('export_error', lang=lang, error=err)}[/bold red]")
+                Prompt.ask(translate('press_enter', lang=lang), console=console)
+        elif choice == "v":
+            break
+
+
+def project_menu(lang="en"):
+    """Submenu for switching and creating projects."""
+    while True:
+        projects = db.get_projects()
+        active_id = db.get_active_project_id()
+
+        console.clear()
+        console.print(f"\n[bold cyan]--- {translate('option_4_clean', lang=lang).upper()} ---[/bold cyan]")
+        
+        table = Table(box=box.SIMPLE, header_style="bold dim")
+        table.add_column("ID", justify="center", style="dim")
+        table.add_column("Name", style="bold")
+        table.add_column("Base", justify="center", style="dim")
+        table.add_column("Active", justify="center")
+
+        for p in projects:
+            is_active = "[bold cyan]●[/bold cyan]" if p['id'] == active_id else ""
+            table.add_row(str(p['id']), p['name'], f"{p['base_hours']}h {p['base_minutes']}m", is_active)
+        
+        console.print(table)
+            
+        console.print(f"\n [bold cyan]1.[/bold cyan] {translate('project_option_select', lang=lang)}")
+        console.print(f" [bold cyan]2.[/bold cyan] {translate('project_option_create', lang=lang)}")
+        console.print(f"\n [bold cyan]V.[/bold cyan] {translate('project_option_back', lang=lang)}")
+        
+        choice = Prompt.ask(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "v"], show_choices=False, console=console).lower()
+        
+        if choice == "1":
+            target_id = Prompt.ask(translate("enter_project_id", lang=lang), console=console)
+            if target_id.isdigit() and any(p['id'] == int(target_id) for p in projects):
+                db.set_active_project_id(int(target_id))
+                break
+            else:
+                console.print(f"[bold red]{translate('invalid_option', lang=lang)}[/bold red]")
+                Prompt.ask(translate("press_enter", lang=lang), console=console)
+        elif choice == "2":
+            name = Prompt.ask(translate("project_name_prompt", lang=lang, current="New"), console=console).strip()
+            if name:
+                try:
+                    h = int(Prompt.ask(translate("base_hours_prompt", lang=lang, current=constants.BASE_HOURS), default=str(constants.BASE_HOURS), console=console))
+                    m = int(Prompt.ask(translate("base_minutes_prompt", lang=lang, current=constants.BASE_MINUTES), default=str(constants.BASE_MINUTES), console=console))
+                    new_id = db.create_project(name, h, m)
+                    db.set_active_project_id(new_id)
+                    break
+                except ValueError:
+                    console.print(f"[bold red]{translate('error_integers', lang=lang)}[/bold red]")
+                    Prompt.ask(translate("press_enter", lang=lang), console=console)
+        elif choice == "v":
+            break
+
+
+def interactive_menu():
+    """Main interactive menu loop with a clean, sober layout."""
+    while True:
+        lang = get_current_lang()
+        active_id = db.get_active_project_id()
+        project = db.get_project_by_id(active_id)
+        total_balance = db.get_total_balance(active_id)
+
+        console.clear()
+        render_dashboard(project, total_balance, lang)
+
+        console.print(f"\n [bold cyan]1.[/bold cyan] {translate('option_1_clean', lang=lang)}")
+        console.print(f" [bold cyan]2.[/bold cyan] {translate('option_2_clean', lang=lang)}")
+        console.print(f" [bold cyan]3.[/bold cyan] {translate('option_3_clean', lang=lang)}")
+        console.print(f" [bold cyan]4.[/bold cyan] {translate('option_4_clean', lang=lang)}")
+        console.print(f" [bold cyan]5.[/bold cyan] {translate('option_5_clean', lang=lang)}")
+
+        option = Prompt.ask(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5"], show_choices=False, console=console)
+
+        if option == "1":
+            register_day(lang=lang)
+            Prompt.ask(translate('press_enter', lang=lang), console=console)
+        elif option == "2":
+            view_history(lang=lang)
+        elif option == "3":
+            config_menu(lang=lang)
+        elif option == "4":
+            project_menu(lang=lang)
+        elif option == "5":
             console.print(f"\n[bold blue]{translate('exit_msg', lang=lang)}[/bold blue]")
             break
+
 
 
 def main():

@@ -24,6 +24,8 @@ from .cli import (
     request_date,
     register_day,
     view_history,
+    config_menu,
+    project_menu,
     main
 )
 
@@ -47,5 +49,7 @@ __all__ = [
     'request_date',
     'register_day',
     'view_history',
+    'config_menu',
+    'project_menu',
     'main'
 ]

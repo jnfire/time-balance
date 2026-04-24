@@ -9,7 +9,7 @@
 
 ## Descripción
 
-`time-balance` es ahora una aplicación de consola **global**. Ya no depende de dónde la ejecutes; tus proyectos y registros se almacenan en una base de datos SQLite centralizada en tu sistema. Calcula automáticamente la diferencia diaria respecto a una jornada base y mantiene un saldo acumulado por cada proyecto de forma independiente.
+`time-balance` es una aplicación de consola **global**. Ya no depende de dónde la ejecutes; tus proyectos y registros se almacenan en una base de datos SQLite centralizada en tu sistema. Calcula automáticamente la diferencia diaria respecto a una jornada base y mantiene un saldo acumulado por cada proyecto de forma independiente.
 
 ---
 
@@ -37,15 +37,14 @@ Ejecuta el comando desde cualquier carpeta para abrir el gestor:
 time-balance
 ```
 
-### 2. Gestión de Proyectos
-Dentro del menú, la **opción 3** te permite crear nuevos proyectos (ej: "Cliente A", "Proyecto Personal") y cambiar entre ellos. La aplicación recordará cuál fue el último proyecto que usaste la próxima vez que la abras.
+### 2. Navegación Intuitiva
+La interfaz utiliza un estándar claro:
+- **Números (1-5)** para seleccionar acciones.
+- **Letras** para navegación: `V` para volver, `N`/`P` para navegar por las páginas del historial.
 
-### 3. Migración de datos antiguos (v0.2.x)
-Si tienes archivos `historial_hours.json` de versiones anteriores, puedes importarlos fácilmente a un nuevo proyecto en la base de datos global:
-
-```bash
-time-balance --migrate ./ruta/al/historial_hours.json
-```
+### 3. Gestión de Proyectos y Configuración
+- **Opción 3 (Configuración)**: Ajusta el nombre, la jornada base o el idioma del proyecto activo. También permite importar/exportar datos.
+- **Opción 4 (Cambiar Proyecto)**: Cambia entre tus diferentes contextos de trabajo o crea uno nuevo.
 
 ### 4. Consultas Rápidas
 Consulta tu estado sin entrar al menú:
@@ -56,19 +55,16 @@ time-balance --status
 
 # Listar los últimos 10 registros del proyecto activo
 time-balance --list 10
-
-# Forzar un idioma (es/en)
-time-balance --lang es
 ```
 
 ---
 
-## Características de la Versión 0.3.0
+## Características Principales
 
+- ✅ **Historial Paginado**: Navega cómodamente por tus registros, sin importar cuántos tengas.
 - ✅ **Almacenamiento SQLite**: Persistencia robusta y profesional en rutas estándar (XDG).
-- ✅ **Multi-proyecto**: Gestiona diferentes contextos de trabajo desde una única instalación.
-- ✅ **Instalación Global**: Accede a tus datos desde cualquier ubicación en la terminal.
-- ✅ **Migración Automática**: Comando dedicado para traer tus datos de la era JSON.
+- ✅ **Multi-proyecto**: Gestiona diferentes contextos de trabajo de forma independiente.
+- ✅ **Navegación Estandarizada**: Uso consistente de teclas para una mejor experiencia de usuario.
 - ✅ **Privacidad**: Todo sigue siendo 100% local en tu equipo.
 
 ---

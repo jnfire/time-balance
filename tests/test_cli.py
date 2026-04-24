@@ -68,6 +68,38 @@ class TestCLI(unittest.TestCase):
         self.assertIn("2026-01-03", output)
         self.assertIn("8h 0m", output)
 
+    def test_view_history_pagination(self):
+        """Verify that view_history handles interactive pagination (Next, Back)."""
+        # Create 15 records to have 2 pages
+        for i in range(1, 16):
+            self.db.upsert_record(1, f"2026-01-{i:02d}", 8, 0, 15)
+            
+        test_console = Console(file=python_io.StringIO(), force_terminal=False, width=100)
+        # Mock inputs: 'n' (next page), then 'v' (back to menu)
+        with mock.patch('time_balance.cli.console', test_console):
+            with mock.patch('rich.prompt.Prompt.ask', side_effect=["n", "v"]):
+                ch.view_history(lang="en")
+        
+        output = test_console.file.getvalue()
+        # Page 1 should have newest records
+        self.assertIn("2026-01-15", output)
+        # Page 2 info should be visible after 'n'
+        self.assertIn("Page 2 of 2", output)
+        self.assertIn("2026-01-01", output)
+
+    def test_config_menu_v_navigation(self):
+        """Verify that config_menu uses 'v' for navigation and sections are visible."""
+        test_console = Console(file=python_io.StringIO(), force_terminal=False, width=100)
+        # Mock input: 'v' to exit config menu immediately
+        with mock.patch('time_balance.cli.console', test_console):
+            with mock.patch('rich.prompt.Prompt.ask', side_effect=["v"]):
+                ch.config_menu(lang="en")
+        
+        output = test_console.file.getvalue()
+        self.assertIn("PROJECT SETTINGS", output)
+        self.assertIn("DATA MANAGEMENT", output)
+        self.assertIn("V. Back to main menu", output)
+
     def test_cli_args_status_rich(self):
         """Verify the --status CLI argument output with Rich formatting."""
         self.db.update_project(1, "ProyA", 7, 45)

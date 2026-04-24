@@ -142,13 +142,17 @@ class DatabaseManager:
                 VALUES (?, ?, ?, ?, ?)
             """, (project_id, record_date, hours, minutes, difference))
 
-    def get_records(self, project_id: int, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        """Returns records for a specific project, sorted by date descending."""
+    def get_records(self, project_id: int, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
+        """Returns records for a specific project, sorted by date descending with pagination support."""
         query = "SELECT * FROM records WHERE project_id = ? ORDER BY date DESC"
         parameters = [project_id]
+        
         if limit:
             query += " LIMIT ?"
             parameters.append(limit)
+            if offset > 0:
+                query += " OFFSET ?"
+                parameters.append(offset)
         
         with self._get_connection() as connection:
             connection.row_factory = sqlite3.Row
@@ -172,6 +176,13 @@ class DatabaseManager:
             cursor.execute("SELECT SUM(difference) FROM records WHERE project_id = ?", (project_id,))
             result = cursor.fetchone()[0]
             return result if result is not None else 0
+
+    def count_records(self, project_id: int) -> int:
+        """Returns the total number of records for a specific project."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM records WHERE project_id = ?", (project_id,))
+            return cursor.fetchone()[0]
 
 # --- GLOBAL SINGLETON ---
 db = DatabaseManager(constants.DATABASE_PATH)

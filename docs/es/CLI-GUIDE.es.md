@@ -1,6 +1,6 @@
 # Guía de Uso: Interfaz CLI
 
-`time-balance` ofrece una interfaz dual: un menú interactivo para el uso diario y comandos directos para consultas rápidas. En la versión 0.3.0, la aplicación es **global** y soporta **múltiples proyectos**.
+`time-balance` ofrece una interfaz dual: un menú interactivo para el uso diario y comandos directos para consultas rápidas. En la versión actual, la aplicación es **global** y soporta **múltiples proyectos** con una navegación optimizada.
 
 ## Comandos Directos (Modo Rápido)
 
@@ -31,54 +31,54 @@ Para iniciar el centro de control completo:
 time-balance
 ```
 
+### Navegación Estándar
+Para una experiencia fluida, `time-balance` utiliza un sistema híbrido:
+- **Números (1-5)**: Para seleccionar acciones y opciones de configuración.
+- **Letras**: Para navegación y movimiento.
+  - `V`: Volver al menú anterior.
+  - `N`: Página siguiente (en historial).
+  - `P`: Página anterior (en historial).
+
+---
+
 ### Menú Principal
 
-La interfaz detecta automáticamente el idioma de tu sistema. Muestra el estado del **proyecto activo**.
+El menú principal es sobrio y directo, mostrando siempre el **Dashboard** del proyecto activo en la parte superior.
 
 ```
-==================================================
-   PROYECTO: MI PROYECTO DE TRABAJO
-   SALDO TOTAL ACUMULADO: +2h 15m
-   (Base diaria: 7h 45m)
-==================================================
-
-Opciones:
-1. Registrar jornada (o corregir día)
-2. Ver últimos registros
-3. Gestionar proyectos (cambiar/crear/editar)
-4. Exportar historial a archivo
-5. Importar historial desde archivo
-6. Salir
-
-Elige opción: _
+1. Registrar jornada
+2. Ver registros
+3. Configuración
+4. Cambiar proyecto
+5. Salir
 ```
 
-## Opciones Detalladas
+## Secciones Detalladas
 
 ### 1. Registrar Jornada
-Permite anotar las horas trabajadas para una fecha (por defecto hoy). Calcula la diferencia respecto a la jornada base del **proyecto activo actual**.
+Permite anotar las horas trabajadas para una fecha (por defecto hoy). Calcula la diferencia respecto a la jornada base del proyecto activo.
 
-### 2. Ver Últimos Registros
-Muestra los últimos 5 registros (o los que especifiques) para el proyecto activo.
+### 2. Ver Registros (Paginado)
+Muestra el historial completo del proyecto en tablas de 10 registros.
+- Usa `N` y `P` para navegar entre páginas.
+- Usa `V` para volver al menú principal.
 
-### 3. Gestionar Proyectos
-Abre un submenú para:
-- **Cambiar de proyecto**: Cambiar cuál es el proyecto activo a nivel global.
-- **Crear nuevo proyecto**: Inicializar un nuevo contexto de trabajo con su propia jornada base.
-- **Editar proyecto**: Cambiar el nombre o la jornada base del proyecto actual.
+### 3. Configuración
+Submenú dividido en secciones para una gestión clara:
+- **Ajustes del Proyecto**: Editar nombre, ajustar jornada base (horas/minutos) e idioma.
+- **Gestión de Datos**: Opciones de Importación y Exportación de archivos JSON.
+- Usa `V` para volver.
 
-### 4. Exportar Historial
-Exporta los datos del proyecto activo a un archivo JSON estructurado.
-
-### 5. Importar Historial
-Importa datos desde un archivo JSON hacia el **proyecto activo actual**.
-- **Modo Merge**: Añade nuevos registros y actualiza los existentes.
-- **Modo Overwrite**: Borra todos los registros actuales antes de importar.
+### 4. Cambiar Proyecto
+Sección dedicada a la gestión de multi-tenencia.
+- Permite seleccionar un proyecto existente de la lista.
+- Permite crear un nuevo proyecto desde cero.
+- Usa `V` para volver.
 
 ---
 
 ## Persistencia de Datos
-Los datos se guardan en una base de datos SQLite centralizada. Ya no necesitas preocuparte por archivos `historial_hours.json` en las carpetas de tus proyectos, a menos que quieras exportarlos o migrarlos.
+Los datos se guardan en una base de datos SQLite centralizada. Ya no necesitas preocuparte por archivos locales en las carpetas de tus proyectos.
 
 ### Rutas por Defecto
 - **macOS**: `~/Library/Application Support/time-balance/`

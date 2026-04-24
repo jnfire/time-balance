@@ -20,6 +20,31 @@ STRINGS = {
         "dashboard_title": "DASHBOARD",
         "choose_option": "Choose option",
 
+        "option_1_clean": "Register workday",
+        "option_2_clean": "View records",
+        "option_3_clean": "Configuration",
+        "option_4_clean": "Change project",
+        "option_5_clean": "Exit",
+
+        "config_option_edit_name": "Edit project name",
+        "config_option_edit_base": "Adjust daily base hours/minutes",
+        "config_option_lang": "Change system language",
+        "config_option_import": "Import history from JSON",
+        "config_option_export": "Export history to JSON",
+        "config_option_back": "Back to main menu",
+
+        "project_option_select": "Select existing project",
+        "project_option_create": "Create new project",
+        "project_option_back": "Back to main menu",
+
+        "pagination_next": "Next page (N)",
+        "pagination_prev": "Previous page (P)",
+        "pagination_back": "Back to menu (V)",
+        "pagination_info": "Page {current} of {total} (Total: {count})",
+
+        "config_section_project": "PROJECT SETTINGS",
+        "config_section_data": "DATA MANAGEMENT",
+
         "projects_menu_header": "PROJECT MANAGEMENT",
         "switch_project": "1. Switch project",
         "create_project": "2. Create new project",
@@ -82,6 +107,31 @@ STRINGS = {
         "data_header": "GESTIÓN DE DATOS",
         "dashboard_title": "CENTRO DE CONTROL",
         "choose_option": "Elige opción",
+
+        "option_1_clean": "Registrar jornada",
+        "option_2_clean": "Ver registros",
+        "option_3_clean": "Configuración",
+        "option_4_clean": "Cambiar proyecto",
+        "option_5_clean": "Salir",
+
+        "config_option_edit_name": "Editar nombre del proyecto",
+        "config_option_edit_base": "Ajustar jornada base (horas/minutos)",
+        "config_option_lang": "Cambiar idioma del sistema",
+        "config_option_import": "Importar historial desde JSON",
+        "config_option_export": "Exportar historial a JSON",
+        "config_option_back": "Volver al menú principal",
+
+        "project_option_select": "Seleccionar proyecto existente",
+        "project_option_create": "Crear nuevo proyecto",
+        "project_option_back": "Volver al menú principal",
+
+        "pagination_next": "Página siguiente (N)",
+        "pagination_prev": "Página anterior (P)",
+        "pagination_back": "Volver (V)",
+        "pagination_info": "Página {current} de {total} (Total: {count})",
+
+        "config_section_project": "AJUSTES DEL PROYECTO",
+        "config_section_data": "GESTIÓN DE DATOS",
 
         "projects_menu_header": "GESTIÓN DE PROYECTOS",
         "switch_project": "1. Cambiar de proyecto",

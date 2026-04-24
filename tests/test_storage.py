@@ -41,20 +41,31 @@ class TestStorage(unittest.TestCase):
         self.assertEqual(project['base_minutes'], 30)
 
     def test_upsert_and_get_records(self):
-        """Verify record creation, update and retrieval sorting."""
+        """Verify record creation, update and retrieval sorting with pagination."""
         project_id = 1
-        self.db.upsert_record(project_id, "2026-04-20", 8, 0, 15)
-        self.db.upsert_record(project_id, "2026-04-21", 7, 45, 0)
+        for i in range(1, 6):
+            self.db.upsert_record(project_id, f"2026-04-{10+i}", 8, 0, 15)
         
+        # Test basic retrieval
         records = self.db.get_records(project_id)
-        self.assertEqual(len(records), 2)
-        # Records should be sorted by date DESC by default
-        self.assertEqual(records[0]['date'], "2026-04-21")
+        self.assertEqual(len(records), 5)
+        self.assertEqual(records[0]['date'], "2026-04-15")
         
+        # Test limit and offset
+        records_p1 = self.db.get_records(project_id, limit=2, offset=0)
+        self.assertEqual(len(records_p1), 2)
+        self.assertEqual(records_p1[0]['date'], "2026-04-15")
+        
+        records_p2 = self.db.get_records(project_id, limit=2, offset=2)
+        self.assertEqual(len(records_p2), 2)
+        self.assertEqual(records_p2[0]['date'], "2026-04-13")
+        
+        # Test count
+        self.assertEqual(self.db.count_records(project_id), 5)
+
         # Test update (UPSERT)
-        self.db.upsert_record(project_id, "2026-04-21", 9, 0, 75)
-        records = self.db.get_records(project_id)
-        self.assertEqual(len(records), 2)
+        self.db.upsert_record(project_id, "2026-04-15", 9, 0, 75)
+        records = self.db.get_records(project_id, limit=1)
         self.assertEqual(records[0]['hours'], 9)
         self.assertEqual(records[0]['difference'], 75)
 

@@ -1,6 +1,6 @@
 # Usage Guide: CLI Interface
 
-`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries. In version 0.3.0, the application is **global** and supports **multiple projects**.
+`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries. In the current version, the application is **global** and supports **multiple projects** with optimized navigation.
 
 ## Direct Commands (Fast Mode)
 
@@ -31,54 +31,54 @@ To start the full control center:
 time-balance
 ```
 
+### Standard Navigation
+For a smooth experience, `time-balance` uses a hybrid system:
+- **Numbers (1-5)**: To select actions and configuration options.
+- **Letters**: For navigation and movement.
+  - `V`: Go Back to previous menu.
+  - `N`: Next page (in history).
+  - `P`: Previous page (in history).
+
+---
+
 ### Main Menu
 
-The interface automatically detects your system language. It shows the status of the **active project**.
+The main menu is sober and direct, always showing the **Dashboard** of the active project at the top.
 
 ```
-==================================================
-   PROJECT: MY WORK PROJECT
-   TOTAL ACCUMULATED BALANCE: +2h 15m
-   (Daily base: 7h 45m)
-==================================================
-
-Options:
-1. Register workday (or correct day)
-2. View recent records
-3. Manage projects (switch/create/edit)
-4. Export history to file
-5. Import history from file
-6. Exit
-
-Choose option: _
+1. Register workday
+2. View records
+3. Configuration
+4. Change project
+5. Exit
 ```
 
-## Detailed Options
+## Detailed Sections
 
 ### 1. Register Workday
-Record worked hours for a specific date (defaults to today). It calculates the difference against the base workday of the **current active project**.
+Record worked hours for a specific date (defaults to today). It calculates the difference against the base workday of the active project.
 
-### 2. View Recent Records
-Displays the last 5 records (or as many as specified) for the active project.
+### 2. View Records (Paginated)
+Displays the complete project history in tables of 10 records.
+- Use `N` and `P` to navigate between pages.
+- Use `V` to go back to the main menu.
 
-### 3. Manage Projects
-Opens a submenu to:
-- **Switch project**: Change which project is currently active globally.
-- **Create new project**: Initialize a new work context with its own base workday.
-- **Edit project**: Change the name or base workday of the current project.
+### 3. Configuration
+Submenu divided into sections for clear management:
+- **Project Settings**: Edit name, adjust daily base (hours/minutes), and language.
+- **Data Management**: Import and Export options for JSON files.
+- Use `V` to go back.
 
-### 4. Export History
-Exports the active project's data to a structured JSON file.
-
-### 5. Import History
-Imports data from a JSON file into the **current active project**.
-- **Merge Mode**: Adds new records and updates existing ones.
-- **Overwrite Mode**: Clears all current records before importing.
+### 4. Change Project
+Dedicated section for multi-tenancy management.
+- Allows selecting an existing project from the list.
+- Allows creating a new project from scratch.
+- Use `V` to go back.
 
 ---
 
 ## Data Persistence
-Data is stored in a centralized SQLite database. You no longer need to worry about `historial_hours.json` files in your project folders unless you want to export or migrate them.
+Data is stored in a centralized SQLite database. You no longer need to worry about local files in your project folders.
 
 ### Default Paths
 - **macOS**: `~/Library/Application Support/time-balance/`
