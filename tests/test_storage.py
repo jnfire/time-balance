@@ -1,76 +1,91 @@
 import unittest
 import tempfile
+import pathlib
 import os
-import json
-import time_balance as ch
+from time_balance.storage import DatabaseManager
+from time_balance import constants
 
 class TestStorage(unittest.TestCase):
     def setUp(self):
-        self.tmpdir = tempfile.TemporaryDirectory()
-        self._orig_cwd = os.getcwd()
-        os.chdir(self.tmpdir.name)
-        # Patch constants for tests
-        self._orig_archivo = ch.constants.DATA_FILE
-        self.data_file = os.path.join(self.tmpdir.name, 'history.json')
-        ch.constants.DATA_FILE = self.data_file
-        
-        # Clear env var
-        self._orig_env = os.environ.get('HISTORIAL_PATH')
-        if 'HISTORIAL_PATH' in os.environ:
-            del os.environ['HISTORIAL_PATH']
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.db_path = pathlib.Path(self.tmp_dir.name) / "test.db"
+        self.db = DatabaseManager(self.db_path)
 
     def tearDown(self):
-        os.chdir(self._orig_cwd)
-        ch.constants.DATA_FILE = self._orig_archivo
-        if self._orig_env:
-            os.environ['HISTORIAL_PATH'] = self._orig_env
-        self.tmpdir.cleanup()
+        self.tmp_dir.cleanup()
 
-    def test_load_data_no_file(self):
-        fake = os.path.join(self.tmpdir.name, "non_existent.json")
-        ch.constants.DATA_FILE = fake
-        res = ch.load_data()
-        self.assertIn("metadata", res)
-        self.assertEqual(res["records"], {})
-
-    def test_load_data_corrupted_json(self):
-        with open(self.data_file, "w", encoding="utf-8") as f:
-            f.write("{ invalid json")
-        res = ch.load_data()
-        self.assertIn("metadata", res)
-        self.assertEqual(res["records"], {})
-
-    def test_save_and_load_roundtrip(self):
-
-        data = {
-            "metadata": {
-                "project_name": "Test Project",
-                "hours_base": 8,
-                "minutes_base": 0,
-                "version": "1.0",
-                "language": "auto"
-            },
-            "records": {
-                "2026-01-01": {"hours": 8, "minutes": 0, "difference": 0}
-            }
-        }
-        ch.save_data(data)
-        loaded = ch.load_data()
-        self.assertEqual(loaded, data)
-
-    def test_resolve_file_path_priorities(self):
-        # 1. Argument
-        arg_path = os.path.join(self.tmpdir.name, "arg.json")
-        self.assertEqual(ch._resolve_file_path(arg_path), os.path.abspath(arg_path))
+    def test_initialization(self):
+        """Should create 'General' project and initial settings by default."""
+        projects = self.db.get_projects()
+        # Initial seeding creates 'General'
+        self.assertEqual(len(projects), 1)
+        self.assertEqual(projects[0]['name'], "General")
         
-        # 2. Env Var
-        env_path = os.path.join(self.tmpdir.name, "env.json")
-        os.environ['HISTORIAL_PATH'] = env_path
-        self.assertEqual(ch._resolve_file_path(), os.path.abspath(env_path))
-        del os.environ['HISTORIAL_PATH']
+        # Should set active project id to 1 by default
+        self.assertEqual(self.db.get_active_project_id(), 1)
         
-        # 3. Default
-        self.assertEqual(ch._resolve_file_path(), os.path.abspath(self.data_file))
+        # Should set default language
+        self.assertEqual(self.db.get_setting("language"), "auto")
+
+    def test_create_and_get_projects(self):
+        """Verify project creation and retrieval."""
+        new_id = self.db.create_project("Side Hustle", 2, 30)
+        self.assertGreater(new_id, 1)
+        
+        projects = self.db.get_projects()
+        self.assertEqual(len(projects), 2)
+        
+        project = self.db.get_project_by_id(new_id)
+        self.assertEqual(project['name'], "Side Hustle")
+        self.assertEqual(project['base_hours'], 2)
+        self.assertEqual(project['base_minutes'], 30)
+
+    def test_upsert_and_get_records(self):
+        """Verify record creation, update and retrieval sorting with pagination."""
+        project_id = 1
+        for i in range(1, 6):
+            self.db.upsert_record(project_id, f"2026-04-{10+i}", 8, 0, 15)
+        
+        # Test basic retrieval
+        records = self.db.get_records(project_id)
+        self.assertEqual(len(records), 5)
+        self.assertEqual(records[0]['date'], "2026-04-15")
+        
+        # Test limit and offset
+        records_p1 = self.db.get_records(project_id, limit=2, offset=0)
+        self.assertEqual(len(records_p1), 2)
+        self.assertEqual(records_p1[0]['date'], "2026-04-15")
+        
+        records_p2 = self.db.get_records(project_id, limit=2, offset=2)
+        self.assertEqual(len(records_p2), 2)
+        self.assertEqual(records_p2[0]['date'], "2026-04-13")
+        
+        # Test count
+        self.assertEqual(self.db.count_records(project_id), 5)
+
+        # Test update (UPSERT)
+        self.db.upsert_record(project_id, "2026-04-15", 9, 0, 75)
+        records = self.db.get_records(project_id, limit=1)
+        self.assertEqual(records[0]['hours'], 9)
+        self.assertEqual(records[0]['difference'], 75)
+
+    def test_total_balance(self):
+        """Verify calculation of total balance for a project."""
+        project_id = 1
+        self.db.upsert_record(project_id, "2026-04-20", 8, 0, 15)
+        self.db.upsert_record(project_id, "2026-04-21", 9, 0, 75)
+        self.db.upsert_record(project_id, "2026-04-22", 7, 0, -45)
+        
+        balance = self.db.get_total_balance(project_id)
+        self.assertEqual(balance, 15 + 75 - 45)
+
+    def test_settings_persistence(self):
+        """Verify global settings can be saved and retrieved."""
+        self.db.set_setting("language", "es")
+        self.assertEqual(self.db.get_setting("language"), "es")
+        
+        self.db.set_setting("last_run", "2026-04-24")
+        self.assertEqual(self.db.get_setting("last_run"), "2026-04-24")
 
 if __name__ == "__main__":
     unittest.main()

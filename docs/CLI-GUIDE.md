@@ -1,17 +1,20 @@
 # Usage Guide: CLI Interface
 
-`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries.
+`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries. In the current version, the application is **global** and supports **multiple projects** with optimized navigation.
 
 ## Direct Commands (Fast Mode)
 
-You can query information without entering the interactive menu using flags:
+You can query information or perform actions without entering the interactive menu using flags:
 
 ```bash
-# View current accumulated balance
+# View current accumulated balance of the active project
 time-balance --status
 
-# List last 10 records
+# List last 10 records of the active project
 time-balance --list 10
+
+# Migrate a legacy JSON history file to a new global project
+time-balance --migrate ./path/to/history.json
 
 # Force language (en/es)
 time-balance --lang en
@@ -28,57 +31,56 @@ To start the full control center:
 time-balance
 ```
 
-### Main Menu
-
-The interface automatically detects your system language, but you can change it in the project configuration.
-
-```
-==================================================
-   PROJECT: PROJECT NAME
-   TOTAL ACCUMULATED BALANCE: +2h 15m
-   (Daily base: 7h 45m)
-==================================================
-
-Options:
-1. Register workday (or correct day)
-2. View recent records
-3. Configure project (name/hours)
-4. Export history to file
-5. Import history from file
-6. Exit
-
-Choose option: _
-```
-
-## Detailed Options
-
-### 1. Register Workday
-Allows you to record worked hours. If the day already exists, it will ask for confirmation to overwrite. It automatically calculates the difference against the base workday configured for **that project**.
-
-### 2. View Recent Records
-Displays a table with the 5 most recent records, including hours worked and the impact on the balance (positive or negative).
-
-### 3. Configure Project
-Allows you to customize the project name and the base workday (hours/minutes) for the current file. This is saved in the JSON metadata.
-
-### 4. Export History
-Creates a backup copy in structured JSON format at the path of your choice.
-
-### 5. Import History
-- **Merge Mode**: Combines external data with the current one. Imported data wins in case of a date conflict.
-- **Overwrite Mode**: Replaces the entire file (metadata and records) with the new one. It creates an automatic backup before proceeding.
-
-## Environment Variables Configuration
-
-You can centralize your history by defining the path in your shell configuration file (`.bashrc` or `.zshrc`):
-
-```bash
-export HISTORIAL_PATH="~/.config/time-balance/main_history.json"
-```
+### Standard Navigation
+For a smooth experience, `time-balance` uses a hybrid system:
+- **Numbers (1-5)**: To select actions and configuration options.
+- **Letters**: For navigation and movement.
+  - `V`: Go Back to previous menu.
+  - `N`: Next page (in history).
+  - `P`: Previous page (in history).
 
 ---
 
-## Usage Tips
-- Press **ENTER** in the date field to use today quickly.
-- Use `--status` in your automation scripts to see your balance when starting the terminal.
-- Export your data regularly if you are not using a synchronized folder.
+### Main Menu
+
+The main menu is sober and direct, always showing the **Dashboard** of the active project at the top.
+
+```
+1. Register workday
+2. View records
+3. Configuration
+4. Change project
+5. Exit
+```
+
+## Detailed Sections
+
+### 1. Register Workday
+Record worked hours for a specific date (defaults to today). It calculates the difference against the base workday of the active project.
+
+### 2. View Records (Paginated)
+Displays the complete project history in tables of 10 records.
+- Use `N` and `P` to navigate between pages.
+- Use `V` to go back to the main menu.
+
+### 3. Configuration
+Submenu divided into sections for clear management:
+- **Project Settings**: Edit name, adjust daily base (hours/minutes), and language.
+- **Data Management**: Import and Export options for JSON files.
+- Use `V` to go back.
+
+### 4. Change Project
+Dedicated section for multi-tenancy management.
+- Allows selecting an existing project from the list.
+- Allows creating a new project from scratch.
+- Use `V` to go back.
+
+---
+
+## Data Persistence
+Data is stored in a centralized SQLite database. You no longer need to worry about local files in your project folders.
+
+### Default Paths
+- **macOS**: `~/Library/Application Support/time-balance/`
+- **Linux**: `~/.local/share/time-balance/`
+- **Windows**: `%APPDATA%/time-balance/`

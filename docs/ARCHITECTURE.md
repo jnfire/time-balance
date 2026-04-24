@@ -2,7 +2,7 @@
 
 ## Overview
 
-`time-balance` is a terminal application to track working hours and manage accumulated balances. It is designed under principles of modularity, data integrity, and ease of use.
+`time-balance` is a terminal application to track working hours and manage accumulated balances. In version 0.4.1, the application evolved into a **global** and **multi-project** tool with a high-performance balance caching system.
 
 ## Project Structure
 
@@ -11,17 +11,17 @@ time-balance/
 ├── time_balance/              # Main package
 │   ├── __init__.py           # Facade (re-exports public API)
 │   ├── __main__.py           # Entry point for module execution
-│   ├── constants.py          # Centralized configuration and constants
+│   ├── constants.py          # Global path configuration and constants
 │   ├── core.py               # Business logic (formatting, calculations)
-│   ├── storage.py            # Persistence and atomic storage
-│   ├── io.py                 # Validation, import, and export
-│   ├── cli.py                # User interface and arguments
+│   ├── storage.py            # Persistence (SQLite) and DatabaseManager
+│   ├── io.py                 # External file validation and reading (JSON)
+│   ├── cli.py                # User interface (Menu and Submenus)
 │   └── i18n.py               # Internationalization system
 ├── tests/                    # Modular test suite
 │   ├── test_core.py
-│   ├── test_storage.py
-│   ├── test_io.py
-│   └── test_cli.py
+│   ├── test_storage.py       # Validates SQLite transactions
+│   ├── test_io.py            # Validates JSON schema reading
+│   └── test_cli.py           # Validates menus and interaction
 ├── docs/                     # Documentation
 ├── README.md                 # User guide
 └── CHANGELOG.md              # Change history
@@ -30,81 +30,69 @@ time-balance/
 ## Modules and Components
 
 ### 1. **`core.py` (Business Logic)**
-Contains the mathematical "brain" of the system, independent of I/O.
-- `format_time()`: Converts minutes to readable format +/- Xh Ym.
-- `calculate_total_balance()`: Sums differences from a list of records.
+Contains mathematical and formatting functions independent of persistence.
+- `format_time()`: Converts minutes to readable format `+/- Xh Ym`.
+- `calculate_total_balance()`: Used mainly during imports to validate balances.
 
-### 2. **`storage.py` (Persistence Layer)**
-Manages the history file lifecycle and physical integrity.
-- `load_data()`: Loads JSON from the structured history file.
-- `save_data()`: **Atomic** (crash-safe) writing using temporary files and replacement.
-- `_create_backup()`: Generates versioned backups before critical operations.
+### 2. **`storage.py` (SQLite Persistence Layer)**
+Implements the `DatabaseManager` class which centralizes all SQL operations.
+- **Project Management**: CRUD for multiple work contexts.
+- **Records**: Efficient storage of workdays by project ID.
+- **Global Settings**: `settings` table to remember the active project and language.
+- **Standard Location**: Uses `pathlib` to comply with XDG (Application Support on macOS, .local/share on Linux).
 
 ### 3. **`cli.py` (Presentation Layer)**
-Handles final user interaction.
-- Supports **command arguments** (`--status`, `--list`, `--version`, `--lang`) for quick queries.
-- Provides an **interactive menu** for daily management.
-- Allows dynamic project configuration (name and base workday).
+Handles user interaction.
+- **Main Menu**: Logging and viewing operations for the active project.
+- **Project Management**: Submenu to create, switch, and edit projects.
+- **Migration Command**: `--migrate` flag to import data from legacy JSON files.
 
 ### 4. **`io.py` (Data Exchange)**
-Logic to import and export histories between different systems.
-- Rigorous JSON schema validation.
-- Support for history merging (`merge`) or total replacement (`overwrite`).
+Logic to validate and read external JSON files.
+- `read_history_file()`: Validates schemas from previous versions (v0.2.x).
+- `export_history()`: Generates a JSON dump of the active project.
 
 ### 5. **`i18n.py` (Internationalization)**
-Simple translation system supporting multiple languages (English and Spanish included).
-- Automatically detects system language.
-- Provides the `translate()` utility for the CLI.
+Simple translation engine supporting English and Spanish.
 
-## Data Schema (JSON)
+## Database Schema (SQLite)
 
-Each project is saved with its own configuration context to allow future multi-project support.
+### `projects` table
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| id | INTEGER PK | Unique identifier |
+| name | TEXT UNIQUE | Project name |
+| base_hours | INTEGER | Base workday (hours) |
+| base_minutes | INTEGER | Base workday (minutes) |
+| total_balance | INTEGER | Cached total balance in minutes (NULL if dirty) |
 
-```json
-{
-    "metadata": {
-        "project_name": "My Project",
-        "hours_base": 7,
-        "minutes_base": 45,
-        "version": "1.0",
-        "language": "auto"
-    },
-    "records": {
-        "2026-04-19": {
-            "hours": 8,
-            "minutes": 0,
-            "difference": 15
-        }
-    }
-}
-```
+## Data Flow and Performance
+
+In version 0.4.1, the application moved from dynamic calculations to an **incremental caching strategy**:
+- **O(1) Access**: The `total_balance` is cached in the `projects` table.
+- **Atomic Updates**: When a record is added, edited, or deleted, the cache is updated using a delta calculation (`total_balance - old_diff + new_diff`).
+- **Deferred Activation**: If a project's balance is `NULL`, it is recalculated from scratch on the next read and cached thereafter.
+- **Audit Tool**: `recalculate_project_balance` is available to force a full validation of the cache against the individual records.
 
 ## Reliability and Safety
 
-- **Integrity**: All writes are atomic. If the program closes unexpectedly, data is not corrupted.
-- **Privacy**: 100% local storage in plain text (JSON).
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| id | INTEGER PK | Unique identifier |
+| project_id | INTEGER FK | Reference to project |
+| date | TEXT | Date (YYYY-MM-DD) |
+| hours | INTEGER | Hours worked |
+| minutes | INTEGER | Minutes worked |
+| difference | INTEGER | Balance in minutes |
+
+## Reliability and Safety
+
+- **Transactions**: All critical database operations are protected by SQLite transactions.
+- **Atomic Export**: JSON dumps still use atomic writing for safety.
+- **Privacy**: All data is stored locally on the user's machine.
 
 ## Testing
 
-The test suite is divided to match the package architecture:
-- `test_core`: Validates calculation algorithms.
-- `test_storage`: Validates persistence and backups.
-- `test_io`: Validates import/export logic.
-- `test_cli`: Validates UI and command arguments.
-
-## Future Extensibility (Technical Evolution)
-
-The system is designed to evolve into a professional time management solution:
-
-1. **Relational Storage (SQLite)**:
-   - Migrate internal persistence from JSON to SQLite.
-   - JSON format will remain exclusively for import/export flows (portability).
-
-2. **Centralized Multi-project Support**:
-   - Implement a global project registry to switch contexts without changing directories.
-
-3. **Cloud Sync**:
-   - Allow database location in cloud storage services for automatic synchronization.
-
-4. **Modern UI (Rich UI)**:
-   - Integrate libraries like `rich` to improve the presentation of tables and colors.
+The test suite has been adapted to use temporary databases:
+- `test_storage`: Verifies the schema and `DatabaseManager` behavior.
+- `test_cli`: Uses patching (mocking) to simulate user input over database logic.

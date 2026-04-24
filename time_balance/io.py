@@ -4,7 +4,6 @@ import tempfile
 import shutil
 import errno
 from datetime import datetime
-from . import storage
 from . import constants
 
 
@@ -69,9 +68,9 @@ def _validate_record_entry(date_key, info):
             raise ValueError(f"'{key}' in {date_key} must be an integer")
 
 
-def export_history(dest_path, file_path=None):
-    """Exports current history to external JSON with atomic safety."""
-    data = storage.load_data(file_path)
+def export_history(data, dest_path):
+    """Exports provided data dictionary to external JSON with atomic safety."""
+    validate_history(data)
     dest = os.path.expanduser(dest_path)
     dest = os.path.abspath(dest)
     dest_dir = os.path.dirname(dest) or "."
@@ -118,31 +117,22 @@ def export_history(dest_path, file_path=None):
     return dest
 
 
-def import_history(source_path, mode=constants.MODE_MERGE, file_path=None):
-    """Imports history from external file."""
+def read_history_file(source_path):
+    """Reads and validates a history file from disk."""
     source = os.path.expanduser(source_path)
     source = os.path.abspath(source)
     if not os.path.exists(source):
-        raise FileNotFoundError(f"Import file not found: {source}")
+        raise FileNotFoundError(f"File not found: {source}")
 
     try:
         with open(source, 'r', encoding='utf-8') as json_file:
             source_data = json.load(json_file)
     except json.JSONDecodeError as error:
-        raise ValueError(f"Invalid JSON in import file: {error}")
+        raise ValueError(f"Invalid JSON in file: {error}")
 
     validate_history(source_data)
-    
-    target_path = storage._resolve_file_path(file_path)
-    if mode == constants.MODE_OVERWRITE:
-        storage._create_backup(target_path)
-        storage.save_data(source_data, target_path)
-        return source_data
-    elif mode == constants.MODE_MERGE:
-        storage._create_backup(target_path)
-        current_data = storage.load_data(target_path)
-        current_data["records"].update(source_data["records"])
-        storage.save_data(current_data, target_path)
-        return current_data
-    else:
-        raise ValueError(f"Unknown mode. Use {constants.VALID_IMPORT_MODES}.")
+    return source_data
+
+# import_history was previously handling backups and saving. 
+# Now cli.py will handle database interaction. 
+# We keep a simpler version or remove it if cli.py handles everything.

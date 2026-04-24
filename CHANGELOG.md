@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-04-24
+
+### Fixed
+- **NameError in Migration**: Fixed missing `migrate_from_json` function reported in code review.
+- **SQLite Connection Leaks**: Implemented a robust context manager in `DatabaseManager` to ensure all database connections are properly closed after use.
+- **Redundant Schema Alterations**: Integrated `total_balance` directly into the initial table creation for cleaner database initialization.
+- **Smooth Exit Flow**: Improved `KeyboardInterrupt` handling to exit immediately without requiring extra prompts.
+
+### Changed
+- **Higher-Level Storage API**: Refactored CLI code to use `DatabaseManager` methods instead of raw SQL queries for better separation of concerns.
+
+## [0.4.1] - 2026-04-24
+
+### Added
+- **High-Performance Balance Cache**: Added `total_balance` column to projects table to avoid $O(N)$ calculations.
+- **Atomic Balance Updates**: Balance is now updated incrementally on each record creation, modification, or deletion.
+- **Balance Audit Tool**: New internal methods to recalculate and validate the total balance.
+- **Automated Balance Tests**: Added comprehensive test suite for the balance cache engine.
+
+### Changed
+- **Optimized CLI Performance**: The status command and main menu now display the balance instantly.
+- **Clean Test Output**: Silenced CLI print statements during automated testing for professional output.
+
+## [0.3.0] - 2026-04-24
+### Added
+- **Global Installation**: The app now stores data in standard system paths (XDG compliant), making it truly global.
+- **SQLite Backend**: Replaced JSON storage with SQLite for improved performance and data integrity.
+- **Multi-project Support**: New project management menu allows creating, switching, and editing multiple work contexts.
+- **Migration Tool**: New `--migrate <file.json>` command to import legacy history files into the new system.
+- **Active Project Context**: The application now remembers the last used project globally.
+
+### Changed
+- Refactored `storage.py` to use `DatabaseManager`.
+- Updated `cli.py` to support project management submenus.
+- Decoupled `io.py` from storage logic for better testability.
+
 ## [0.2.0] - 2026-04-20
 ### Added
 - **Globalization (i18n)**: Fully translated UI with automatic language detection (English and Spanish supported).

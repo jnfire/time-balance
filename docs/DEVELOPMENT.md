@@ -1,71 +1,51 @@
 # Developer Guide
 
-This guide provides technical details for developers who want to integrate with `time-balance` or contribute to its development.
+This guide provides technical details for developers who want to contribute to version 0.3.x of `time-balance`.
 
 ## Project Philosophy
 
-- **Standard Library Only**: No external dependencies allowed for the core functionality.
-- **Clean Code**: Descriptive naming, modularity, and high test coverage.
-- **Safety**: Atomic writes and defensive data validation.
+- **Standard Library Core**: The business logic and persistence rely solely on native Python libraries.
+- **Professional UI**: Uses `rich` to provide a modern, readable, and visually appealing terminal interface.
 
-## Module Structure
+## Layer Structure
 
-The project is organized into logical layers:
+### 1. Persistence Logic (`storage.py`)
+Manages the global SQLite database.
+- `DatabaseManager`: Central class for project and record CRUD.
+- `db`: Global instance used by the rest of the application.
 
-### 1. Business Logic (`core.py`)
-Pure functions for time calculations.
-- `format_time(minutes)`: Returns strings like `"-1h 30m"`.
-- `calculate_total_balance(records)`: Sums differences from the data dictionary.
-
-### 2. Persistence (`storage.py`)
-Handles disk I/O and atomic writing.
-- `load_data(path)`: Returns a structured dict with `metadata` and `records`.
-- `save_data(data, path)`: Atomic write via temporary files.
+### 2. Presentation Layer (`cli.py`)
+Controls menu flow and user interaction.
+- `manage_projects()`: Logic for the multi-project management submenu.
+- `register_day()`: Interacts with `db` to save workdays in the active project.
 
 ### 3. Data Exchange (`io.py`)
-Logic for moving data between systems.
-- `export_history(dest)`: Exports the full structured JSON.
-- `import_history(src, mode)`: Validates and merges/overwrites data.
-
-### 4. User Interface (`cli.py`)
-The presentation layer using `argparse` and a loop-based menu.
-
-### 5. Internationalization (`i18n.py`)
-Simple translation engine. Uses `translate(key, lang)` to fetch strings.
+Functions for reading legacy JSON and exporting dumps.
+- `read_history_file(path)`: Reads a JSON and validates it against the old schema.
 
 ## Running Tests
 
-We use the standard `unittest` framework:
+It is essential to keep tests updated. A temporary database is used to avoid messing with the developer's real data.
 
 ```bash
 # Run all tests
 python3 -m unittest discover -v tests
 ```
 
-## Adding a New Language
+## Database Management
 
-1. Open `time_balance/i18n.py`.
-2. Add a new entry to the `STRINGS` dictionary with the ISO 639-1 code (e.g., `"fr"` for French).
-3. Translate all keys from the `"en"` template.
-4. Update the `--lang` choices list in `cli.py` to include the new language code.
+The database is initialized automatically on the first run. The schema is defined in the `_initialize_database()` method of `DatabaseManager`.
 
-## Data Schema Reference
+### Data Paths (XDG)
+- macOS: `~/Library/Application Support/time-balance/`
+- Linux: `~/.local/share/time-balance/`
 
-```json
-{
-    "metadata": {
-        "project_name": "string",
-        "hours_base": "int",
-        "minutes_base": "int",
-        "version": "string",
-        "language": "string (en|es|auto)"
-    },
-    "records": {
-        "YYYY-MM-DD": {
-            "hours": "int",
-            "minutes": "int",
-            "difference": "int (worked_minutes - base_minutes)"
-        }
-    }
-}
-```
+## How to add a CLI command
+
+1. Modify the `main()` function in `cli.py`.
+2. Add the new flag in `argparse`.
+3. Implement the corresponding logic, using `db` if it requires data access or `translate()` for output.
+
+## Record Schema Reference
+Workdays are saved as difference minutes (`worked_minutes - base_minutes`).
+- Example: If the base is 7h 45m (465 min) and 8h (480 min) are worked, the saved difference is `+15`.
