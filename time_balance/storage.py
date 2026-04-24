@@ -18,7 +18,7 @@ class DatabaseManager:
         return sqlite3.connect(self.db_path)
 
     def _initialize_database(self):
-        """Creates the necessary tables if they do not exist."""
+        """Creates the necessary tables if they do not exist and handles migrations."""
         with self._get_connection() as connection:
             cursor = connection.cursor()
             
@@ -32,6 +32,13 @@ class DatabaseManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            # Migration: Add total_balance if it doesn't exist
+            try:
+                cursor.execute("ALTER TABLE projects ADD COLUMN total_balance INTEGER DEFAULT NULL")
+            except sqlite3.OperationalError:
+                # Column already exists
+                pass
             
             # Records table: daily time registrations
             cursor.execute("""
@@ -134,13 +141,55 @@ class DatabaseManager:
             cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
 
     def upsert_record(self, project_id: int, record_date: str, hours: int, minutes: int, difference: int):
-        """Inserts or updates a daily time record."""
+        """Inserts or updates a daily time record and updates project total balance cache."""
         with self._get_connection() as connection:
             cursor = connection.cursor()
+            
+            # 1. Get old difference if record exists to adjust balance
+            cursor.execute("SELECT difference FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
+            row = cursor.fetchone()
+            old_difference = row[0] if row else 0
+            
+            # 2. Upsert the record
             cursor.execute("""
                 INSERT OR REPLACE INTO records (project_id, date, hours, minutes, difference)
                 VALUES (?, ?, ?, ?, ?)
             """, (project_id, record_date, hours, minutes, difference))
+            
+            # 3. Update project total balance cache
+            # If total_balance is NULL, we don't update it (it stays NULL until next calculation)
+            cursor.execute("""
+                UPDATE projects 
+                SET total_balance = total_balance - ? + ? 
+                WHERE id = ? AND total_balance IS NOT NULL
+            """, (old_difference, difference, project_id))
+            
+            connection.commit()
+
+    def delete_record(self, project_id: int, record_date: str):
+        """Deletes a record and updates project total balance cache."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            
+            # 1. Get difference to subtract from total
+            cursor.execute("SELECT difference FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
+            row = cursor.fetchone()
+            if not row:
+                return
+
+            difference = row[0]
+            
+            # 2. Delete the record
+            cursor.execute("DELETE FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
+            
+            # 3. Update project total balance cache
+            cursor.execute("""
+                UPDATE projects 
+                SET total_balance = total_balance - ? 
+                WHERE id = ? AND total_balance IS NOT NULL
+            """, (difference, project_id))
+            
+            connection.commit()
 
     def get_records(self, project_id: int, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
         """Returns records for a specific project, sorted by date descending with pagination support."""
@@ -170,12 +219,38 @@ class DatabaseManager:
             return dict(row) if row else None
 
     def get_total_balance(self, project_id: int) -> int:
-        """Calculates the sum of differences for all records in a project."""
+        """Retrieves the cached balance or calculates it if NULL."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            
+            # Try to get cached balance
+            cursor.execute("SELECT total_balance FROM projects WHERE id = ?", (project_id,))
+            row = cursor.fetchone()
+            
+            if row and row[0] is not None:
+                return row[0]
+        
+        # Recalculate if NULL (outside the previous 'with' to avoid nested connections)
+        return self.recalculate_project_balance(project_id)
+
+    def recalculate_project_balance(self, project_id: int) -> int:
+        """Forces a full recalculation of the balance from all records and updates the cache."""
         with self._get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("SELECT SUM(difference) FROM records WHERE project_id = ?", (project_id,))
             result = cursor.fetchone()[0]
-            return result if result is not None else 0
+            total = result if result is not None else 0
+            
+            cursor.execute("UPDATE projects SET total_balance = ? WHERE id = ?", (total, project_id))
+            connection.commit()
+            return total
+
+    def reset_project_balance(self, project_id: int):
+        """Resets the project balance cache to NULL, forcing a recalculation on next access."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE projects SET total_balance = NULL WHERE id = ?", (project_id,))
+            connection.commit()
 
     def count_records(self, project_id: int) -> int:
         """Returns the total number of records for a specific project."""

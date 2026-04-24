@@ -244,6 +244,10 @@ def config_menu(lang="en"):
                 )
                 try:
                     source_data = io.read_history_file(path)
+                    
+                    # Invalidate balance cache before import
+                    db.reset_project_balance(active_id)
+                    
                     if mode == constants.MODE_OVERWRITE:
                         with db._get_connection() as conn:
                             conn.execute("DELETE FROM records WHERE project_id = ?", (active_id,))

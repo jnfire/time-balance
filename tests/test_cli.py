@@ -14,9 +14,13 @@ class TestCLI(unittest.TestCase):
         from time_balance.storage import DatabaseManager
         self.db = DatabaseManager(self.db_path)
         
+        # Capture console output to keep tests quiet
+        self.test_console = Console(file=python_io.StringIO(), force_terminal=False, width=100)
+
         self.patchers = [
             mock.patch('time_balance.cli.db', self.db),
-            mock.patch('time_balance.storage.db', self.db)
+            mock.patch('time_balance.storage.db', self.db),
+            mock.patch('time_balance.cli.console', self.test_console)
         ]
         for patcher in self.patchers:
             patcher.start()
