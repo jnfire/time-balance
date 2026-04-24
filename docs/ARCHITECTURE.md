@@ -2,7 +2,7 @@
 
 ## Overview
 
-`time-balance` is a terminal application to track working hours and manage accumulated balances. In version 0.3.0, the application evolved into a **global** and **multi-project** tool, using **SQLite** as the persistence engine and following XDG standards for data storage.
+`time-balance` is a terminal application to track working hours and manage accumulated balances. In version 0.4.1, the application evolved into a **global** and **multi-project** tool with a high-performance balance caching system.
 
 ## Project Structure
 

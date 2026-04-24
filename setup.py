@@ -1,10 +1,21 @@
 from setuptools import setup, find_packages
 
+import os
+
+def get_version():
+    version_path = os.path.join(os.path.dirname(__file__), 'time_balance', 'VERSION')
+    with open(version_path, 'r') as f:
+        return f.read().strip()
+
 setup(
     name='time-balance',
-    version='0.4.0',
+    version=get_version(),
     description='Control sencillo de jornadas y saldo horario',
     packages=find_packages(exclude=("tests",)),
+    include_package_data=True,
+    package_data={
+        'time_balance': ['VERSION'],
+    },
     install_requires=[
         'rich>=10.0.0',
     ],

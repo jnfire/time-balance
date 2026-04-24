@@ -1,7 +1,15 @@
 import os
 import pathlib
 
-VERSION = "0.4.1"
+# --- VERSION ---
+def _get_version():
+    try:
+        version_path = pathlib.Path(__file__).parent / "VERSION"
+        return version_path.read_text().strip()
+    except Exception:
+        return "0.0.0-unknown"
+
+VERSION = _get_version()
 
 # --- PATH CONFIGURATION ---
 def get_data_dir() -> pathlib.Path:

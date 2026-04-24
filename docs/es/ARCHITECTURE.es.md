@@ -2,7 +2,7 @@
 
 ## Visión General
 
-`time-balance` es una aplicación de terminal para registrar jornadas laborales y gestionar el saldo horario acumulado. En su versión 0.3.0, la aplicación ha evolucionado a una herramienta **global** y **multiproyecto**, utilizando **SQLite** como motor de persistencia siguiendo los estándares XDG para el almacenamiento de datos.
+`time-balance` es una aplicación de terminal para registrar jornadas laborales y gestionar el saldo horario acumulado. En su versión 0.4.1, la aplicación ha evolucionado a una herramienta **global** y **multiproyecto** con un sistema de caché de saldo de alto rendimiento.
 
 ## Estructura del Proyecto
 
