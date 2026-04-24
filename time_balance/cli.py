@@ -350,18 +350,22 @@ def interactive_menu():
 
         option = Prompt.ask(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5"], show_choices=False, console=console)
 
-        if option == "1":
-            register_day(lang=lang)
+        try:
+            if option == "1":
+                register_day(lang=lang)
+                Prompt.ask(translate('press_enter', lang=lang), console=console)
+            elif option == "2":
+                view_history(lang=lang)
+            elif option == "3":
+                config_menu(lang=lang)
+            elif option == "4":
+                project_menu(lang=lang)
+            elif option == "5":
+                console.print(f"\n[bold blue]{translate('exit_msg', lang=lang)}[/bold blue]")
+                break
+        except KeyboardInterrupt:
+            console.print(f"\n\n[yellow] {translate('op_cancelled', lang=lang)} [/yellow]")
             Prompt.ask(translate('press_enter', lang=lang), console=console)
-        elif option == "2":
-            view_history(lang=lang)
-        elif option == "3":
-            config_menu(lang=lang)
-        elif option == "4":
-            project_menu(lang=lang)
-        elif option == "5":
-            console.print(f"\n[bold blue]{translate('exit_msg', lang=lang)}[/bold blue]")
-            break
 
 
 
