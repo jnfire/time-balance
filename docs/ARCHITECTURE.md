@@ -64,8 +64,18 @@ Simple translation engine supporting English and Spanish.
 | name | TEXT UNIQUE | Project name |
 | base_hours | INTEGER | Base workday (hours) |
 | base_minutes | INTEGER | Base workday (minutes) |
+| total_balance | INTEGER | Cached total balance in minutes (NULL if dirty) |
 
-### `records` table
+## Data Flow and Performance
+
+In version 0.4.1, the application moved from dynamic calculations to an **incremental caching strategy**:
+- **O(1) Access**: The `total_balance` is cached in the `projects` table.
+- **Atomic Updates**: When a record is added, edited, or deleted, the cache is updated using a delta calculation (`total_balance - old_diff + new_diff`).
+- **Deferred Activation**: If a project's balance is `NULL`, it is recalculated from scratch on the next read and cached thereafter.
+- **Audit Tool**: `recalculate_project_balance` is available to force a full validation of the cache against the individual records.
+
+## Reliability and Safety
+
 | Column | Type | Description |
 | :--- | :--- | :--- |
 | id | INTEGER PK | Unique identifier |

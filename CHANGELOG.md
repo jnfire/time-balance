@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-04-24
+
+### Added
+- **High-Performance Balance Cache**: Added `total_balance` column to projects table to avoid $O(N)$ calculations.
+- **Atomic Balance Updates**: Balance is now updated incrementally on each record creation, modification, or deletion.
+- **Balance Audit Tool**: New internal methods to recalculate and validate the total balance.
+- **Automated Balance Tests**: Added comprehensive test suite for the balance cache engine.
+
+### Changed
+- **Optimized CLI Performance**: The status command and main menu now display the balance instantly.
+- **Clean Test Output**: Silenced CLI print statements during automated testing for professional output.
+
 ## [0.3.0] - 2026-04-24
 ### Added
 - **Global Installation**: The app now stores data in standard system paths (XDG compliant), making it truly global.

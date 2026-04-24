@@ -64,8 +64,18 @@ Motor de traducción simple que soporta inglés y español.
 | name | TEXT UNIQUE | Nombre del proyecto |
 | base_hours | INTEGER | Jornada base (horas) |
 | base_minutes | INTEGER | Jornada base (minutos) |
+| total_balance | INTEGER | Saldo total cacheado en minutos (NULL si está sucio) |
 
-### Tabla `records`
+## Flujo de Datos y Rendimiento
+
+En la versión 0.4.1, la aplicación pasó de cálculos dinámicos a una **estrategia de caché incremental**:
+- **Acceso O(1)**: El `total_balance` se guarda en la tabla `projects`.
+- **Actualizaciones Atómicas**: Cuando se añade, edita o borra un registro, la caché se actualiza mediante un cálculo delta (`total_balance - vieja_dif + nueva_dif`).
+- **Activación Diferida**: Si el saldo de un proyecto es `NULL`, se recalcula desde cero en la siguiente lectura y se guarda.
+- **Herramienta de Auditoría**: `recalculate_project_balance` está disponible para forzar una validación completa de la caché frente a los registros individuales.
+
+## Fiabilidad y Seguridad
+
 | Columna | Tipo | Descripción |
 | :--- | :--- | :--- |
 | id | INTEGER PK | Identificador único |

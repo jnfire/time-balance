@@ -61,6 +61,7 @@ time-balance --list 10
 
 ## Main Features
 
+- ✅ **High-Performance Caching**: Atomic balance updates for instant results, even with years of data.
 - ✅ **Paginated History**: Comfortably browse your records, no matter how many you have.
 - ✅ **SQLite Backend**: Robust and professional persistence in standard paths (XDG).
 - ✅ **Multi-project**: Manage different work contexts independently.

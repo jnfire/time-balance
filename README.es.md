@@ -61,6 +61,7 @@ time-balance --list 10
 
 ## Características Principales
 
+- ✅ **Caché de Alto Rendimiento**: Actualizaciones atómicas del saldo para resultados instantáneos, incluso con años de datos.
 - ✅ **Historial Paginado**: Navega cómodamente por tus registros, sin importar cuántos tengas.
 - ✅ **Almacenamiento SQLite**: Persistencia robusta y profesional en rutas estándar (XDG).
 - ✅ **Multi-proyecto**: Gestiona diferentes contextos de trabajo de forma independiente.
