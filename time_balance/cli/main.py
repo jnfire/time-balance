@@ -3,7 +3,7 @@ import sys
 from ..utils.calculations import format_time
 from ..ui import interface as ui
 from ..database.manager import db
-from ..utils.i18n import translate, get_system_language
+from ..utils.i18n import translate, resolve_language
 from .. import config
 
 # Import sibling modules
@@ -15,10 +15,8 @@ from .migration import migrate_from_json
 
 def get_current_lang() -> str:
     """Determines the active language based on settings or system."""
-    lang = db.get_setting("language", "auto")
-    if lang == "auto":
-        return get_system_language()
-    return lang
+    language_setting = db.get_setting("language", "auto")
+    return resolve_language(language_setting)
 
 
 def display_dashboard(project: dict, balance: int, lang: str):

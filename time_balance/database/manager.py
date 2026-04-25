@@ -266,5 +266,30 @@ class DatabaseManager:
             cursor.execute("SELECT COUNT(*) FROM records WHERE project_id = ?", (project_id,))
             return cursor.fetchone()[0]
 
+    def import_records(self, project_id: int, records_dict: Dict[str, dict]) -> int:
+        """Imports a dictionary of records into the database. Returns count of imported items."""
+        imported_count = 0
+        for record_date, record_info in records_dict.items():
+            self.upsert_record(
+                project_id, 
+                record_date, 
+                record_info['hours'], 
+                record_info['minutes'], 
+                record_info['difference']
+            )
+            imported_count += 1
+        return imported_count
+
+    def get_records_dict(self, project_id: int) -> Dict[str, dict]:
+        """Returns all records for a project as a dictionary formatted for JSON export."""
+        all_records = self.get_records(project_id)
+        return {
+            record['date']: {
+                'hours': record['hours'], 
+                'minutes': record['minutes'], 
+                'difference': record['difference']
+            } for record in all_records
+        }
+
 # --- GLOBAL SINGLETON ---
 db = DatabaseManager(config.DATABASE_PATH)

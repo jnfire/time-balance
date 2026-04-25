@@ -15,21 +15,18 @@ def migrate_from_json(path: str, lang: str):
         
         # 1. Create the project
         project_name = metadata.get("project_name", f"Imported {date.today()}")
-        h = metadata.get("hours_base", config.BASE_HOURS)
-        m = metadata.get("minutes_base", config.BASE_MINUTES)
+        base_h = metadata.get("hours_base", config.BASE_HOURS)
+        base_m = metadata.get("minutes_base", config.BASE_MINUTES)
         
-        new_id = db.create_project(project_name, h, m)
-        db.set_active_project_id(new_id)
+        new_project_id = db.create_project(project_name, base_h, base_m)
+        db.set_active_project_id(new_project_id)
         
-        # 2. Insert records
-        count = 0
-        records = source_data.get("records", {})
-        for date_str, info in records.items():
-            db.upsert_record(new_id, date_str, info['hours'], info['minutes'], info['difference'])
-            count += 1
+        # 2. Bulk insert records using centralized method
+        records_to_import = source_data.get("records", {})
+        imported_count = db.import_records(new_project_id, records_to_import)
             
-        ui.print_message(translate('import_success', lang=lang, count=count), style="bold green")
-        ui.print_message(f"   {translate('project_label', lang=lang)}: [bold]{project_name}[/bold] (ID: {new_id})")
+        ui.print_message(translate('import_success', lang=lang, count=imported_count), style="bold green")
+        ui.print_message(f"   {translate('project_label', lang=lang)}: [bold]{project_name}[/bold] (ID: {new_project_id})")
         
-    except Exception as err:
-        ui.print_message(translate('import_error', lang=lang, error=err), style="bold red")
+    except Exception as error:
+        ui.print_message(translate('import_error', lang=lang, error=error), style="bold red")

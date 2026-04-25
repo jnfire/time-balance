@@ -18,7 +18,7 @@ class TestCore(unittest.TestCase):
             "2026-01-01": {"difference": 15},
             "2026-01-02": {"difference": -10}
         }
-        self.assertEqual(core.calculate_total_balance(records), 5)
+        self.assertEqual(core.calculate_total_balance_from_records(records), 5)
 
 if __name__ == "__main__":
     unittest.main()
