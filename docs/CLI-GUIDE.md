@@ -32,7 +32,7 @@ time-balance
 The application uses a consistent navigation standard:
 - **Numbers (1-5)**: To select actions and configuration options.
 - **Capital Letters (V, N, P)**: For movement and navigation.
-  - `V`: **V**olvver / Back.
+  - `V`: **V**olver / Back.
   - `N`: **N**ext page.
   - `P`: **P**revious page.
 
