@@ -9,84 +9,78 @@
 
 ## Descripción
 
-`time-balance` es una aplicación de consola **global**. Ya no depende de dónde la ejecutes; tus proyectos y registros se almacenan en una base de datos SQLite centralizada en tu sistema. Calcula automáticamente la diferencia diaria respecto a una jornada base y mantiene un saldo acumulado por cada proyecto de forma independiente.
+`time-balance` es una aplicación de terminal **global** diseñada para la productividad. Ya no depende de archivos locales; todos tus proyectos y registros se almacenan en una base de datos SQLite centralizada. Cuenta con una arquitectura modular basada en dominios, una capa de UI desacoplada y un sistema de localización robusto basado en JSON.
 
 ---
 
-## Instalación Global
+## Instalación
 
-Para instalar la aplicación de forma que esté disponible en cualquier terminal:
+### Para Usuarios
+Para instalar la aplicación y que esté disponible en cualquier terminal:
 
 ```bash
-# Clonar y entrar al directorio
-git clone <url-del-repo>
+# Clonar y entrar en el directorio
+git clone <repo-url>
 cd time-balance
 
-# Instalar de forma global en tu usuario
+# Instalar globalmente
 pip install .
+```
+
+### Para Desarrolladores
+Si deseas contribuir, recomendamos usar el punto de entrada directo:
+
+```bash
+# Ejecutar sin instalar
+./main.py --version
 ```
 
 ---
 
-## Uso de la aplicación
+## Uso
 
 ### 1. Centro de Control (Menú Interactivo)
-Ejecuta el comando desde cualquier carpeta para abrir el gestor:
+Simplemente ejecuta el comando desde cualquier carpeta:
 
 ```bash
 time-balance
 ```
 
 ### 2. Navegación Intuitiva
-La interfaz utiliza un estándar claro:
-- **Números (1-5)** para seleccionar acciones.
-- **Letras** para navegación: `V` para volver, `N`/`P` para navegar por las páginas del historial.
+La interfaz utiliza un sistema de navegación estandarizado:
+- **Números (1-5)** para seleccionar acciones principales.
+- **Letras (V, N, P)** para navegación: `V` para volver, `N`/`P` para paginar el historial.
 
-### 3. Gestión de Proyectos y Configuración
-- **Opción 3 (Configuración)**: Ajusta el nombre, la jornada base o el idioma del proyecto activo. También permite importar/exportar datos.
-- **Opción 4 (Cambiar Proyecto)**: Cambia entre tus diferentes contextos de trabajo o crea uno nuevo.
-
-### 4. Consultas Rápidas
+### 3. Comandos Rápidos
 Consulta tu estado sin entrar al menú:
 
 ```bash
-# Ver el saldo del proyecto activo
+# Saldo del proyecto activo
 time-balance --status
 
-# Listar los últimos 10 registros del proyecto activo
+# Últimos 10 registros del proyecto activo
 time-balance --list 10
-
-# Migrar un historial antiguo en formato JSON
-time-balance --migrate ./ruta/al/archivo.json
 ```
 
 ---
 
 ## Características Principales
 
-- ✅ **Caché de Alto Rendimiento**: Actualizaciones atómicas del saldo para resultados instantáneos, incluso con años de datos.
-- ✅ **Historial Paginado**: Navega cómodamente por tus registros, sin importar cuántos tengas.
-- ✅ **Almacenamiento SQLite**: Persistencia robusta y profesional en rutas estándar (XDG).
-- ✅ **Multi-proyecto**: Gestiona diferentes contextos de trabajo de forma independiente.
-- ✅ **Navegación Estandarizada**: Uso consistente de teclas para una mejor experiencia de usuario.
-- ✅ **Privacidad**: Todo sigue siendo 100% local en tu equipo.
-
----
-
-## Ubicación de los datos
-La base de datos se guarda automáticamente en:
-- **macOS**: `~/Library/Application Support/time-balance/time_balance.db`
-- **Linux**: `~/.local/share/time-balance/time_balance.db`
-- **Windows**: `%APPDATA%/time-balance/time_balance.db`
+- ✅ **Arquitectura por Dominios**: Separación clara entre CLI, Base de Datos e interfaz.
+- ✅ **Abstracción de UI**: Desacoplada de librerías visuales para máxima flexibilidad.
+- ✅ **Localización en JSON**: Añade idiomas fácilmente mediante archivos externos.
+- ✅ **Caché de Alto Rendimiento**: Actualizaciones de saldo atómicas e instantáneas.
+- ✅ **Backend SQLite**: Persistencia robusta siguiendo estándares XDG.
+- ✅ **Multiproyecto**: Gestiona diferentes contextos de trabajo de forma independiente.
 
 ---
 
 ## Desarrollo y Contribuciones
 
-Si quieres contribuir o entender cómo funciona internamente:
-- [**ARCHITECTURE.es.md**](docs/es/ARCHITECTURE.es.md): Diseño y módulos del sistema.
-- [**DEVELOPMENT.es.md**](docs/es/DEVELOPMENT.es.md): Guía técnica para desarrolladores.
-- [**CONTRIBUTING.es.md**](docs/es/CONTRIBUTING.es.md): Cómo enviar mejoras y traducciones.
+Si quieres contribuir o entender el funcionamiento interno:
+- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): Diseño del sistema, módulos y dominios.
+- [**DEVELOPMENT.md**](docs/DEVELOPMENT.md): Guía técnica para desarrolladores.
+- [**CONTRIBUTING.md**](docs/CONTRIBUTING.md): Cómo enviar mejoras y traducciones.
 
 ## Licencia
 

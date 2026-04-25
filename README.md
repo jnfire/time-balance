@@ -9,12 +9,13 @@
 
 ## Description
 
-`time-balance` is a **global** console application. It no longer depends on where you run it; your projects and records are stored in a centralized SQLite database on your machine. It automatically calculates the daily difference against a base workday and maintains an accumulated balance for each project independently.
+`time-balance` is a **global** console application designed for productivity. It no longer depends on local files; all your projects and records are stored in a centralized SQLite database. It features a domain-driven modular architecture, a decoupled UI layer, and a robust localization system.
 
 ---
 
-## Global Installation
+## Installation
 
+### For Users
 To install the application so it's available in any terminal:
 
 ```bash
@@ -22,8 +23,16 @@ To install the application so it's available in any terminal:
 git clone <repo-url>
 cd time-balance
 
-# Install globally for your user
+# Install globally
 pip install .
+```
+
+### For Developers
+If you want to contribute, we recommend using the direct entry point:
+
+```bash
+# Run without installing
+./main.py --version
 ```
 
 ---
@@ -38,15 +47,11 @@ time-balance
 ```
 
 ### 2. Intuitive Navigation
-The interface uses a clear standard:
-- **Numbers (1-5)** to select actions.
-- **Letters** for navigation: `V` to go back, `N`/`P` to navigate history pages.
+The interface uses a standardized navigation system:
+- **Numbers (1-5)** to select main actions.
+- **Letters (V, N, P)** for navigation: `V` to go back, `N`/`P` to navigate history pages.
 
-### 3. Project Management and Configuration
-- **Option 3 (Configuration)**: Adjust the name, base workday, or language of the active project. Also allows data import/export.
-- **Option 4 (Change Project)**: Switch between different work contexts or create a new one.
-
-### 4. Quick Commands
+### 3. Quick Commands
 Check your status without entering the menu:
 
 ```bash
@@ -61,27 +66,19 @@ time-balance --list 10
 
 ## Main Features
 
-- ✅ **High-Performance Caching**: Atomic balance updates for instant results, even with years of data.
-- ✅ **Paginated History**: Comfortably browse your records, no matter how many you have.
-- ✅ **SQLite Backend**: Robust and professional persistence in standard paths (XDG).
+- ✅ **Domain-Driven Architecture**: Clean separation between CLI, Database, and UI logic.
+- ✅ **UI Abstraction**: Decoupled from visual libraries for maximum flexibility.
+- ✅ **JSON-Based Localization**: Easily add new languages via external JSON files.
+- ✅ **High-Performance Caching**: Atomic balance updates for instant results.
+- ✅ **SQLite Backend**: Robust persistence following XDG standards.
 - ✅ **Multi-project**: Manage different work contexts independently.
-- ✅ **Standardized Navigation**: Consistent use of keys for a better user experience.
-- ✅ **Privacy-Focused**: All data remains 100% local on your machine.
-
----
-
-## Data Location
-The database is automatically saved in:
-- **macOS**: `~/Library/Application Support/time-balance/time_balance.db`
-- **Linux**: `~/.local/share/time-balance/time_balance.db`
-- **Windows**: `%APPDATA%/time-balance/time_balance.db`
 
 ---
 
 ## Development and Contributions
 
-If you want to contribute or understand how it works internally:
-- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): System design and modules.
+If you want to contribute or understand the internals:
+- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): System design, modules, and domain structure.
 - [**DEVELOPMENT.md**](docs/DEVELOPMENT.md): Technical guide for developers.
 - [**CONTRIBUTING.md**](docs/CONTRIBUTING.md): How to submit improvements and translations.
 

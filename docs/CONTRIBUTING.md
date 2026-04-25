@@ -1,57 +1,45 @@
 # Contributing to time-balance
 
-First of all, thank you for considering contributing to `time-balance`! It's people like you that make the open-source community such an amazing place to learn, inspire, and create.
+First of all, thank you for considering contributing to `time-balance`!
 
 ## How Can I Contribute?
 
 ### Reporting Bugs
-
-- Check if the bug has already been reported in the Issues section.
-- If not, open a new issue. Include a clear title, a description of the problem, and steps to reproduce it.
+- Check if the bug has already been reported.
+- If not, open a new issue with a clear title and reproduction steps.
 
 ### Suggesting Enhancements
-
 - Open an enhancement issue to discuss your idea before writing code.
-- Explain why this feature would be useful and how it should work.
 
 ### Adding New Languages (i18n)
+We want `time-balance` to be accessible to everyone. Adding a new language is now easier than ever:
 
-We want `time-balance` to be accessible to everyone. To add a new language:
-
-1. Locate `time_balance/i18n.py`.
-2. Find the `STRINGS` dictionary.
-3. Copy the `"en"` dictionary as a template.
-4. Add your language code (e.g., `"it"`, `"pt"`, `"de"`) and translate the values.
-5. Submit a Pull Request with the title `feat(i18n): add [Language] support`.
+1. Navigate to `time_balance/i18n/locales/`.
+2. Copy `en.json` to a new file named with your language code (e.g., `fr.json`, `de.json`).
+3. Translate the values in the JSON file.
+4. Submit a Pull Request.
 
 ### Improving Documentation
-
 - Fix typos or grammatical errors.
-- Clarify confusing sections.
 - Translate documentation files to other languages.
 
 ## Development Process
 
 1. **Fork the repo** and create your branch from `main`.
-2. **Setup your environment** (Python 3.8+ recommended).
-3. **Write your code** following the project's style (Clean Code, descriptive naming).
-4. **Add tests** for any new functionality.
-5. **Ensure all tests pass** with `python3 -m unittest discover tests`.
+2. **Setup your environment** (Python 3.8+).
+3. **Run in dev mode** using `./main.py`.
+4. **Follow Style Standards**:
+   - Internal code MUST be in **English**.
+   - No single-letter variables (minimum 3 chars).
+   - Use `ui.interface` for console input/output.
+5. **Ensure tests pass**: `python3 -m unittest discover tests`.
 6. **Submit a Pull Request**.
 
-## Pull Request Guidelines
-
-- Use descriptive commit messages (e.g., `fix(core): improve balance calculation`).
-- Update the `CHANGELOG.md` with your changes.
-- Ensure the CI/CD pipeline passes.
-
 ## Style Guide
-
-- Internal code (functions, variables, comments) MUST be in **English**.
-- Use 4 spaces for indentation.
-- Follow PEP 8 guidelines.
-- Never use single-letter variable names (except in very obvious list comprehensions).
+- **Descriptive Naming**: Use names that explain intent (e.g., `active_project_id` instead of `id`).
+- **Dry Logic**: Centralize data operations in the `database` domain.
+- **UI Independence**: Never import `Rich` outside the `ui/` directory.
 
 ---
 
-By contributing, you agree that your contributions will be licensed under its **GPL-3.0 License**.
+By contributing, you agree that your contributions will be licensed under the **GPL-3.0 License**.
