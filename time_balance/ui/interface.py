@@ -42,12 +42,12 @@ def render_info_line(label: str, value: str):
     _console.print(f"  [{COLOR_DIM}]{label}:[/{COLOR_DIM}] [bold]{value}[/bold]")
 
 def render_navigation_help(options: List[Tuple[str, str]]):
-    """Renders a consistent navigation help line (e.g., V. Back  N. Next)."""
-    help_parts = []
+    """Renders navigation help options vertically, enclosed by rules."""
+    _console.print("")
+    _console.print(Rule(style=COLOR_DIM))
     for key, label in options:
-        help_parts.append(f"[bold {COLOR_PRIMARY}]{key}.[/bold {COLOR_PRIMARY}] {label}")
-    
-    _console.print(f"\n  {'  '.join(help_parts)}")
+        _console.print(f"  [bold {COLOR_PRIMARY}]{key}.[/bold {COLOR_PRIMARY}] {label}")
+    _console.print(Rule(style=COLOR_DIM))
 
 def render_dashboard(project_name: str, base_hours: int, base_minutes: int, balance_fmt: str, balance_color: str, version: str, labels: dict):
     """Renders the main dashboard header."""
