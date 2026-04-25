@@ -4,7 +4,7 @@ from ..database.manager import db
 from .. import config
 
 def project_menu(lang: str = "en"):
-    """Submenu for switching and creating projects."""
+    """Submenu for switching and creating projects directly."""
     while True:
         projects_list = db.get_projects()
         active_project_id = db.get_active_project_id()
@@ -31,21 +31,25 @@ def project_menu(lang: str = "en"):
         
         ui.render_simple_table(table_columns, table_rows)
             
-        ui.print_message(f"\n  [bold blue]1.[/bold blue] {translate('project_option_select', lang=lang)}")
-        ui.print_message(f"  [bold blue]2.[/bold blue] {translate('project_option_create', lang=lang)}")
-        ui.render_navigation_help([("V", translate("project_option_back", lang=lang))])
+        # Unified navigation help
+        ui.render_navigation_help([
+            ("ID", translate("project_option_select", lang=lang)),
+            ("C", translate("project_option_create", lang=lang)),
+            ("V", translate("project_option_back", lang=lang))
+        ])
         
-        user_choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "v"]).lower()
+        # We accept IDs (numbers) or navigation keys
+        valid_ids = [str(project['id']) for project in projects_list]
+        choice_options = valid_ids + ["c", "v"]
         
-        if user_choice == "1":
-            selected_id_input = ui.ask_string(translate("enter_project_id", lang=lang))
-            if selected_id_input.isdigit() and any(proj['id'] == int(selected_id_input) for proj in projects_list):
-                db.set_active_project_id(int(selected_id_input))
+        user_choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=choice_options).lower()
+        
+        if user_choice.isdigit():
+            selected_id = int(user_choice)
+            if any(project['id'] == selected_id for project in projects_list):
+                db.set_active_project_id(selected_id)
                 break
-            else:
-                ui.print_message(translate('invalid_option', lang=lang), style="bold red")
-                ui.ask_string(translate("press_enter", lang=lang), default="")
-        elif user_choice == "2":
+        elif user_choice == "c":
             new_project_name = ui.ask_string(translate("project_name_prompt", lang=lang, current="New")).strip()
             if new_project_name:
                 try:
