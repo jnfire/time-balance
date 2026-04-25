@@ -1,5 +1,5 @@
 from ..ui import interface as ui
-from ..utils.i18n import translate, resolve_language
+from ..i18n.translator import translate, resolve_language
 from ..database.manager import db
 from ..utils import files
 from .. import config

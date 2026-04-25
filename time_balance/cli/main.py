@@ -3,7 +3,7 @@ import sys
 from ..utils.calculations import format_time
 from ..ui import interface as ui
 from ..database.manager import db
-from ..utils.i18n import translate, resolve_language
+from ..i18n.translator import translate, resolve_language
 from .. import config
 
 # Import sibling modules

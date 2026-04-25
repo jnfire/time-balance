@@ -11,10 +11,10 @@ setup(
     name='time-balance',
     version=get_version(),
     description='Control sencillo de jornadas y saldo horario',
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(),
     include_package_data=True,
     package_data={
-        'time_balance': ['VERSION'],
+        'time_balance': ['VERSION', 'i18n/locales/*.json'],
     },
     install_requires=[
         'rich>=10.0.0',

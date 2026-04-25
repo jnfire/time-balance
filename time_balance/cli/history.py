@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from ..utils.calculations import format_time
 from ..ui import interface as ui
-from ..utils.i18n import translate
+from ..i18n.translator import translate
 from ..database.manager import db
 
 def _prepare_table_rows(records_list: List[Dict[str, Any]]) -> List[List[str]]:
