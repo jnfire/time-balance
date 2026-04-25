@@ -1,9 +1,8 @@
 import unittest
 import tempfile
 import pathlib
-import os
-from time_balance.storage import DatabaseManager
-from time_balance import constants
+from time_balance.database.manager import DatabaseManager
+from time_balance import config
 
 class TestStorage(unittest.TestCase):
     def setUp(self):
@@ -17,7 +16,6 @@ class TestStorage(unittest.TestCase):
     def test_initialization(self):
         """Should create 'General' project and initial settings by default."""
         projects = self.db.get_projects()
-        # Initial seeding creates 'General'
         self.assertEqual(len(projects), 1)
         self.assertEqual(projects[0]['name'], "General")
         

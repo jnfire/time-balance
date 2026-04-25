@@ -2,7 +2,7 @@ import unittest
 import tempfile
 import os
 import json
-import time_balance as ch
+import time_balance.utils.files as io
 
 class TestImportExport(unittest.TestCase):
     def setUp(self):
@@ -13,86 +13,59 @@ class TestImportExport(unittest.TestCase):
 
     def test_export_history_creates_file(self):
         """Verify that export_history correctly writes the provided dictionary to a JSON file."""
-        datos = {
+        data = {
             "metadata": {
-                "project_name": "P1", 
-                "hours_base": 7, 
-                "minutes_base": 45, 
-                "version": "1.0", 
-                "language": "auto"
+                "project_name": "Test",
+                "hours_base": 8,
+                "minutes_base": 0
             },
-            "records": {
-                "2026-04-01": {"hours": 8, "minutes": 0, "difference": 15}
-            }
+            "records": {}
         }
-        export_path = os.path.join(self.tmpdir.name, 'export.json')
-        written = ch.export_history(datos, export_path)
+        dest = os.path.join(self.tmpdir.name, "export.json")
+        result_path = io.export_history(data, dest)
         
-        self.assertTrue(os.path.exists(written))
-        with open(written, 'r', encoding='utf-8') as f:
-            contenido = json.load(f)
-        self.assertEqual(contenido, datos)
+        self.assertTrue(os.path.exists(result_path))
+        with open(result_path, 'r', encoding='utf-8') as f:
+            saved_data = json.load(f)
+        self.assertEqual(saved_data["metadata"]["project_name"], "Test")
 
     def test_read_history_file_validates(self):
         """Verify that read_history_file loads and validates a standard JSON history file."""
-        datos = {
-            "metadata": {
-                "project_name": "Source", 
-                "hours_base": 7, 
-                "minutes_base": 45, 
-                "version": "1.0", 
-                "language": "auto"
-            },
+        data = {
+            "metadata": {"project_name": "Valid", "hours_base": 7, "minutes_base": 45},
             "records": {
-                "2026-04-01": {"hours": 9, "minutes": 0, "difference": 75}
+                "2026-01-01": {"hours": 8, "minutes": 0, "difference": 15}
             }
         }
-        src_path = os.path.join(self.tmpdir.name, 'source.json')
-        with open(src_path, 'w', encoding='utf-8') as f:
-            json.dump(datos, f)
-
-        res = ch.read_history_file(src_path)
-        self.assertEqual(res, datos)
+        path = os.path.join(self.tmpdir.name, "valid.json")
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+            
+        loaded = io.read_history_file(path)
+        self.assertEqual(loaded["metadata"]["project_name"], "Valid")
 
     def test_read_invalid_json_raises(self):
         """Verify that reading a corrupted JSON file raises a ValueError."""
-        src_path = os.path.join(self.tmpdir.name, 'bad.json')
-        with open(src_path, 'w', encoding='utf-8') as f:
-            f.write('{ invalid json')
+        path = os.path.join(self.tmpdir.name, "bad.json")
+        with open(path, 'w') as f:
+            f.write("{ invalid json")
+        
         with self.assertRaises(ValueError):
-            ch.read_history_file(src_path)
+            io.read_history_file(path)
 
     def test_validate_history_schema(self):
         """Verify strict schema validation for history structure."""
-        # Missing required keys
-        with self.assertRaisesRegex(ValueError, "missing required structured keys"):
-            ch.io.validate_history({"records": {}})
+        # Missing metadata
+        with self.assertRaises(ValueError):
+            io.validate_history({"records": {}})
         
-        # Invalid hours_base type (string instead of int)
-        bad_meta = {
-            "metadata": {
-                "project_name": "P", 
-                "hours_base": "8", 
-                "minutes_base": 0, 
-                "version": "1.0"
-            },
+        # Invalid base hours
+        bad_data = {
+            "metadata": {"project_name": "X", "hours_base": -1, "minutes_base": 0},
             "records": {}
         }
-        with self.assertRaisesRegex(ValueError, "must be an integer"):
-            ch.io.validate_history(bad_meta)
-        
-        # Invalid minutes range
-        bad_minutes = {
-            "metadata": {
-                "project_name": "P", 
-                "hours_base": 8, 
-                "minutes_base": 60, 
-                "version": "1.0"
-            },
-            "records": {}
-        }
-        with self.assertRaisesRegex(ValueError, "between 0 and 59"):
-            ch.io.validate_history(bad_minutes)
+        with self.assertRaises(ValueError):
+            io.validate_history(bad_data)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

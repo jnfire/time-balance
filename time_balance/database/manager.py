@@ -3,7 +3,7 @@ import pathlib
 import os
 import contextlib
 from typing import List, Dict, Optional, Any
-from . import constants
+from .. import config
 
 class DatabaseManager:
     """Manages SQLite database operations for projects and time records."""
@@ -72,7 +72,7 @@ class DatabaseManager:
                 # We don't use self.create_project here to keep it within the same connection/transaction
                 cursor.execute(
                     "INSERT INTO projects (name, base_hours, base_minutes) VALUES (?, ?, ?)",
-                    ("General", constants.BASE_HOURS, constants.BASE_MINUTES)
+                    ("General", config.BASE_HOURS, config.BASE_MINUTES)
                 )
                 # Set the first project as active by default
                 cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('active_project_id', '1')")
@@ -270,36 +270,4 @@ class DatabaseManager:
             return cursor.fetchone()[0]
 
 # --- GLOBAL SINGLETON ---
-db = DatabaseManager(constants.DATABASE_PATH)
-
-# --- BACKWARD COMPATIBILITY / SHIMS (TO BE REMOVED) ---
-def load_data():
-    """Shim for compatibility during migration. Returns active project as a dict."""
-    project_id = db.get_active_project_id()
-    project = db.get_project_by_id(project_id)
-    records_list = db.get_records(project_id)
-    
-    # Convert list of records to dict by date
-    records_dict = {r['date']: {'hours': r['hours'], 'minutes': r['minutes'], 'difference': r['difference']} for r in records_list}
-    
-    return {
-        "metadata": {
-            "project_name": project['name'],
-            "hours_base": project['base_hours'],
-            "minutes_base": project['base_minutes'],
-            "language": db.get_setting("language", "auto")
-        },
-        "records": records_dict
-    }
-
-def save_data(data, file_path=None):
-    """Shim for compatibility. Saves metadata to the active project."""
-    if file_path:
-        # If a file_path is provided, we might be exporting or using a non-standard flow
-        # For now, we ignore it and warn, or implement as needed.
-        pass
-        
-    project_id = db.get_active_project_id()
-    metadata = data.get("metadata", {})
-    db.update_project(project_id, metadata['project_name'], metadata['hours_base'], metadata['minutes_base'])
-    db.set_setting("language", metadata.get("language", "auto"))
+db = DatabaseManager(config.DATABASE_PATH)
