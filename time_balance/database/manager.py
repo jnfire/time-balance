@@ -3,7 +3,7 @@ import pathlib
 import os
 import contextlib
 from typing import List, Dict, Optional, Any
-from . import constants
+from .. import config
 
 class DatabaseManager:
     """Manages SQLite database operations for projects and time records."""
@@ -18,6 +18,7 @@ class DatabaseManager:
     def _get_connection(self):
         """Context manager that yields a database connection, handling transactions and closing."""
         connection = sqlite3.connect(self.db_path)
+        connection.execute("PRAGMA foreign_keys = ON")
         try:
             # The connection object itself is a context manager for transactions
             with connection:
@@ -31,7 +32,6 @@ class DatabaseManager:
             cursor = connection.cursor()
             
             # Projects table: configuration for different work contexts
-            # We include total_balance directly here as per review feedback
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS projects (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,16 +68,21 @@ class DatabaseManager:
 
             # Seed initial data if empty
             cursor.execute("SELECT COUNT(*) FROM projects")
-            if cursor.fetchone()[0] == 0:
-                # We don't use self.create_project here to keep it within the same connection/transaction
+            projects_count = cursor.fetchone()[0]
+            if projects_count == 0:
                 cursor.execute(
                     "INSERT INTO projects (name, base_hours, base_minutes) VALUES (?, ?, ?)",
-                    ("General", constants.BASE_HOURS, constants.BASE_MINUTES)
+                    ("General", config.BASE_HOURS, config.BASE_MINUTES)
                 )
                 # Set the first project as active by default
                 cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('active_project_id', '1')")
                 cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('language', 'auto')")
 
+    def _get_record_difference(self, cursor: sqlite3.Cursor, project_id: int, record_date: str) -> int:
+        """Helper to get the difference value of an existing record."""
+        cursor.execute("SELECT difference FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
+        record_row = cursor.fetchone()
+        return record_row[0] if record_row else 0
 
     def create_project(self, name: str, base_hours: int, base_minutes: int) -> int:
         """Creates a new project and returns its ID."""
@@ -104,7 +109,7 @@ class DatabaseManager:
             connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
             cursor.execute("SELECT * FROM projects ORDER BY name")
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(project_row) for project_row in cursor.fetchall()]
 
     def get_project_by_id(self, project_id: int) -> Optional[Dict[str, Any]]:
         """Retrieves a single project by ID."""
@@ -112,17 +117,17 @@ class DatabaseManager:
             connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
             cursor.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
-            row = cursor.fetchone()
-            return dict(row) if row else None
+            project_row = cursor.fetchone()
+            return dict(project_row) if project_row else None
 
     def get_active_project_id(self) -> int:
         """Gets the ID of the project currently in use."""
         with self._get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("SELECT value FROM settings WHERE key = 'active_project_id'")
-            row = cursor.fetchone()
-            if row:
-                return int(row[0])
+            setting_row = cursor.fetchone()
+            if setting_row:
+                return int(setting_row[0])
             return 1
 
     def set_active_project_id(self, project_id: int):
@@ -136,8 +141,8 @@ class DatabaseManager:
         with self._get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
-            row = cursor.fetchone()
-            return row[0] if row else default
+            setting_row = cursor.fetchone()
+            return setting_row[0] if setting_row else default
 
     def set_setting(self, key: str, value: str):
         """Saves a global setting."""
@@ -150,10 +155,8 @@ class DatabaseManager:
         with self._get_connection() as connection:
             cursor = connection.cursor()
             
-            # 1. Get old difference if record exists to adjust balance
-            cursor.execute("SELECT difference FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
-            row = cursor.fetchone()
-            old_difference = row[0] if row else 0
+            # 1. Get old difference to adjust balance
+            old_difference = self._get_record_difference(cursor, project_id, record_date)
             
             # 2. Upsert the record
             cursor.execute("""
@@ -162,13 +165,11 @@ class DatabaseManager:
             """, (project_id, record_date, hours, minutes, difference))
             
             # 3. Update project total balance cache
-            # If total_balance is NULL, we don't update it (it stays NULL until next calculation)
             cursor.execute("""
                 UPDATE projects 
                 SET total_balance = total_balance - ? + ? 
                 WHERE id = ? AND total_balance IS NOT NULL
             """, (old_difference, difference, project_id))
-
 
     def delete_record(self, project_id: int, record_date: str):
         """Deletes a record and updates project total balance cache."""
@@ -177,11 +178,11 @@ class DatabaseManager:
             
             # 1. Get difference to subtract from total
             cursor.execute("SELECT difference FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
-            row = cursor.fetchone()
-            if not row:
+            record_row = cursor.fetchone()
+            if not record_row:
                 return
 
-            difference = row[0]
+            current_difference = record_row[0]
             
             # 2. Delete the record
             cursor.execute("DELETE FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
@@ -191,8 +192,7 @@ class DatabaseManager:
                 UPDATE projects 
                 SET total_balance = total_balance - ? 
                 WHERE id = ? AND total_balance IS NOT NULL
-            """, (difference, project_id))
-
+            """, (current_difference, project_id))
 
     def clear_project_records(self, project_id: int):
         """Removes all records for a project and resets its balance cache."""
@@ -201,6 +201,20 @@ class DatabaseManager:
             cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
             cursor.execute("UPDATE projects SET total_balance = 0 WHERE id = ?", (project_id,))
 
+    def delete_project(self, project_id: int):
+        """Deletes a project and all its records."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            # Records are deleted automatically due to ON DELETE CASCADE if supported,
+            # but we do it explicitly to be safe and clear.
+            cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
+            cursor.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+
+    def recalculate_all_balances(self):
+        """Forces a full recalculation for all projects in the database."""
+        projects = self.get_projects()
+        for project in projects:
+            self.recalculate_project_balance(project['id'])
 
     def get_records(self, project_id: int, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
         """Returns records for a specific project, sorted by date descending with pagination support."""
@@ -218,7 +232,7 @@ class DatabaseManager:
             connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
             cursor.execute(query, tuple(parameters))
-            return [dict(row) for row in cursor.fetchall()]
+            return [dict(record_row) for record_row in cursor.fetchall()]
 
     def get_record_by_date(self, project_id: int, record_date: str) -> Optional[Dict[str, Any]]:
         """Retrieves a specific record for a project and date."""
@@ -226,8 +240,8 @@ class DatabaseManager:
             connection.row_factory = sqlite3.Row
             cursor = connection.cursor()
             cursor.execute("SELECT * FROM records WHERE project_id = ? AND date = ?", (project_id, record_date))
-            row = cursor.fetchone()
-            return dict(row) if row else None
+            record_row = cursor.fetchone()
+            return dict(record_row) if record_row else None
 
     def get_total_balance(self, project_id: int) -> int:
         """Retrieves the cached balance or calculates it if NULL."""
@@ -236,12 +250,12 @@ class DatabaseManager:
             
             # Try to get cached balance
             cursor.execute("SELECT total_balance FROM projects WHERE id = ?", (project_id,))
-            row = cursor.fetchone()
+            project_row = cursor.fetchone()
             
-            if row and row[0] is not None:
-                return row[0]
+            if project_row and project_row[0] is not None:
+                return project_row[0]
         
-        # Recalculate if NULL (outside the previous 'with' to avoid nested connections)
+        # Recalculate if NULL
         return self.recalculate_project_balance(project_id)
 
     def recalculate_project_balance(self, project_id: int) -> int:
@@ -249,18 +263,17 @@ class DatabaseManager:
         with self._get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("SELECT SUM(difference) FROM records WHERE project_id = ?", (project_id,))
-            result = cursor.fetchone()[0]
-            total = result if result is not None else 0
+            sum_result = cursor.fetchone()[0]
+            total_sum = sum_result if sum_result is not None else 0
             
-            cursor.execute("UPDATE projects SET total_balance = ? WHERE id = ?", (total, project_id))
-            return total
+            cursor.execute("UPDATE projects SET total_balance = ? WHERE id = ?", (total_sum, project_id))
+            return total_sum
 
     def reset_project_balance(self, project_id: int):
         """Resets the project balance cache to NULL, forcing a recalculation on next access."""
         with self._get_connection() as connection:
             cursor = connection.cursor()
             cursor.execute("UPDATE projects SET total_balance = NULL WHERE id = ?", (project_id,))
-
 
     def count_records(self, project_id: int) -> int:
         """Returns the total number of records for a specific project."""
@@ -269,37 +282,30 @@ class DatabaseManager:
             cursor.execute("SELECT COUNT(*) FROM records WHERE project_id = ?", (project_id,))
             return cursor.fetchone()[0]
 
+    def import_records(self, project_id: int, records_dict: Dict[str, dict]) -> int:
+        """Imports a dictionary of records into the database. Returns count of imported items."""
+        imported_count = 0
+        for record_date, record_info in records_dict.items():
+            self.upsert_record(
+                project_id, 
+                record_date, 
+                record_info['hours'], 
+                record_info['minutes'], 
+                record_info['difference']
+            )
+            imported_count += 1
+        return imported_count
+
+    def get_records_dict(self, project_id: int) -> Dict[str, dict]:
+        """Returns all records for a project as a dictionary formatted for JSON export."""
+        all_records = self.get_records(project_id)
+        return {
+            record['date']: {
+                'hours': record['hours'], 
+                'minutes': record['minutes'], 
+                'difference': record['difference']
+            } for record in all_records
+        }
+
 # --- GLOBAL SINGLETON ---
-db = DatabaseManager(constants.DATABASE_PATH)
-
-# --- BACKWARD COMPATIBILITY / SHIMS (TO BE REMOVED) ---
-def load_data():
-    """Shim for compatibility during migration. Returns active project as a dict."""
-    project_id = db.get_active_project_id()
-    project = db.get_project_by_id(project_id)
-    records_list = db.get_records(project_id)
-    
-    # Convert list of records to dict by date
-    records_dict = {r['date']: {'hours': r['hours'], 'minutes': r['minutes'], 'difference': r['difference']} for r in records_list}
-    
-    return {
-        "metadata": {
-            "project_name": project['name'],
-            "hours_base": project['base_hours'],
-            "minutes_base": project['base_minutes'],
-            "language": db.get_setting("language", "auto")
-        },
-        "records": records_dict
-    }
-
-def save_data(data, file_path=None):
-    """Shim for compatibility. Saves metadata to the active project."""
-    if file_path:
-        # If a file_path is provided, we might be exporting or using a non-standard flow
-        # For now, we ignore it and warn, or implement as needed.
-        pass
-        
-    project_id = db.get_active_project_id()
-    metadata = data.get("metadata", {})
-    db.update_project(project_id, metadata['project_name'], metadata['hours_base'], metadata['minutes_base'])
-    db.set_setting("language", metadata.get("language", "auto"))
+db = DatabaseManager(config.DATABASE_PATH)

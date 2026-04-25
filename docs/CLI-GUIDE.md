@@ -1,86 +1,72 @@
 # Usage Guide: CLI Interface
 
-`time-balance` offers a dual interface: an interactive menu for daily use and direct commands for quick queries. In the current version, the application is **global** and supports **multiple projects** with optimized navigation.
+`time-balance` offers a dual interface: an interactive control center and direct flags for quick status checks.
 
-## Direct Commands (Fast Mode)
+## Direct Flags (Fast Mode)
 
-You can query information or perform actions without entering the interactive menu using flags:
+You can query your status or perform migrations without entering the menu:
 
 ```bash
-# View current accumulated balance of the active project
+# View status of active project
 time-balance --status
 
-# List last 10 records of the active project
-time-balance --list 10
+# List last 5 records
+time-balance --list
 
-# Migrate a legacy JSON history file to a new global project
-time-balance --migrate ./path/to/history.json
+# Migrate legacy history.json
+time-balance --migrate ./history.json
 
-# Force language (en/es)
-time-balance --lang en
-
-# Check version
-time-balance --version
+# Force UI language
+time-balance --lang es
 ```
 
 ## Interactive Interface
 
-To start the full control center:
+To start the control center:
 
 ```bash
 time-balance
 ```
 
 ### Standard Navigation
-For a smooth experience, `time-balance` uses a hybrid system:
+The application uses a consistent navigation standard:
 - **Numbers (1-5)**: To select actions and configuration options.
-- **Letters**: For navigation and movement.
-  - `V`: Go Back to previous menu.
-  - `N`: Next page (in history).
-  - `P`: Previous page (in history).
+- **Capital Letters (V, N, P)**: For movement and navigation.
+  - `V`: **V**olver / Back.
+  - `N`: **N**ext page.
+  - `P`: **P**revious page.
 
 ---
 
-### Main Menu
+### Main Dashboard
+Every time you enter a menu, a central dashboard displays the current project context, base workday, and your current accumulated balance.
 
-The main menu is sober and direct, always showing the **Dashboard** of the active project at the top.
-
-```
-1. Register workday
-2. View records
-3. Configuration
-4. Change project
-5. Exit
-```
-
-## Detailed Sections
+## Submenus
 
 ### 1. Register Workday
-Record worked hours for a specific date (defaults to today). It calculates the difference against the base workday of the active project.
+Interactive flow to log your hours. It automatically calculates the difference against your base workday. If a record already exists, it will ask for confirmation before overwriting.
 
-### 2. View Records (Paginated)
-Displays the complete project history in tables of 10 records.
-- Use `N` and `P` to navigate between pages.
-- Use `V` to go back to the main menu.
+### 2. View History (Paginated)
+Displays your records in professional tables.
+- Use `N` and `P` to browse through your work history.
+- Use `V` to return to the main menu.
 
 ### 3. Configuration
-Submenu divided into sections for clear management:
-- **Project Settings**: Edit name, adjust daily base (hours/minutes), and language.
-- **Data Management**: Import and Export options for JSON files.
-- Use `V` to go back.
+Manage your project and data:
+- **Project Settings**: Edit name, adjust base time, and language.
+- **Data Management**: Bulk import and Export to JSON.
 
-### 4. Change Project
-Dedicated section for multi-tenancy management.
-- Allows selecting an existing project from the list.
-- Allows creating a new project from scratch.
-- Use `V` to go back.
+### 4. Project Management
+Dedicated section to manage multiple work contexts:
+- Switch between existing projects.
+- Create new projects with custom base workdays.
 
 ---
 
-## Data Persistence
-Data is stored in a centralized SQLite database. You no longer need to worry about local files in your project folders.
+## Data and Persistence
+All information is stored in a centralized SQLite database.
 
-### Default Paths
+### System Paths (XDG)
 - **macOS**: `~/Library/Application Support/time-balance/`
 - **Linux**: `~/.local/share/time-balance/`
 - **Windows**: `%APPDATA%/time-balance/`

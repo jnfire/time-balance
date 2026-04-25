@@ -1,0 +1,2 @@
+include time_balance/VERSION
+recursive-include time_balance/i18n/locales *.json

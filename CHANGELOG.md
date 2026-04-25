@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-04-25
+
+### Added
+- **Project Balance in Overview**: The project selection table now displays the total accumulated balance for each project in real-time.
+- **Project Deletion Safeguard**: Added a secure project deletion flow requiring the user to type the exact project name to confirm.
+- **Data Integrity Maintenance**: New "Repair/Recalculate balances" option in the configuration menu to force a full cache rebuild from history.
+- **Unified Navigation Help**: Redesigned navigation options (V, N, P, etc.) to be vertical and enclosed by horizontal rules for better readability on all terminal sizes.
+- **Database Integrity**: Enabled SQLite foreign keys support (`PRAGMA foreign_keys = ON`) to ensure `ON DELETE CASCADE` consistency.
+- **Domain-Driven Modularization**: The application has been completely restructured into functional domains: `cli/`, `database/`, `ui/`, `i18n/`, and `utils/`.
+- **UI Abstraction Layer**: Created a dedicated `ui/interface.py` to decouple the application from the `Rich` library, allowing for future frontend flexibility.
+- **JSON-Based Localization**: Migrated all translations to external JSON files (`en.json`, `es.json`) located in `i18n/locales/` for easier management and expansion.
+
+### Changed
+- **Simplified Project Management**: Users can now switch projects directly by entering their ID from the overview table, removing unnecessary menu steps.
+- **Professional Time Formatting**: Updated `format_time` to use a more readable and consistent format (`+1h 5m` instead of `+01h 05m`) across the entire application.
+- **Enhanced I18N Fallback**: Replaced the deprecated `locale.getdefaultlocale()` with a modern approach using `locale.getlocale()` and environment variable detection (`LC_ALL`, `LANG`).
+- **Improved UX Prompts**: Set `case_sensitive=False` for all navigation prompts, allowing both uppercase and lowercase inputs (V/v, N/n, etc.).
+- **Naming Excellence**: System-wide refactor to eliminate single-letter variables and adopt descriptive, professional naming conventions.
+- **Clean CLI Architecture**: Divided the monolithic `cli.py` into specialized modules (`history`, `registration`, `projects`, `config_menu`, `migration`).
+
+### Fixed
+- **Double Sign Formatting**: Resolved an issue where time balances were displayed with double signs (e.g., `++0h 09m`) in the dashboard and history views.
+- **UI Spacing & Consistency**: Resolved issues with redundant dash decorations and excessive whitespace in submenus.
+- **Import Errors on Installation**: Fixed a regression in `__init__.py` that caused `ImportError` when running as a globally installed tool.
+
+
 ## [0.4.2] - 2026-04-24
 
 ### Fixed

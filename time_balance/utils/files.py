@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import errno
 from datetime import datetime
-from . import constants
+from .. import config
 
 
 def validate_history(data):
