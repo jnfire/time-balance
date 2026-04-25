@@ -36,7 +36,7 @@ time-balance/
 
 ## Architectural Principles
 
-### 1. **UI Decoupling (Abstration Layer)**
+### 1. **UI Decoupling (Abstraction Layer)**
 The application is decoupled from the `Rich` library via `ui/interface.py`. All visual components (headers, tables, prompts) are called through generic methods. This allows for future frontend migrations (e.g., to Textual or a web API) without touching business logic.
 
 ### 2. **Domain-Driven Modularization**
