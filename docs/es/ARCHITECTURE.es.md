@@ -2,97 +2,66 @@
 
 ## Visión General
 
-`time-balance` es una aplicación de terminal para registrar jornadas laborales y gestionar el saldo horario acumulado. En su versión 0.4.1, la aplicación ha evolucionado a una herramienta **global** y **multiproyecto** con un sistema de caché de saldo de alto rendimiento.
+`time-balance` es una aplicación de terminal profesional diseñada para registrar jornadas laborales y gestionar saldos horarios acumulados. A partir de la versión 0.5.0, la aplicación cuenta con una **arquitectura modular basada en dominios**, una capa de UI desacoplada y un sistema de localización robusto basado en archivos JSON.
 
 ## Estructura del Proyecto
 
+La aplicación ha sido reestructurada de un paquete monolítico a dominios funcionales especializados:
+
 ```
 time-balance/
-├── time_balance/              # Paquete principal
-│   ├── __init__.py           # Fachada (reexporta la API pública)
-│   ├── __main__.py           # Punto de entrada para ejecución como módulo
-│   ├── constants.py          # Configuración de rutas globales y constantes
-│   ├── core.py               # Lógica de negocio (formateo, cálculos)
-│   ├── storage.py            # Persistencia (SQLite) y DatabaseManager
-│   ├── io.py                 # Validación y lectura de archivos externos (JSON)
-│   ├── cli.py                # Interfaz de usuario (Menú y Submenús)
-│   └── i18n.py               # Sistema de internacionalización
-├── tests/                    # Suite de tests modular
-│   ├── test_core.py
-│   ├── test_storage.py       # Valida transacciones SQLite
-│   ├── test_io.py            # Valida lectura de esquemas JSON
-│   └── test_cli.py           # Valida menús e interacción
-├── docs/                     # Documentación
-├── README.md                 # Guía de usuario (Inglés)
-└── CHANGELOG.md              # Historial de cambios
+├── main.py                   # Punto de entrada directo para desarrollo
+├── setup.py                  # Configuración de empaquetado y distribución
+├── time_balance/             # Código fuente principal
+│   ├── cli/                  # Dominio de presentación (Lógica de menús)
+│   │   ├── main.py           # Orquestador CLI y punto de entrada
+│   │   ├── registration.py   # Flujos de entrada de jornada
+│   │   ├── history.py        # Visualización de registros y paginación
+│   │   └── ...               # Submenús (proyectos, configuración, migración)
+│   ├── database/             # Dominio de persistencia
+│   │   └── manager.py        # DatabaseManager SQLite (lógica DRY)
+│   ├── i18n/                 # Dominio de localización
+│   │   ├── translator.py     # Motor de traducción con caché
+│   │   └── locales/*.json    # Definiciones de cadenas externas
+│   ├── ui/                   # Capa de abstracción de UI
+│   │   └── interface.py      # Puente de desacoplamiento (implementación Rich)
+│   ├── utils/                # Funcionalidades transversales
+│   │   ├── calculations.py   # Cálculos y formateo
+│   │   └── files.py          # Operaciones de E/S atómicas
+│   ├── config.py             # Configuración global de la aplicación
+│   └── VERSION               # Fuente única de verdad para la versión
+├── tests/                    # Suite de tests adaptada a los dominios
+└── docs/                     # Documentación técnica
 ```
 
-## Módulos y Componentes
+## Principios Arquitectónicos
 
-### 1. **`core.py` (Lógica de Negocio)**
-Contiene las funciones matemáticas y de formateo independientes de la persistencia.
-- `format_time()`: Convierte minutos a formato legible `+/- Xh Ym`.
-- `calculate_total_balance()`: Utilizado principalmente en importaciones para validar saldos.
+### 1. **Desacoplamiento de UI (Capa de Abstracción)**
+La aplicación está desacoplada de la librería `Rich` mediante `ui/interface.py`. Todos los componentes visuales (cabeceras, tablas, prompts) se invocan a través de métodos genéricos. Esto permite futuras migraciones de frontend (ej. a Textual o una API web) sin tocar la lógica de negocio.
 
-### 2. **`storage.py` (Capa de Persistencia SQLite)**
-Implementa la clase `DatabaseManager` que centraliza todas las operaciones SQL.
-- **Gestión de Proyectos**: CRUD para múltiples contextos de trabajo.
-- **Registros**: Almacenamiento eficiente de jornadas por ID de proyecto.
-- **Configuración Global**: Tabla `settings` para recordar el proyecto activo e idioma.
-- **Ubicación Estándar**: Uso de `pathlib` para cumplir con XDG (Application Support en macOS, .local/share en Linux).
+### 2. **Modularización Basada en Dominios**
+- **`cli/`**: Maneja el flujo del usuario y la validación de entradas. Dividido en archivos pequeños y tematizados.
+- **`database/`**: Centraliza toda la lógica de persistencia. El `DatabaseManager` maneja actualizaciones atómicas y caché de saldos.
+- **`i18n/`**: Un dominio independiente para la localización. Soporta carga dinámica de JSON, caché y fallback automático al inglés.
 
-### 3. **`cli.py` (Capa de Presentación)**
-Maneja la interacción con el usuario.
-- **Menú Principal**: Operaciones de registro y visualización del proyecto activo.
-- **Gestión de Proyectos**: Submenú para crear, cambiar y editar proyectos.
-- **Comando de Migración**: Flag `--migrate` para importar datos desde JSON antiguos.
-
-### 4. **`io.py` (Intercambio de Datos)**
-Lógica para validar y leer archivos JSON externos.
-- `read_history_file()`: Valida esquemas de versiones anteriores (v0.2.x).
-- `export_history()`: Genera un volcado JSON del proyecto activo.
-
-### 5. **`i18n.py` (Internacionalización)**
-Motor de traducción simple que soporta inglés y español.
-
-## Esquema de Base de Datos (SQLite)
-
-### Tabla `projects`
-| Columna | Tipo | Descripción |
-| :--- | :--- | :--- |
-| id | INTEGER PK | Identificador único |
-| name | TEXT UNIQUE | Nombre del proyecto |
-| base_hours | INTEGER | Jornada base (horas) |
-| base_minutes | INTEGER | Jornada base (minutos) |
-| total_balance | INTEGER | Saldo total cacheado en minutos (NULL si está sucio) |
+### 3. **Código Limpio y Estándares de Naming**
+- **Naming Descriptivo**: Todas las variables y funciones siguen una regla estricta de "No variables de una sola letra" (mínimo 3 caracteres).
+- **DRY (Don't Repeat Yourself)**: Las operaciones masivas (como la importación de registros) están centralizadas en la capa de base de datos.
 
 ## Flujo de Datos y Rendimiento
 
-En la versión 0.4.1, la aplicación pasó de cálculos dinámicos a una **estrategia de caché incremental**:
-- **Acceso O(1)**: El `total_balance` se guarda en la tabla `projects`.
-- **Actualizaciones Atómicas**: Cuando se añade, edita o borra un registro, la caché se actualiza mediante un cálculo delta (`total_balance - vieja_dif + nueva_dif`).
-- **Activación Diferida**: Si el saldo de un proyecto es `NULL`, se recalcula desde cero en la siguiente lectura y se guarda.
-- **Herramienta de Auditoría**: `recalculate_project_balance` está disponible para forzar una validación completa de la caché frente a los registros individuales.
+La aplicación utiliza una **estrategia de caché incremental** para los saldos totales:
+- **Acceso O(1)**: El saldo total se cachea en la tabla `projects`.
+- **Actualizaciones Atómicas**: Cada operación de registro dispara una actualización delta del saldo del proyecto.
+- **Persistencia**: Impulsada por SQLite con resolución de rutas estándar del sistema (cumplimiento XDG).
 
-## Fiabilidad y Seguridad
+## Estrategia de Testing
 
-| Columna | Tipo | Descripción |
-| :--- | :--- | :--- |
-| id | INTEGER PK | Identificador único |
-| project_id | INTEGER FK | Referencia al proyecto |
-| date | TEXT | Fecha (YYYY-MM-DD) |
-| hours | INTEGER | Horas trabajadas |
-| minutes | INTEGER | Minutos trabajados |
-| difference | INTEGER | Balance en minutos |
+La suite de pruebas sigue la arquitectura modular:
+- **Tests Unitarios**: Lógica matemática en `test_core`.
+- **Tests de Integración**: Transacciones de base de datos en `test_storage` y `test_balance_cache`.
+- **Mocking de UI**: `test_cli` utiliza la capa de abstracción de UI para simular interacciones sin requerir una terminal real.
 
-## Confiabilidad y Seguridad
+## Distribución
 
-- **Transacciones**: Todas las operaciones críticas de base de datos están protegidas por transacciones SQLite.
-- **Atomicidad en Exportación**: Los volcados JSON siguen utilizando escrituras atómicas.
-- **Privacidad**: Todos los datos se almacenan localmente en el equipo del usuario.
-
-## Testing
-
-La suite de tests ha sido adaptada para utilizar bases de datos temporales:
-- `test_storage`: Verifica el esquema y el comportamiento de `DatabaseManager`.
-- `test_cli`: Utiliza parches (mocking) para simular la entrada del usuario sobre la lógica de base de datos.
+Como herramienta profesional, `time-balance` se distribuye como un paquete de Python pero funciona como un ejecutable independiente. El archivo `setup.py` y el `MANIFEST.in` aseguran que todos los recursos no-Python (JSON de idiomas, archivos de versión) se incluyan correctamente.
