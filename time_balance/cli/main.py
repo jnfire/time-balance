@@ -1,6 +1,6 @@
 import argparse
 import sys
-from ..utils.calculations import format_time
+from ..utils.calculations import format_time, get_balance_color
 from ..ui import interface as ui
 from ..database.manager import db
 from ..i18n.translator import translate, resolve_language
@@ -22,9 +22,7 @@ def get_current_lang() -> str:
 def display_dashboard(project_data: dict, current_balance: int, lang: str):
     """Prepares and sends dashboard data to the UI interface."""
     balance_fmt = format_time(current_balance)
-    balance_color = "green" if current_balance >= 0 else "red"
-    if current_balance > 0:
-        balance_fmt = f"+{balance_fmt}"
+    balance_color = get_balance_color(current_balance)
 
     labels_dict = {
         'project': translate('project_label', lang=lang),
@@ -111,8 +109,7 @@ def main():
     if args.status:
         total_project_balance = db.get_total_balance(active_project_id)
         balance_display_fmt = format_time(total_project_balance)
-        balance_display_color = "green" if total_project_balance >= 0 else "red"
-        if total_project_balance > 0: balance_display_fmt = f"+{balance_display_fmt}"
+        balance_display_color = get_balance_color(total_project_balance)
         
         ui.print_message(translate('status_project', lang=active_lang, name=current_project['name']), style="bold blue")
         ui.print_message(translate('status_balance', lang=active_lang, balance=f'[{balance_display_color}]{balance_display_fmt}[/{balance_display_color}]'), style="bold")

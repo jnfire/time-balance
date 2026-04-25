@@ -19,6 +19,7 @@ def _display_menu_options(lang: str):
     ui.render_section_title(translate('config_section_data', lang=lang))
     ui.print_message(f"  [bold blue]4.[/bold blue] {translate('config_option_import', lang=lang)}")
     ui.print_message(f"  [bold blue]5.[/bold blue] {translate('config_option_export', lang=lang)}")
+    ui.print_message(f"  [bold blue]6.[/bold blue] Reparar/Recalcular saldos")
     
     ui.render_navigation_help([("V", translate("config_option_back", lang=lang))])
 
@@ -101,6 +102,14 @@ def _handle_export_data(project_id: int, project_data: dict, lang: str):
     ui.ask_string(translate('press_enter', lang=lang), default="")
 
 
+def _handle_recalculate_balances(lang: str):
+    """Forces a recalculation of all balances."""
+    if ui.ask_confirm("¿Recalcular TODOS los saldos desde el historial?"):
+        db.recalculate_all_balances()
+        ui.print_message("\n✅ Saldos recalculados correctamente.", style="bold green")
+    ui.ask_string(translate('press_enter', lang=lang), default="")
+
+
 def config_menu(lang: str = "en"):
     """Submenu for project-specific and global configuration."""
     while True:
@@ -112,7 +121,7 @@ def config_menu(lang: str = "en"):
         _display_config_status(project, lang_setting, lang)
         _display_menu_options(lang)
         
-        choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5", "v"]).lower()
+        choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5", "6", "v"]).lower()
         
         if choice == "1":
             _handle_edit_project_name(active_id, project['name'], project['base_hours'], project['base_minutes'], lang)
@@ -124,5 +133,7 @@ def config_menu(lang: str = "en"):
             _handle_import_data(active_id, lang)
         elif choice == "5":
             _handle_export_data(active_id, project, lang)
+        elif choice == "6":
+            _handle_recalculate_balances(lang)
         elif choice == "v":
             break

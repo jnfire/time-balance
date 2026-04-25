@@ -85,5 +85,21 @@ class TestStorage(unittest.TestCase):
         self.db.set_setting("last_run", "2026-04-24")
         self.assertEqual(self.db.get_setting("last_run"), "2026-04-24")
 
+    def test_delete_project(self):
+        """Verify project and its records are deleted."""
+        new_id = self.db.create_project("Project to Delete", 8, 0)
+        self.db.upsert_record(new_id, "2026-01-01", 8, 30, 30)
+        
+        # Verify it exists
+        self.assertIsNotNone(self.db.get_project_by_id(new_id))
+        self.assertEqual(self.db.count_records(new_id), 1)
+        
+        # Delete
+        self.db.delete_project(new_id)
+        
+        # Verify it's gone
+        self.assertIsNone(self.db.get_project_by_id(new_id))
+        self.assertEqual(self.db.count_records(new_id), 0)
+
 if __name__ == "__main__":
     unittest.main()

@@ -3,12 +3,12 @@ import time_balance.utils.calculations as core
 
 class TestCore(unittest.TestCase):
     def test_format_time_positive(self):
-        self.assertEqual(core.format_time(60), "1h 0m")
-        self.assertEqual(core.format_time(75), "1h 15m")
+        self.assertEqual(core.format_time(60), "+1h 0m")
+        self.assertEqual(core.format_time(125), "+2h 5m")
 
     def test_format_time_negative(self):
         self.assertEqual(core.format_time(-60), "-1h 0m")
-        self.assertEqual(core.format_time(-15), "-0h 15m")
+        self.assertEqual(core.format_time(-5), "-0h 5m")
 
     def test_format_time_zero(self):
         self.assertEqual(core.format_time(0), "0h 0m")

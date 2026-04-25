@@ -200,6 +200,21 @@ class DatabaseManager:
             cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
             cursor.execute("UPDATE projects SET total_balance = 0 WHERE id = ?", (project_id,))
 
+    def delete_project(self, project_id: int):
+        """Deletes a project and all its records."""
+        with self._get_connection() as connection:
+            cursor = connection.cursor()
+            # Records are deleted automatically due to ON DELETE CASCADE if supported,
+            # but we do it explicitly to be safe and clear.
+            cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
+            cursor.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+
+    def recalculate_all_balances(self):
+        """Forces a full recalculation for all projects in the database."""
+        projects = self.get_projects()
+        for project in projects:
+            self.recalculate_project_balance(project['id'])
+
     def get_records(self, project_id: int, limit: Optional[int] = None, offset: int = 0) -> List[Dict[str, Any]]:
         """Returns records for a specific project, sorted by date descending with pagination support."""
         query = "SELECT * FROM records WHERE project_id = ? ORDER BY date DESC"

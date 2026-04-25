@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from ..utils.calculations import format_time
+from ..utils.calculations import format_time, get_balance_color
 from ..ui import interface as ui
 from ..i18n.translator import translate
 from ..database.manager import db
@@ -8,10 +8,9 @@ def _prepare_table_rows(records_list: List[Dict[str, Any]]) -> List[List[str]]:
     """Helper to format database records into displayable table rows."""
     formatted_rows = []
     for record in records_list:
-        time_balance_fmt = format_time(record['difference'])
-        row_color = "green" if record['difference'] >= 0 else "red"
-        if record['difference'] > 0:
-            time_balance_fmt = f"+{time_balance_fmt}"
+        difference_value = record['difference']
+        time_balance_fmt = format_time(difference_value)
+        row_color = get_balance_color(difference_value)
         
         formatted_rows.append([
             record['date'], 
