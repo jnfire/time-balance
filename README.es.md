@@ -15,17 +15,26 @@
 
 ## Instalación
 
-### Para Usuarios
-Para instalar la aplicación y que esté disponible en cualquier terminal:
+### Desde archivos de distribución (Release)
+Si has descargado los archivos de la versión (ej: `time_balance-0.5.0-py3-none-any.whl`), puedes instalarlo directamente:
 
 ```bash
-# Clonar y entrar en el directorio
+# Instalar el archivo Wheel
+pip install time_balance-0.5.0-py3-none-any.whl
+```
+
+### Desde el código fuente
+Para instalar la aplicación desde el código:
+
+```bash
+# Clonar y entrar al directorio
 git clone <repo-url>
 cd time-balance
 
 # Instalar globalmente
 pip install .
 ```
+
 
 ### Para Desarrolladores
 Si deseas contribuir, recomendamos usar el punto de entrada directo:
