@@ -67,20 +67,23 @@ def view_history(limit: int = None, lang: str = "en"):
         ui.render_table("", table_columns, display_rows)
         ui.print_message(f"\n {translate('pagination_info', lang=lang, current=current_page_index+1, total=total_pages_count, count=total_records_count)}")
         
-        navigation_choices = ["v"]
-        navigation_msg = f"\n [bold cyan]V.[/bold cyan] {translate('pagination_back', lang=lang)}"
-        if current_page_index < total_pages_count - 1:
-            navigation_msg += f"  [bold cyan]N.[/bold cyan] {translate('pagination_next', lang=lang)}"
-            navigation_choices.append("n")
-        if current_page_index > 0:
-            navigation_msg += f"  [bold cyan]P.[/bold cyan] {translate('pagination_prev', lang=lang)}"
-            navigation_choices.append("p")
+        # Build navigation options
+        nav_options = [("V", translate("pagination_back", lang=lang))]
+        nav_choices = ["v"]
         
-        ui.print_message(navigation_msg)
+        if current_page_index < total_pages_count - 1:
+            nav_options.append(("N", translate("pagination_next", lang=lang)))
+            nav_choices.append("n")
+        if current_page_index > 0:
+            nav_options.append(("P", translate("pagination_prev", lang=lang)))
+            nav_choices.append("p")
+        
+        ui.render_navigation_help(nav_options)
+        
         user_navigation_choice = ui.ask_string(
             translate('choose_option', lang=lang), 
             default="v", 
-            choices=navigation_choices
+            choices=nav_choices
         ).lower()
         
         if user_navigation_choice == "n":

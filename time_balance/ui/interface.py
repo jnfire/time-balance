@@ -31,6 +31,14 @@ def render_info_line(label: str, value: str):
     """Renders a consistent key-value information line."""
     _console.print(f"  [dim]{label}:[/dim] [bold]{value}[/bold]")
 
+def render_navigation_help(options: List[Tuple[str, str]]):
+    """Renders a consistent navigation help line (e.g., V. Back  N. Next)."""
+    help_parts = []
+    for key, label in options:
+        help_parts.append(f"[bold cyan]{key}.[/bold cyan] {label}")
+    
+    _console.print(f"\n  {'  '.join(help_parts)}")
+
 def render_dashboard(project_name: str, base_hours: int, base_minutes: int, balance_fmt: str, balance_color: str, version: str, labels: dict):
     """Renders the main dashboard header."""
     dashboard_content = (

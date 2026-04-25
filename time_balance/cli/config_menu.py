@@ -20,7 +20,7 @@ def _display_menu_options(lang: str):
     ui.print_message(f"  [bold cyan]4.[/bold cyan] {translate('config_option_import', lang=lang)}")
     ui.print_message(f"  [bold cyan]5.[/bold cyan] {translate('config_option_export', lang=lang)}")
     
-    ui.print_message(f"\n  [bold cyan]V.[/bold cyan] {translate('config_option_back', lang=lang)}")
+    ui.render_navigation_help([("V", translate("config_option_back", lang=lang))])
 
 def _handle_edit_project_name(project_id: int, current_name: str, base_hours: int, base_minutes: int, lang: str):
     new_name = ui.ask_string(

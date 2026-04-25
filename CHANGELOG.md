@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-04-25
+
+### Added
+- **Domain-Driven Modularization**: The application has been completely restructured into functional domains: `cli/`, `database/`, `ui/`, `i18n/`, and `utils/`.
+- **UI Abstraction Layer**: Created a dedicated `ui/interface.py` to decouple the application from the `Rich` library, allowing for future frontend flexibility.
+- **JSON-Based Localization**: Migrated all translations to external JSON files (`en.json`, `es.json`) located in `i18n/locales/` for easier management and expansion.
+- **Unified Visual Components**: Implemented reusable UI components for headers (`render_header`), section titles, information lines, and navigation help.
+- **New Direct Entry Point**: Added a `main.py` executable in the root directory for easier development and execution.
+- **Project Documentation (`memory/`)**: Established a project memory system to track architectural evolutions.
+
+### Changed
+- **Naming Excellence**: System-wide refactor to eliminate single-letter variables and adopt descriptive, professional naming conventions.
+- **DRY Database Manager**: Centralized bulk record import and export mapping logic within `DatabaseManager`.
+- **Clean CLI Architecture**: Divided the monolithic `cli.py` into specialized modules (`history`, `registration`, `projects`, `config_menu`, `migration`).
+- **Improved I18N Engine**: Optimized translation logic with absolute path resolution, caching, and automatic English fallback.
+- **Enhanced Deployment**: Updated `setup.py` and added `MANIFEST.in` to ensure non-python assets (JSON locales, VERSION) are correctly included in distributions.
+
+### Fixed
+- **UI Spacing & Consistency**: Resolved issues with redundant dash decorations and excessive whitespace in submenus.
+- **Rich Rendering Errors**: Fixed an issue where `Rule` objects were not being rendered correctly due to string interpolation.
+- **Import Errors on Installation**: Fixed a regression in `__init__.py` that caused `ImportError` when running as a globally installed tool.
+
 ## [0.4.2] - 2026-04-24
 
 ### Fixed

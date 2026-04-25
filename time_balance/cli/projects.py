@@ -33,7 +33,7 @@ def project_menu(lang: str = "en"):
             
         ui.print_message(f"\n  [bold cyan]1.[/bold cyan] {translate('project_option_select', lang=lang)}")
         ui.print_message(f"  [bold cyan]2.[/bold cyan] {translate('project_option_create', lang=lang)}")
-        ui.print_message(f"\n  [bold cyan]V.[/bold cyan] {translate('project_option_back', lang=lang)}")
+        ui.render_navigation_help([("V", translate("project_option_back", lang=lang))])
         
         user_choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "v"]).lower()
         
