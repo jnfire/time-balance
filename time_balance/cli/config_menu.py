@@ -12,13 +12,13 @@ def _display_config_status(project_data: dict, current_lang_setting: str, lang: 
 
 def _display_menu_options(lang: str):
     ui.render_section_title(translate('config_section_project', lang=lang))
-    ui.print_message(f"  [bold cyan]1.[/bold cyan] {translate('config_option_edit_name', lang=lang)}")
-    ui.print_message(f"  [bold cyan]2.[/bold cyan] {translate('config_option_edit_base', lang=lang)}")
-    ui.print_message(f"  [bold cyan]3.[/bold cyan] {translate('config_option_lang', lang=lang)}")
+    ui.print_message(f"  [bold blue]1.[/bold blue] {translate('config_option_edit_name', lang=lang)}")
+    ui.print_message(f"  [bold blue]2.[/bold blue] {translate('config_option_edit_base', lang=lang)}")
+    ui.print_message(f"  [bold blue]3.[/bold blue] {translate('config_option_lang', lang=lang)}")
     
     ui.render_section_title(translate('config_section_data', lang=lang))
-    ui.print_message(f"  [bold cyan]4.[/bold cyan] {translate('config_option_import', lang=lang)}")
-    ui.print_message(f"  [bold cyan]5.[/bold cyan] {translate('config_option_export', lang=lang)}")
+    ui.print_message(f"  [bold blue]4.[/bold blue] {translate('config_option_import', lang=lang)}")
+    ui.print_message(f"  [bold blue]5.[/bold blue] {translate('config_option_export', lang=lang)}")
     
     ui.render_navigation_help([("V", translate("config_option_back", lang=lang))])
 

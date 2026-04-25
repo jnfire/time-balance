@@ -21,7 +21,7 @@ def project_menu(lang: str = "en"):
         
         table_rows = []
         for project in projects_list:
-            is_active_marker = "[bold cyan]●[/bold cyan]" if project['id'] == active_project_id else ""
+            is_active_marker = "[bold blue]●[/bold blue]" if project['id'] == active_project_id else ""
             table_rows.append([
                 str(project['id']), 
                 project['name'], 
@@ -31,8 +31,8 @@ def project_menu(lang: str = "en"):
         
         ui.render_simple_table(table_columns, table_rows)
             
-        ui.print_message(f"\n  [bold cyan]1.[/bold cyan] {translate('project_option_select', lang=lang)}")
-        ui.print_message(f"  [bold cyan]2.[/bold cyan] {translate('project_option_create', lang=lang)}")
+        ui.print_message(f"\n  [bold blue]1.[/bold blue] {translate('project_option_select', lang=lang)}")
+        ui.print_message(f"  [bold blue]2.[/bold blue] {translate('project_option_create', lang=lang)}")
         ui.render_navigation_help([("V", translate("project_option_back", lang=lang))])
         
         user_choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "v"]).lower()

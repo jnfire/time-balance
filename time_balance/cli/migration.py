@@ -11,7 +11,7 @@ def migrate_from_json(path: str, lang: str):
         source_data = files.read_history_file(path)
         metadata = source_data.get("metadata", {})
         
-        ui.print_message(f"\n{translate('import_header', lang=lang, date=path)}", style="bold cyan")
+        ui.print_message(f"\n{translate('import_header', lang=lang, date=path)}", style="bold blue")
         
         # 1. Create the project
         project_name = metadata.get("project_name", f"Imported {date.today()}")

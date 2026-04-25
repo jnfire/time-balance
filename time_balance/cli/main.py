@@ -19,14 +19,14 @@ def get_current_lang() -> str:
     return resolve_language(language_setting)
 
 
-def display_dashboard(project: dict, balance: int, lang: str):
+def display_dashboard(project_data: dict, current_balance: int, lang: str):
     """Prepares and sends dashboard data to the UI interface."""
-    balance_fmt = format_time(balance)
-    balance_color = "green" if balance >= 0 else "red"
-    if balance > 0:
+    balance_fmt = format_time(current_balance)
+    balance_color = "green" if current_balance >= 0 else "red"
+    if current_balance > 0:
         balance_fmt = f"+{balance_fmt}"
 
-    labels = {
+    labels_dict = {
         'project': translate('project_label', lang=lang),
         'base_day': translate('base_day_label', lang=lang),
         'balance': translate('balance_label', lang=lang),
@@ -34,50 +34,50 @@ def display_dashboard(project: dict, balance: int, lang: str):
     }
     
     ui.render_dashboard(
-        project_name=project['name'],
-        base_hours=project['base_hours'],
-        base_minutes=project['base_minutes'],
+        project_name=project_data['name'],
+        base_hours=project_data['base_hours'],
+        base_minutes=project_data['base_minutes'],
         balance_fmt=balance_fmt,
         balance_color=balance_color,
         version=config.VERSION,
-        labels=labels
+        labels=labels_dict
     )
 
 
 def interactive_menu():
     """Main interactive menu loop."""
     while True:
-        lang = get_current_lang()
-        active_id = db.get_active_project_id()
-        project = db.get_project_by_id(active_id)
-        total_balance = db.get_total_balance(active_id)
+        current_lang = get_current_lang()
+        active_project_id = db.get_active_project_id()
+        current_project = db.get_project_by_id(active_project_id)
+        total_project_balance = db.get_total_balance(active_project_id)
 
         ui.clear_screen()
-        display_dashboard(project, total_balance, lang)
+        display_dashboard(current_project, total_project_balance, current_lang)
 
-        ui.print_message(f"\n [bold cyan]1.[/bold cyan] {translate('option_1_clean', lang=lang)}")
-        ui.print_message(f" [bold cyan]2.[/bold cyan] {translate('option_2_clean', lang=lang)}")
-        ui.print_message(f" [bold cyan]3.[/bold cyan] {translate('option_3_clean', lang=lang)}")
-        ui.print_message(f" [bold cyan]4.[/bold cyan] {translate('option_4_clean', lang=lang)}")
-        ui.print_message(f" [bold cyan]5.[/bold cyan] {translate('option_5_clean', lang=lang)}")
+        ui.print_message(f"\n [bold blue]1.[/bold blue] {translate('option_1_clean', lang=current_lang)}")
+        ui.print_message(f" [bold blue]2.[/bold blue] {translate('option_2_clean', lang=current_lang)}")
+        ui.print_message(f" [bold blue]3.[/bold blue] {translate('option_3_clean', lang=current_lang)}")
+        ui.print_message(f" [bold blue]4.[/bold blue] {translate('option_4_clean', lang=current_lang)}")
+        ui.print_message(f" [bold blue]5.[/bold blue] {translate('option_5_clean', lang=current_lang)}")
 
-        option = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "3", "4", "5"])
+        user_option = ui.ask_string(f"\n{translate('choose_option', lang=current_lang)}", choices=["1", "2", "3", "4", "5"])
 
         try:
-            if option == "1":
-                register_day(lang=lang)
-                ui.ask_string(translate('press_enter', lang=lang), default="")
-            elif option == "2":
-                view_history(lang=lang)
-            elif option == "3":
-                config_menu(lang=lang)
-            elif option == "4":
-                project_menu(lang=lang)
-            elif option == "5":
-                ui.print_message(f"\n{translate('exit_msg', lang=lang)}", style="bold blue")
+            if user_option == "1":
+                register_day(lang=current_lang)
+                ui.ask_string(translate('press_enter', lang=current_lang), default="")
+            elif user_option == "2":
+                view_history(lang=current_lang)
+            elif user_option == "3":
+                config_menu(lang=current_lang)
+            elif user_option == "4":
+                project_menu(lang=current_lang)
+            elif user_option == "5":
+                ui.print_message(f"\n{translate('exit_msg', lang=current_lang)}", style="bold blue")
                 break
         except KeyboardInterrupt:
-            ui.print_message(f"\n\n {translate('op_cancelled', lang=lang)} ", style="yellow")
+            ui.print_message(f"\n\n {translate('op_cancelled', lang=current_lang)} ", style="yellow")
             break
 
 
@@ -94,32 +94,32 @@ def main():
     args = parser.parse_args()
 
     if args.version:
-        ui.print_message(f"time-balance [bold cyan]v{config.VERSION}[/bold cyan]")
+        ui.print_message(f"time-balance [bold blue]v{config.VERSION}[/bold blue]")
         return
 
-    lang = args.lang
-    if lang == "auto":
-        lang = get_current_lang()
+    active_lang = args.lang
+    if active_lang == "auto":
+        active_lang = get_current_lang()
 
     if args.migrate:
-        migrate_from_json(args.migrate, lang=lang)
+        migrate_from_json(args.migrate, lang=active_lang)
         return
 
-    active_id = db.get_active_project_id()
-    project = db.get_project_by_id(active_id)
+    active_project_id = db.get_active_project_id()
+    current_project = db.get_project_by_id(active_project_id)
 
     if args.status:
-        total_balance = db.get_total_balance(active_id)
-        balance_fmt = format_time(total_balance)
-        color = "green" if total_balance >= 0 else "red"
-        if total_balance > 0: balance_fmt = f"+{balance_fmt}"
+        total_project_balance = db.get_total_balance(active_project_id)
+        balance_display_fmt = format_time(total_project_balance)
+        balance_display_color = "green" if total_project_balance >= 0 else "red"
+        if total_project_balance > 0: balance_display_fmt = f"+{balance_display_fmt}"
         
-        ui.print_message(translate('status_project', lang=lang, name=project['name']), style="bold cyan")
-        ui.print_message(translate('status_balance', lang=lang, balance=f'[{color}]{balance_fmt}[/{color}]'), style="bold")
+        ui.print_message(translate('status_project', lang=active_lang, name=current_project['name']), style="bold blue")
+        ui.print_message(translate('status_balance', lang=active_lang, balance=f'[{balance_display_color}]{balance_display_fmt}[/{balance_display_color}]'), style="bold")
         return
 
     if args.list is not None:
-        view_history(limit=args.list, lang=lang)
+        view_history(limit=args.list, lang=active_lang)
         return
 
     interactive_menu()
