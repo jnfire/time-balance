@@ -41,7 +41,8 @@ def view_history(limit: int = None, lang: str = "en"):
         table_title = translate("full_history_header", lang=lang) if limit <= 0 else translate("recent_records_header", lang=lang, limit=limit)
         display_rows = _prepare_table_rows(history_records)
             
-        ui.render_table(table_title, table_columns, display_rows)
+        ui.render_header(table_title)
+        ui.render_table("", table_columns, display_rows)
         return
 
     # --- Interactive Pagination Mode ---
@@ -62,7 +63,8 @@ def view_history(limit: int = None, lang: str = "en"):
         table_title = translate("full_history_header", lang=lang)
         display_rows = _prepare_table_rows(paged_records)
         
-        ui.render_table(table_title, table_columns, display_rows)
+        ui.render_header(table_title)
+        ui.render_table("", table_columns, display_rows)
         ui.print_message(f"\n {translate('pagination_info', lang=lang, current=current_page_index+1, total=total_pages_count, count=total_records_count)}")
         
         navigation_choices = ["v"]

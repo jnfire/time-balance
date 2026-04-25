@@ -4,6 +4,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
 from rich.align import Align
+from rich.rule import Rule
 from rich import box
 
 # Initialize the global console
@@ -16,6 +17,19 @@ def clear_screen():
 def print_message(text: str, style: str = ""):
     """Prints a message to the console with optional styling."""
     _console.print(f"[{style}]{text}[/{style}]" if style else text)
+
+def render_header(title: str):
+    """Renders a consistent header for submenus."""
+    _console.print("")
+    _console.print(Rule(title.upper(), style="bright_blue"))
+
+def render_section_title(title: str):
+    """Renders a section divider inside a menu."""
+    _console.print(f"\n [bold dim]>> {title.upper()}[/bold dim]")
+
+def render_info_line(label: str, value: str):
+    """Renders a consistent key-value information line."""
+    _console.print(f"  [dim]{label}:[/dim] [bold]{value}[/bold]")
 
 def render_dashboard(project_name: str, base_hours: int, base_minutes: int, balance_fmt: str, balance_color: str, version: str, labels: dict):
     """Renders the main dashboard header."""
@@ -36,8 +50,9 @@ def render_dashboard(project_name: str, base_hours: int, base_minutes: int, bala
     _console.print(panel)
 
 def render_table(title: str, columns: List[Tuple[str, dict]], rows: List[List[Any]]):
-    """Renders a data table."""
-    table = Table(title=f"\n[bold]{title}[/bold]", box=box.SIMPLE_HEAD, header_style="bold cyan")
+    """Renders a data table. Only adds title if not empty."""
+    table_title = f"\n[bold]{title}[/bold]" if title else None
+    table = Table(title=table_title, box=box.SIMPLE_HEAD, header_style="bold cyan")
     
     for col_name, col_args in columns:
         table.add_column(col_name, **col_args)
@@ -61,7 +76,6 @@ def render_simple_table(columns: List[Tuple[str, dict]], rows: List[List[Any]]):
 
 def ask_string(message: str, default: str = "", choices: Optional[List[str]] = None) -> str:
     """Requests a string input from the user without automatic Rich decorations."""
-    # We add a trailing space if not present for better UX
     prompt_message = message if message.endswith(" ") or not message else f"{message} "
     
     return Prompt.ask(

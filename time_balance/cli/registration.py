@@ -38,7 +38,7 @@ def register_day(lang: str = "en"):
             ui.print_message(translate('op_cancelled', lang=lang), style="blue")
             return
 
-    ui.print_message(f"\n{translate('input_header', lang=lang, date=target_work_date)}", style="bold cyan")
+    ui.render_header(translate('input_header', lang=lang, date=target_work_date))
     try:
         worked_hours_input = int(ui.ask_string(translate("hours_worked", lang=lang), default="0"))
         worked_minutes_input = int(ui.ask_string(translate("minutes_worked", lang=lang), default="0"))

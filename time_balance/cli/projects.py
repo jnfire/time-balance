@@ -10,7 +10,7 @@ def project_menu(lang: str = "en"):
         active_project_id = db.get_active_project_id()
 
         ui.clear_screen()
-        ui.print_message(f"\n--- {translate('option_4_clean', lang=lang).upper()} ---", style="bold cyan")
+        ui.render_header(translate('option_4_clean', lang=lang))
         
         table_columns = [
             ("ID", {"justify": "center", "style": "dim"}),
@@ -31,9 +31,9 @@ def project_menu(lang: str = "en"):
         
         ui.render_simple_table(table_columns, table_rows)
             
-        ui.print_message(f"\n [bold cyan]1.[/bold cyan] {translate('project_option_select', lang=lang)}")
-        ui.print_message(f" [bold cyan]2.[/bold cyan] {translate('project_option_create', lang=lang)}")
-        ui.print_message(f"\n [bold cyan]V.[/bold cyan] {translate('project_option_back', lang=lang)}")
+        ui.print_message(f"\n  [bold cyan]1.[/bold cyan] {translate('project_option_select', lang=lang)}")
+        ui.print_message(f"  [bold cyan]2.[/bold cyan] {translate('project_option_create', lang=lang)}")
+        ui.print_message(f"\n  [bold cyan]V.[/bold cyan] {translate('project_option_back', lang=lang)}")
         
         user_choice = ui.ask_string(f"\n{translate('choose_option', lang=lang)}", choices=["1", "2", "v"]).lower()
         

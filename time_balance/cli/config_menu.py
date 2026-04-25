@@ -5,22 +5,22 @@ from ..utils import files
 from .. import config
 
 def _display_config_status(project_data: dict, current_lang_setting: str, lang: str):
-    ui.print_message(f"\n--- {translate('option_3_clean', lang=lang).upper()} ---", style="bold cyan")
-    ui.print_message(f"\n [dim]{translate('project_label', lang=lang)}:[/dim] [bold]{project_data['name']}[/bold]")
-    ui.print_message(f" [dim]{translate('base_day_label', lang=lang)}:[/dim] [bold]{project_data['base_hours']}h {project_data['base_minutes']}m[/bold]")
-    ui.print_message(f" [dim]Language:[/dim] [bold]{current_lang_setting}[/bold]")
+    ui.render_header(translate('option_3_clean', lang=lang))
+    ui.render_info_line(translate('project_label', lang=lang), project_data['name'])
+    ui.render_info_line(translate('base_day_label', lang=lang), f"{project_data['base_hours']}h {project_data['base_minutes']}m")
+    ui.render_info_line("Language", current_lang_setting)
 
 def _display_menu_options(lang: str):
-    ui.print_message(f"\n[bold dim]>> {translate('config_section_project', lang=lang)}[/bold dim]")
-    ui.print_message(f" [bold cyan]1.[/bold cyan] {translate('config_option_edit_name', lang=lang)}")
-    ui.print_message(f" [bold cyan]2.[/bold cyan] {translate('config_option_edit_base', lang=lang)}")
-    ui.print_message(f" [bold cyan]3.[/bold cyan] {translate('config_option_lang', lang=lang)}")
+    ui.render_section_title(translate('config_section_project', lang=lang))
+    ui.print_message(f"  [bold cyan]1.[/bold cyan] {translate('config_option_edit_name', lang=lang)}")
+    ui.print_message(f"  [bold cyan]2.[/bold cyan] {translate('config_option_edit_base', lang=lang)}")
+    ui.print_message(f"  [bold cyan]3.[/bold cyan] {translate('config_option_lang', lang=lang)}")
     
-    ui.print_message(f"\n[bold dim]>> {translate('config_section_data', lang=lang)}[/bold dim]")
-    ui.print_message(f" [bold cyan]4.[/bold cyan] {translate('config_option_import', lang=lang)}")
-    ui.print_message(f" [bold cyan]5.[/bold cyan] {translate('config_option_export', lang=lang)}")
+    ui.render_section_title(translate('config_section_data', lang=lang))
+    ui.print_message(f"  [bold cyan]4.[/bold cyan] {translate('config_option_import', lang=lang)}")
+    ui.print_message(f"  [bold cyan]5.[/bold cyan] {translate('config_option_export', lang=lang)}")
     
-    ui.print_message(f"\n [bold cyan]V.[/bold cyan] {translate('config_option_back', lang=lang)}")
+    ui.print_message(f"\n  [bold cyan]V.[/bold cyan] {translate('config_option_back', lang=lang)}")
 
 def _handle_edit_project_name(project_id: int, current_name: str, base_hours: int, base_minutes: int, lang: str):
     new_name = ui.ask_string(
