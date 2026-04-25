@@ -26,6 +26,7 @@ from .cli import (
     view_history,
     config_menu,
     project_menu,
+    migrate_from_json,
     main
 )
 
@@ -51,5 +52,6 @@ __all__ = [
     'view_history',
     'config_menu',
     'project_menu',
+    'migrate_from_json',
     'main'
 ]

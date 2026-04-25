@@ -118,5 +118,37 @@ class TestCLI(unittest.TestCase):
         self.assertIn("Project: ProyA", output)
         self.assertIn("Accumulated balance: +0h 15m", output)
 
+    def test_migrate_from_json_flow(self):
+        """Verify that migrate_from_json creates a project and imports records."""
+        mock_data = {
+            "metadata": {
+                "project_name": "Legacy Project",
+                "hours_base": 8,
+                "minutes_base": 0
+            },
+            "records": {
+                "2026-01-01": {"hours": 8, "minutes": 30, "difference": 30},
+                "2026-01-02": {"hours": 7, "minutes": 0, "difference": -60}
+            }
+        }
+        
+        with mock.patch('time_balance.io.read_history_file', return_value=mock_data):
+            ch.migrate_from_json("fake_path.json", lang="en")
+        
+        # Verify project creation
+        projects = self.db.get_projects()
+        # Initial 'General' plus the new one
+        self.assertEqual(len(projects), 2)
+        legacy_project = next(p for p in projects if p['name'] == "Legacy Project")
+        self.assertEqual(legacy_project['base_hours'], 8)
+        
+        # Verify records import
+        records = self.db.get_records(legacy_project['id'])
+        self.assertEqual(len(records), 2)
+        
+        # Check specific record
+        record_01 = self.db.get_record_by_date(legacy_project['id'], "2026-01-01")
+        self.assertEqual(record_01['difference'], 30)
+
 if __name__ == "__main__":
     unittest.main()
