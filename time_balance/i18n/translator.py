@@ -1,6 +1,7 @@
 import locale
 import json
 import pathlib
+import os
 from typing import Dict, Any, Optional
 
 # Private cache to avoid repeated disk reads
@@ -15,16 +16,16 @@ def _load_language_file(lang: str) -> Dict[str, str]:
     """Loads a translation JSON file from disk into the cache."""
     if lang in _translations_cache:
         return _translations_cache[lang]
-    
+
     locales_dir = _get_locales_dir()
     file_path = locales_dir / f"{lang}.json"
-    
+
     if not file_path.exists():
         # If the file doesn't exist, we fallback to English
         if lang == "en":
             return {}
         return _load_language_file("en")
-    
+
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             translations = json.load(f)
@@ -39,16 +40,23 @@ def _load_language_file(lang: str) -> Dict[str, str]:
 def get_system_language() -> str:
     """Detects system language using modern locale API, defaults to English."""
     try:
-        lang_code, _ = locale.getlocale()
-        if not lang_code:
-            lang_code = locale.getdefaultlocale()[0]
-            
-        if lang_code and lang_code.startswith("es"):
+        # We try to get the language code from the current locale
+        language_info = locale.getlocale()
+        language_code = language_info[0]
+
+        if not language_code:
+            # Fallback to standard environment variables if locale is not set
+            for variable_name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+                language_code = os.environ.get(variable_name)
+                if language_code:
+                    break
+
+        if language_code and language_code.lower().startswith("es"):
             return "es"
     except Exception:
+        # In some environments, locale functions can raise unexpected exceptions
         pass
     return "en"
-
 def resolve_language(language_setting: str) -> str:
     """Resolves 'auto' setting to actual system language."""
     if language_setting == "auto":
