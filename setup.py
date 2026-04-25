@@ -11,7 +11,7 @@ setup(
     name='time-balance',
     version=get_version(),
     description='Control sencillo de jornadas y saldo horario',
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "tests.*")),
     include_package_data=True,
     package_data={
         'time_balance': ['VERSION', 'i18n/locales/*.json'],
