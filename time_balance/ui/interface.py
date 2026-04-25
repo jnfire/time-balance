@@ -102,6 +102,7 @@ def ask_string(message: str, default: str = "", choices: Optional[List[str]] = N
         choices=choices, 
         show_choices=False, 
         show_default=False, 
+        case_sensitive=False,
         console=_console
     )
 
