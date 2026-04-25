@@ -75,7 +75,11 @@ def view_history(limit: int = None, lang: str = "en"):
             navigation_choices.append("p")
         
         ui.print_message(navigation_msg)
-        user_navigation_choice = ui.ask_string("", default="v", choices=navigation_choices).lower()
+        user_navigation_choice = ui.ask_string(
+            translate('choose_option', lang=lang), 
+            default="v", 
+            choices=navigation_choices
+        ).lower()
         
         if user_navigation_choice == "n":
             current_page_index += 1

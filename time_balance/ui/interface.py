@@ -60,8 +60,18 @@ def render_simple_table(columns: List[Tuple[str, dict]], rows: List[List[Any]]):
     _console.print(table)
 
 def ask_string(message: str, default: str = "", choices: Optional[List[str]] = None) -> str:
-    """Requests a string input from the user."""
-    return Prompt.ask(message, default=default, choices=choices, show_choices=False, console=_console)
+    """Requests a string input from the user without automatic Rich decorations."""
+    # We add a trailing space if not present for better UX
+    prompt_message = message if message.endswith(" ") or not message else f"{message} "
+    
+    return Prompt.ask(
+        prompt_message, 
+        default=default, 
+        choices=choices, 
+        show_choices=False, 
+        show_default=False, 
+        console=_console
+    )
 
 def ask_confirm(message: str, default: bool = False) -> bool:
     """Requests a yes/no confirmation from the user."""
