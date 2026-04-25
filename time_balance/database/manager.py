@@ -18,6 +18,7 @@ class DatabaseManager:
     def _get_connection(self):
         """Context manager that yields a database connection, handling transactions and closing."""
         connection = sqlite3.connect(self.db_path)
+        connection.execute("PRAGMA foreign_keys = ON")
         try:
             # The connection object itself is a context manager for transactions
             with connection:
