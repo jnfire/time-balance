@@ -113,3 +113,76 @@ def ask_confirm(message: str, default: bool = False) -> bool:
 def print_panel_message(message: str, style: str = "blue"):
     """Prints a message inside a simple panel."""
     _console.print(Panel(message, border_style=style))
+
+# --- TIMER COMPONENTS ---
+
+def render_timer_display(total_hours: int, total_minutes: int, total_seconds: int, 
+                         is_paused: bool, project_name: str, base_time_str: str, 
+                         estimated_balance: str):
+    """
+    Renderiza el display bloqueante del timer.
+    - Contador grande y visible (total)
+    - Estado (ACTIVE / PAUSED)
+    - Balance estimado actual vs base
+    - Controles: [P]ause | [R]esume | [F]inish | [C]ancel
+    """
+    clear_screen()
+    
+    # Build the timer display
+    status_label = "[bold yellow]⏸ PAUSED[/bold yellow]" if is_paused else "[bold green]● ACTIVE[/bold green]"
+    timer_display = (
+        f"[bold {COLOR_PRIMARY}]{project_name.upper()}[/bold {COLOR_PRIMARY}]\n\n"
+        f"[bold]Time Tracked:[/bold]\n"
+        f"[bold cyan]{total_hours:02d}h {total_minutes:02d}m {total_seconds:02d}s[/bold cyan]\n\n"
+        f"[bold]Status:[/bold]\n{status_label}\n\n"
+        f"[bold]Base Workday:[/bold] {base_time_str}\n"
+        f"[bold]Balance:[/bold] {estimated_balance}"
+    )
+    
+    panel = Panel(
+        Align.center(timer_display),
+        title="[bold]⏱ REAL-TIME TIMER[/bold]",
+        border_style=COLOR_PRIMARY,
+        box=box.ROUNDED,
+        padding=(2, 4)
+    )
+    _console.print(panel)
+    
+    # Display controls
+    _console.print("")
+    _console.print("[bold magenta]Controls:[/bold magenta]")
+    _console.print("  [bold cyan]P[/bold cyan] - Pause/Resume")
+    _console.print("  [bold cyan]F[/bold cyan] - Finish & Save")
+    _console.print("  [bold cyan]C[/bold cyan] - Cancel")
+    _console.print("")
+
+def render_timer_finalized_summary(total_hours: int, total_minutes: int, 
+                                    balance_delta: int, project_name: str):
+    """
+    Resumen final al terminar timer.
+    Muestra: tiempo total, diferencia con base, nuevo balance.
+    """
+    clear_screen()
+    
+    balance_color = COLOR_SUCCESS if balance_delta >= 0 else COLOR_ERROR
+    balance_sign = "+" if balance_delta >= 0 else ""
+    balance_delta_minutes_abs = abs(balance_delta)
+    balance_delta_hours = balance_delta_minutes_abs // 60
+    balance_delta_mins = balance_delta_minutes_abs % 60
+    
+    summary_content = (
+        f"[bold green]✓ Timer Saved Successfully[/bold green]\n\n"
+        f"[bold {COLOR_PRIMARY}]Project:[/bold {COLOR_PRIMARY}] {project_name.upper()}\n"
+        f"[bold {COLOR_PRIMARY}]Total Time:[/bold {COLOR_PRIMARY}] {total_hours}h {total_minutes}m\n"
+        f"[bold {COLOR_PRIMARY}]Balance Change:[/bold {COLOR_PRIMARY}] [{balance_color}]{balance_sign}{balance_delta_hours}h {balance_delta_mins}m[/{balance_color}]"
+    )
+    
+    panel = Panel(
+        Align.center(summary_content),
+        title="[bold]⏱ TIMER COMPLETED[/bold]",
+        border_style=COLOR_SUCCESS,
+        box=box.ROUNDED,
+        padding=(2, 4)
+    )
+    _console.print(panel)
+    _console.print("")

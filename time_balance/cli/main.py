@@ -11,6 +11,7 @@ from .registration import register_day
 from .history import view_history
 from .config_menu import config_menu
 from .projects import project_menu
+from .timer import show_timer_menu
 
 def get_current_lang() -> str:
     """Determines the active language based on settings or system."""
@@ -57,8 +58,9 @@ def interactive_menu():
         ui.print_message(f" [bold blue]3.[/bold blue] {translate('option_3_clean', lang=current_lang)}")
         ui.print_message(f" [bold blue]4.[/bold blue] {translate('option_4_clean', lang=current_lang)}")
         ui.print_message(f" [bold blue]5.[/bold blue] {translate('option_5_clean', lang=current_lang)}")
+        ui.print_message(f" [bold blue]6.[/bold blue] {translate('option_6_clean', lang=current_lang)}")
 
-        user_option = ui.ask_string(f"\n{translate('choose_option', lang=current_lang)}", choices=["1", "2", "3", "4", "5"])
+        user_option = ui.ask_string(f"\n{translate('choose_option', lang=current_lang)}", choices=["1", "2", "3", "4", "5", "6"])
 
         try:
             if user_option == "1":
@@ -69,8 +71,10 @@ def interactive_menu():
             elif user_option == "3":
                 config_menu(lang=current_lang)
             elif user_option == "4":
-                project_menu(lang=current_lang)
+                show_timer_menu(active_project_id)
             elif user_option == "5":
+                project_menu(lang=current_lang)
+            elif user_option == "6":
                 ui.print_message(f"\n{translate('exit_msg', lang=current_lang)}", style="bold blue")
                 break
         except KeyboardInterrupt:
