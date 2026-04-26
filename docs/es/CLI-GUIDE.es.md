@@ -13,9 +13,6 @@ time-balance --status
 # Listar los últimos 10 registros del proyecto activo
 time-balance --list 10
 
-# Migrar un archivo JSON de legado a un nuevo proyecto global
-time-balance --migrate ./ruta/al/historial.json
-
 # Forzar idioma (en/es)
 time-balance --lang en
 
