@@ -16,11 +16,11 @@
 ## Instalación
 
 ### Desde archivos de distribución (Release)
-Si has descargado los archivos de la versión (ej: `time_balance-0.5.0-py3-none-any.whl`), puedes instalarlo directamente:
+Si has descargado los archivos de la versión (ej: `time_balance-0.5.1-py3-none-any.whl`), puedes instalarlo directamente:
 
 ```bash
 # Instalar el archivo Wheel
-pip install time_balance-0.5.0-py3-none-any.whl
+pip install time_balance-0.5.1-py3-none-any.whl
 ```
 
 ### Desde el código fuente
@@ -78,9 +78,12 @@ time-balance --list 10
 - ✅ **Arquitectura por Dominios**: Separación clara entre CLI, Base de Datos e interfaz.
 - ✅ **Abstracción de UI**: Desacoplada de librerías visuales para máxima flexibilidad.
 - ✅ **Localización en JSON**: Añade idiomas fácilmente mediante archivos externos.
-- ✅ **Caché de Alto Rendimiento**: Actualizaciones de saldo atómicas e instantáneas.
+- ✅ **Caché de Alto Rendimiento**: Actualizaciones de saldo atómicas con manejo automático de valores NULL para datos importados.
 - ✅ **Backend SQLite**: Persistencia robusta siguiendo estándares XDG.
-- ✅ **Multiproyecto**: Gestiona diferentes contextos de trabajo de forma independiente.
+- ✅ **Gestión Multiproyecto**: Administra diferentes contextos de trabajo de forma independiente con operaciones aisladas por proyecto.
+- ✅ **Eliminar Registros**: Borra jornadas con confirmación y recálculo inmediato del saldo.
+- ✅ **Recalcular Saldo**: Fuerza una reconstrucción completa de la caché de saldo con un único comando para corregir inconsistencias.
+- ✅ **Integridad de Datos**: Restricciones de clave foránea y transacciones atómicas garantizan integridad referencial.
 
 ---
 

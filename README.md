@@ -16,11 +16,11 @@
 ## Installation
 
 ### From Distribution Files (Release)
-If you have downloaded the release files (e.g., `time_balance-0.5.0-py3-none-any.whl`), you can install it directly:
+If you have downloaded the release files (e.g., `time_balance-0.5.1-py3-none-any.whl`), you can install it directly:
 
 ```bash
 # Install the Wheel file
-pip install time_balance-0.5.0-py3-none-any.whl
+pip install time_balance-0.5.1-py3-none-any.whl
 ```
 
 ### From Source
@@ -77,9 +77,12 @@ time-balance --list 10
 - ✅ **Domain-Driven Architecture**: Clean separation between CLI, Database, and UI logic.
 - ✅ **UI Abstraction**: Decoupled from visual libraries for maximum flexibility.
 - ✅ **JSON-Based Localization**: Easily add new languages via external JSON files.
-- ✅ **High-Performance Caching**: Atomic balance updates for instant results.
+- ✅ **High-Performance Caching**: Atomic balance updates with automatic NULL handling for imported data.
 - ✅ **SQLite Backend**: Robust persistence following XDG standards.
-- ✅ **Multi-project**: Manage different work contexts independently.
+- ✅ **Multi-project Management**: Manage different work contexts independently with project-isolated operations.
+- ✅ **Delete Records**: Safely delete daily time records with confirmation and immediate balance recalculation.
+- ✅ **Balance Recalculation**: Force a full rebuild of the balance cache with a single command to fix any inconsistencies.
+- ✅ **Data Integrity**: Foreign key constraints and atomic transactions ensure referential integrity.
 
 ---
 

@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-04-26
+
+### Added
+- **Delete Workday Feature**: Users can now delete daily time records from the history view with confirmation display showing date, hours worked, and balance impact. Feature is fully project-isolated.
+- **COALESCE NULL Balance Handling**: Replaced `WHERE total_balance IS NOT NULL` conditions with `COALESCE(total_balance, 0)` to ensure cache updates work correctly even when importing or restoring data with NULL balances.
+
+### Changed
+- **Project-Isolated Recalculation**: The balance recalculation now only affects the active project, preventing unintended side effects on other projects.
+- **Delete Flow UX**: Improved delete workflow to display recent records as reference context before requesting the date to delete.
+
+### Fixed
+- **Cross-Project Balance Contamination**: Fixed bug where recalculating balances would affect all projects instead of just the active one.
+- **Delete Flow Context**: Removed automatic screen clear during delete operation to maintain visual context of available records.
+- **Cache Inconsistency on Import**: Fixed issue where NULL `total_balance` values (from imports or restores) would prevent proper cache updates during record operations.
+
+### Testing
+- **Comprehensive Delete & Recalculate Tests**: Added 15 new tests verifying balance calculations square correctly and projects remain isolated.
+- **COALESCE NULL Balance Tests**: Added 9 tests specifically targeting the NULL balance handling to ensure cache resilience during imports and data restoration.
+
+### Quality Assurance
+- All changes validated against project standards defined in `docs/ARCHITECTURE.md` and `docs/DEVELOPMENT.md`.
+- 51 total tests passing with zero regressions.
+- Full compliance with UI Abstraction Layer, Domain-Driven Modularization, and Naming Standards.
+
+---
+
 ## [0.5.0] - 2026-04-25
 
 ### Added
