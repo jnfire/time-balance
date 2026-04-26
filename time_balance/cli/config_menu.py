@@ -103,10 +103,11 @@ def _handle_export_data(project_id: int, project_data: dict, lang: str):
 
 
 def _handle_recalculate_balances(lang: str):
-    """Forces a recalculation of all balances."""
-    if ui.ask_confirm("¿Recalcular TODOS los saldos desde el historial?"):
-        db.recalculate_all_balances()
-        ui.print_message("\n✅ Saldos recalculados correctamente.", style="bold green")
+    """Forces a recalculation of the active project balance."""
+    active_project_id = db.get_active_project_id()
+    if ui.ask_confirm("¿Recalcular saldo del proyecto desde el historial?"):
+        db.recalculate_project_balance(active_project_id)
+        ui.print_message("\n✅ Saldo recalculado correctamente.", style="bold green")
     ui.ask_string(translate('press_enter', lang=lang), default="")
 
 

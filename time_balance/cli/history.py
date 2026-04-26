@@ -21,15 +21,34 @@ def _prepare_table_rows(records_list: List[Dict[str, Any]]) -> List[List[str]]:
 
 
 def _delete_record_flow(active_project_id: int, lang: str):
-    """Handles the workflow for deleting a record: date input, confirmation, and deletion."""
+    """Handles the workflow for deleting a record: show list, date input, confirmation, and deletion."""
+    table_columns = [
+        ("Date", {"style": "dim", "justify": "center"}),
+        (translate("work_label", lang=lang), {"justify": "right"}),
+        (translate("balance_short_label", lang=lang), {"justify": "right"})
+    ]
+    
+    # Fetch recent records for reference
+    paged_records = db.get_records(active_project_id, limit=10)
+    if not paged_records:
+        ui.clear_screen()
+        ui.print_message(f"\n{translate('no_records', lang=lang)}", style="yellow")
+        ui.ask_string(translate('press_enter', lang=lang), default="")
+        return
+    
+    # Display the records table for reference
     ui.clear_screen()
     ui.render_header(translate("delete_record_option", lang=lang))
+    display_rows = _prepare_table_rows(paged_records)
+    ui.render_table("", table_columns, display_rows)
     
-    # Request the exact date
+    # Request the exact date to delete
+    ui.print_message("")
     user_date_input = ui.ask_string(translate("delete_date_prompt", lang=lang), default="")
     
     if not user_date_input.strip():
         ui.print_message(translate("op_cancelled", lang=lang), style="yellow")
+        ui.ask_string(translate('press_enter', lang=lang), default="")
         return
     
     # Fetch the record
