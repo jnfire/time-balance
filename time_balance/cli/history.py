@@ -20,6 +20,76 @@ def _prepare_table_rows(records_list: List[Dict[str, Any]]) -> List[List[str]]:
     return formatted_rows
 
 
+def _delete_record_flow(active_project_id: int, lang: str):
+    """Handles the workflow for deleting a record: show list, date input, confirmation, and deletion."""
+    table_columns = [
+        ("Date", {"style": "dim", "justify": "center"}),
+        (translate("work_label", lang=lang), {"justify": "right"}),
+        (translate("balance_short_label", lang=lang), {"justify": "right"})
+    ]
+    
+    # Fetch recent records for reference
+    paged_records = db.get_records(active_project_id, limit=10)
+    if not paged_records:
+        ui.clear_screen()
+        ui.print_message(f"\n{translate('no_records', lang=lang)}", style="yellow")
+        ui.ask_string(translate('press_enter', lang=lang), default="")
+        return
+    
+    # Display the records table for reference
+    ui.clear_screen()
+    ui.render_header(translate("delete_record_option", lang=lang))
+    display_rows = _prepare_table_rows(paged_records)
+    ui.render_table("", table_columns, display_rows)
+    
+    # Request the exact date to delete
+    ui.print_message("")
+    user_date_input = ui.ask_string(translate("delete_date_prompt", lang=lang), default="")
+    
+    if not user_date_input.strip():
+        ui.print_message(translate("op_cancelled", lang=lang), style="yellow")
+        ui.ask_string(translate('press_enter', lang=lang), default="")
+        return
+    
+    # Fetch the record
+    record_to_delete = db.get_record_by_date(active_project_id, user_date_input)
+    
+    if not record_to_delete:
+        ui.print_message(
+            translate("delete_record_not_found", lang=lang, date=user_date_input),
+            style="red"
+        )
+        ui.ask_string(translate('press_enter', lang=lang), default="")
+        return
+    
+    # Show confirmation with record details
+    difference_fmt = format_time(record_to_delete['difference'])
+    confirmation_message = translate(
+        "delete_record_confirm",
+        lang=lang,
+        date=record_to_delete['date'],
+        hours=record_to_delete['hours'],
+        minutes=record_to_delete['minutes'],
+        diff=difference_fmt
+    )
+    
+    user_confirmation = ui.ask_string(confirmation_message, choices=["s", "n"] if lang == "es" else ["y", "n"])
+    
+    if user_confirmation.lower() not in ("s", "y"):
+        ui.print_message(translate("op_cancelled", lang=lang), style="yellow")
+        ui.ask_string(translate('press_enter', lang=lang), default="")
+        return
+    
+    # Delete the record
+    db.delete_record(active_project_id, record_to_delete['date'])
+    ui.print_message(
+        translate("delete_success", lang=lang, date=record_to_delete['date']),
+        style="green"
+    )
+    ui.ask_string(translate('press_enter', lang=lang), default="")
+
+
+
 def view_history(limit: int = None, lang: str = "en"):
     """Displays records for the active project. Handles both static list and interactive pagination."""
     active_project_id = db.get_active_project_id()
@@ -77,6 +147,9 @@ def view_history(limit: int = None, lang: str = "en"):
             nav_options.append(("P", translate("pagination_prev", lang=lang)))
             nav_choices.append("p")
         
+        nav_options.append(("D", translate("delete_record_option", lang=lang)))
+        nav_choices.append("d")
+        
         ui.render_navigation_help(nav_options)
         
         user_navigation_choice = ui.ask_string(
@@ -89,5 +162,7 @@ def view_history(limit: int = None, lang: str = "en"):
             current_page_index += 1
         elif user_navigation_choice == "p":
             current_page_index -= 1
+        elif user_navigation_choice == "d":
+            _delete_record_flow(active_project_id, lang)
         elif user_navigation_choice == "v":
             break
