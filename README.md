@@ -26,6 +26,15 @@ pip install time_balance-0.5.0-py3-none-any.whl
 ### From Source
 To install the application from the source code:
 
+```bash
+# Clone and enter directory
+git clone <repo-url>
+cd time-balance
+
+# Install globally
+pip install .
+```
+
 ### For Developers
 If you want to contribute, we recommend using the direct entry point:
 

@@ -11,7 +11,6 @@ from .registration import register_day
 from .history import view_history
 from .config_menu import config_menu
 from .projects import project_menu
-from .migration import migrate_from_json
 
 def get_current_lang() -> str:
     """Determines the active language based on settings or system."""
@@ -87,7 +86,6 @@ def main():
     parser.add_argument("-l", "--list", type=int, nargs="?", const=5, help="List last N records (default 5).")
     parser.add_argument("--version", action="store_true", help="Show application version.")
     parser.add_argument("--lang", type=str, choices=["en", "es", "auto"], default="auto", help="Force interface language.")
-    parser.add_argument("--migrate", type=str, metavar="JSON_FILE", help="Migrate records from a legacy JSON file.")
 
     args = parser.parse_args()
 
@@ -98,10 +96,6 @@ def main():
     active_lang = args.lang
     if active_lang == "auto":
         active_lang = get_current_lang()
-
-    if args.migrate:
-        migrate_from_json(args.migrate, lang=active_lang)
-        return
 
     active_project_id = db.get_active_project_id()
     current_project = db.get_project_by_id(active_project_id)

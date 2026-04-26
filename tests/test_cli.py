@@ -11,7 +11,6 @@ from time_balance.cli.main import main
 from time_balance.cli.registration import register_day
 from time_balance.cli.history import view_history
 from time_balance.cli.config_menu import config_menu
-from time_balance.cli.migration import migrate_from_json
 
 class TestCLI(unittest.TestCase):
     def setUp(self):
@@ -31,7 +30,6 @@ class TestCLI(unittest.TestCase):
             mock.patch('time_balance.cli.history.db', self.db),
             mock.patch('time_balance.cli.config_menu.db', self.db),
             mock.patch('time_balance.cli.projects.db', self.db),
-            mock.patch('time_balance.cli.migration.db', self.db),
         ]
         for patcher in self.patchers:
             patcher.start()
@@ -114,32 +112,6 @@ class TestCLI(unittest.TestCase):
         calls = [call[0][0] for call in mock_print.call_args_list]
         self.assertTrue(any("ProyA" in str(c) for c in calls))
         self.assertTrue(any("+0h 15m" in str(c) for c in calls))
-
-    def test_migrate_from_json_flow(self):
-        """Verify that migrate_from_json creates a project and imports records modularly."""
-        mock_data = {
-            "metadata": {
-                "project_name": "Legacy Project",
-                "hours_base": 8,
-                "minutes_base": 0
-            },
-            "records": {
-                "2026-01-01": {"hours": 8, "minutes": 30, "difference": 30},
-                "2026-01-02": {"hours": 7, "minutes": 0, "difference": -60}
-            }
-        }
-        
-        with mock.patch('time_balance.utils.files.read_history_file', return_value=mock_data):
-            migrate_from_json("fake_path.json", lang="en")
-        
-        # Verify project creation
-        projects = self.db.get_projects()
-        legacy_project = next(p for p in projects if p['name'] == "Legacy Project")
-        self.assertEqual(legacy_project['base_hours'], 8)
-        
-        # Verify records import
-        records = self.db.get_records(legacy_project['id'])
-        self.assertEqual(len(records), 2)
 
 if __name__ == "__main__":
     unittest.main()

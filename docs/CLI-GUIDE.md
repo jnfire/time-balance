@@ -13,9 +13,6 @@ time-balance --status
 # List last 5 records
 time-balance --list
 
-# Migrate legacy history.json
-time-balance --migrate ./history.json
-
 # Force UI language
 time-balance --lang es
 ```
