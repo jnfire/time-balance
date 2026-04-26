@@ -16,11 +16,11 @@
 ## Instalación
 
 ### Desde archivos de distribución (Release)
-Si has descargado los archivos de la versión (ej: `time_balance-0.5.1-py3-none-any.whl`), puedes instalarlo directamente:
+Si has descargado los archivos de la versión (ej: `time_balance-0.5.0-py3-none-any.whl`), puedes instalarlo directamente:
 
 ```bash
 # Instalar el archivo Wheel
-pip install time_balance-0.5.1-py3-none-any.whl
+pip install time_balance-0.5.0-py3-none-any.whl
 ```
 
 ### Desde el código fuente
