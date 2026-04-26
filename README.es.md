@@ -87,9 +87,9 @@ time-balance --list 10
 ## Desarrollo y Contribuciones
 
 Si quieres contribuir o entender el funcionamiento interno:
-- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): Diseño del sistema, módulos y dominios.
-- [**DEVELOPMENT.md**](docs/DEVELOPMENT.md): Guía técnica para desarrolladores.
-- [**CONTRIBUTING.md**](docs/CONTRIBUTING.md): Cómo enviar mejoras y traducciones.
+- [**ARCHITECTURE.es.md**](docs/es/ARCHITECTURE.es.md): Diseño del sistema, módulos y dominios.
+- [**DEVELOPMENT.es.md**](docs/es/DEVELOPMENT.es.md): Guía técnica para desarrolladores.
+- [**CONTRIBUTING.es.md**](docs/es/CONTRIBUTING.es.md): Cómo enviar mejoras y traducciones.
 
 ## Licencia
 

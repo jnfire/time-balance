@@ -1,51 +1,59 @@
 # Guía para Desarrolladores
 
-Esta guía proporciona detalles técnicos para desarrolladores que deseen contribuir a la versión 0.3.x de `time-balance`.
+Esta guía proporciona detalles técnicos para desarrolladores que deseen contribuir a `time-balance` v0.5.x.
 
 ## Filosofía del Proyecto
 
-- **Librería Estándar para el Core**: El core y la persistencia dependen únicamente de librerías nativas de Python (como `sqlite3`).
-- **UI Profesional**: Se utiliza `rich` para proporcionar una interfaz de terminal moderna, legible y visualmente atractiva.
+- **Modularización Basada en Dominios**: La aplicación está dividida en dominios funcionales para asegurar la escalabilidad y mantenibilidad.
+- **Abstracción de UI**: La lógica de negocio está desacoplada de las librerías de renderizado de terminal.
+- **Estándares de Naming Estrictos**: No se permiten variables de una sola letra (excepto en list comprehensions obvias). Mínimo 3 caracteres.
 
 ## Estructura de Capas
 
-### 1. Lógica de Persistencia (`storage.py`)
-Gestiona la base de datos SQLite global.
-- `DatabaseManager`: Clase central para CRUD de proyectos y registros.
-- `db`: Instancia global utilizada por el resto de la aplicación.
+### 1. Dominio de Persistencia (`database/`)
+- `DatabaseManager`: Centraliza todas las operaciones SQLite. Gestiona transacciones, actualizaciones atómicas de saldo e importaciones masivas.
+- Instancia global `db`: Utilizada como un singleton en toda la aplicación.
 
-### 2. Capa de Presentación (`cli.py`)
-Controla el flujo de menús e interacción con el usuario.
-- `manage_projects()`: Lógica para el submenú de gestión multiproyecto.
-- `register_day()`: Interactúa con `db` para guardar jornadas en el proyecto activo.
+### 2. Dominio de Presentación (`cli/`)
+- Orquestado por `cli/main.py`.
+- Dividido en módulos temáticos: `registration.py`, `history.py`, `projects.py`, etc.
+- Utiliza `ui/interface.py` para toda la E/S de consola.
 
-### 3. Intercambio de Datos (`io.py`)
-Funciones para leer JSON de legado y exportar volcados.
-- `read_history_file(path)`: Lee un JSON y valida que cumpla con el esquema antiguo.
+### 3. Capa de Abstracción de UI (`ui/`)
+- `ui/interface.py`: El único módulo autorizado para importar librerías visuales (como `Rich`).
+- Proporciona componentes genéricos: `render_header`, `render_table`, `render_navigation_help`.
+
+### 4. Dominio de Localización (`i18n/`)
+- `i18n/translator.py`: Motor de traducción con sistema de caché.
+- `i18n/locales/*.json`: Cadenas de texto externalizadas.
+
+## Ejecución para Desarrollo
+
+Durante el desarrollo, utiliza el punto de entrada directo en el directorio raíz:
+
+```bash
+chmod +x main.py
+./main.py
+```
 
 ## Ejecución de Tests
 
-Es fundamental mantener los tests actualizados. Se utiliza una base de datos temporal para evitar ensuciar los datos reales del desarrollador.
+Utilizamos bases de datos SQLite temporales para las pruebas para asegurar el aislamiento del entorno.
 
 ```bash
 # Ejecutar todos los tests
 python3 -m unittest discover -v tests
 ```
 
+## Cómo añadir un nuevo comando CLI
+
+1. Si es un flujo nuevo, crea un archivo en `time_balance/cli/`.
+2. Registra el comando en la función `main()` en `time_balance/cli/main.py`.
+3. Utiliza `ui.interface` para cualquier interacción con el usuario.
+4. Asegúrate de que la nueva lógica siga los estándares de naming y DRY.
+
 ## Gestión de la Base de Datos
 
-La base de datos se inicializa automáticamente en la primera ejecución. El esquema se define en el método `_initialize_database()` de `DatabaseManager`.
-
-### Rutas de Datos (XDG)
+La base de datos sigue los estándares XDG. El esquema se define en `DatabaseManager._initialize_database()`.
 - macOS: `~/Library/Application Support/time-balance/`
 - Linux: `~/.local/share/time-balance/`
-
-## Cómo añadir un comando CLI
-
-1. Modifica la función `main()` en `cli.py`.
-2. Añade el nuevo flag en `argparse`.
-3. Implementa la lógica correspondiente, utilizando `db` si requiere acceso a datos o `translate()` para la salida.
-
-## Referencia del Esquema de Registros
-Las jornadas se guardan como minutos de diferencia (`worked_minutes - base_minutes`).
-- Ejemplo: Si la base es 7h 45m (465 min) y se trabajan 8h (480 min), la diferencia guardada es `+15`.
