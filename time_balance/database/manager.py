@@ -167,8 +167,8 @@ class DatabaseManager:
             # 3. Update project total balance cache
             cursor.execute("""
                 UPDATE projects 
-                SET total_balance = total_balance - ? + ? 
-                WHERE id = ? AND total_balance IS NOT NULL
+                SET total_balance = COALESCE(total_balance, 0) - ? + ? 
+                WHERE id = ?
             """, (old_difference, difference, project_id))
 
     def delete_record(self, project_id: int, record_date: str):
@@ -190,8 +190,8 @@ class DatabaseManager:
             # 3. Update project total balance cache
             cursor.execute("""
                 UPDATE projects 
-                SET total_balance = total_balance - ? 
-                WHERE id = ? AND total_balance IS NOT NULL
+                SET total_balance = COALESCE(total_balance, 0) - ? 
+                WHERE id = ?
             """, (current_difference, project_id))
 
     def clear_project_records(self, project_id: int):
