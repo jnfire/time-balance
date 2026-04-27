@@ -203,6 +203,83 @@ def render_timer_display_simplified(total_hours: int, total_minutes: int, total_
     )
     _console.print(panel)
 
+def render_timer_running(total_hours: int, total_minutes: int, total_seconds: int,
+                        project_name: str, base_time_str: str, 
+                        estimated_balance: str, current_lang: str = "en"):
+    """
+    Renderiza el display del timer en ejecución.
+    Balance en verde si positivo, rojo si negativo.
+    Añade etiquetas explicativas para cada dato.
+    """
+    clear_screen()
+    
+    # Get translated strings
+    timer_title = translate("timer_title", lang=current_lang)
+    press_to_stop = translate("timer_press_enter_to_pause", lang=current_lang).replace("pause", "stop")
+    status_active = translate("timer_status_active", lang=current_lang)
+    label_elapsed = translate("timer_label_elapsed", lang=current_lang)
+    label_status = translate("timer_label_status", lang=current_lang)
+    label_balance = translate("timer_label_balance", lang=current_lang)
+    
+    # Determine balance color based on sign
+    is_negative = estimated_balance.startswith('-')
+    balance_color = COLOR_ERROR if is_negative else COLOR_SUCCESS
+    
+    timer_display = (
+        f"[bold {COLOR_PRIMARY}]{project_name.upper()}[/bold {COLOR_PRIMARY}]\n\n"
+        f"[dim]{label_elapsed}:[/dim] [bold blue]{total_hours:02d}h {total_minutes:02d}m {total_seconds:02d}s[/bold blue]\n"
+        f"[dim]{label_status}:[/dim] [bold {COLOR_ACCENT}]{status_active}[/bold {COLOR_ACCENT}]\n"
+        f"[dim]{label_balance}:[/dim] [bold {balance_color}]{estimated_balance}[/bold {balance_color}]\n\n"
+        f"[bold {COLOR_ACCENT}]{press_to_stop}[/bold {COLOR_ACCENT}]"
+    )
+    
+    panel = Panel(
+        Align.center(timer_display),
+        title=f"[bold]⏱ {timer_title.upper()}[/bold]",
+        border_style=COLOR_PRIMARY,
+        box=box.ROUNDED,
+        padding=(1, 2)
+    )
+    _console.print(panel)
+
+def render_timer_menu_with_display(hours: int, minutes: int, seconds: int,
+                                   project_name: str, base_time_str: str,
+                                   balance_str: str, current_lang: str = "en"):
+    """
+    Renderiza el display del timer en el menú (pausa).
+    Muestra el contador grande con status PAUSED.
+    Balance en verde si positivo, rojo si negativo.
+    Añade etiquetas explicativas para cada dato.
+    """
+    clear_screen()
+    
+    # Get translated strings
+    timer_title = translate("timer_title", lang=current_lang)
+    status_paused = translate("timer_status_paused", lang=current_lang)
+    label_elapsed = translate("timer_label_elapsed", lang=current_lang)
+    label_status = translate("timer_label_status", lang=current_lang)
+    label_balance = translate("timer_label_balance", lang=current_lang)
+    
+    # Determine balance color based on sign
+    is_negative = balance_str.startswith('-')
+    balance_color = COLOR_ERROR if is_negative else COLOR_SUCCESS
+    
+    timer_display = (
+        f"[bold {COLOR_PRIMARY}]{project_name.upper()}[/bold {COLOR_PRIMARY}]\n\n"
+        f"[dim]{label_elapsed}:[/dim] [bold blue]{hours:02d}h {minutes:02d}m {seconds:02d}s[/bold blue]\n"
+        f"[dim]{label_status}:[/dim] [bold {COLOR_ACCENT}]{status_paused}[/bold {COLOR_ACCENT}]\n"
+        f"[dim]{label_balance}:[/dim] [bold {balance_color}]{balance_str}[/bold {balance_color}]"
+    )
+    
+    panel = Panel(
+        Align.center(timer_display),
+        title=f"[bold]⏱ {timer_title.upper()}[/bold]",
+        border_style=COLOR_PRIMARY,
+        box=box.ROUNDED,
+        padding=(1, 2)
+    )
+    _console.print(panel)
+
 def render_timer_finalized_summary(total_hours: int, total_minutes: int, 
                                     balance_delta: int, project_name: str, current_lang: str = "en"):
     """

@@ -82,6 +82,9 @@
     "timer_menu_resume": "Resume Timer",
     "timer_menu_back": "Back",
     "timer_current_time": "Current time",
-    "timer_press_enter_to_pause": "Press ENTER to pause",
-    "timer_press_enter_to_start": "Press ENTER to start"
+    "timer_press_enter_to_pause": "Press ENTER to stop",
+    "timer_press_enter_to_start": "Press ENTER to start",
+    "timer_label_elapsed": "Elapsed time",
+    "timer_label_status": "Status",
+    "timer_label_balance": "Balance"
 }

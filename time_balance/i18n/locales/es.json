@@ -82,6 +82,9 @@
     "timer_menu_resume": "Reanudar Contador",
     "timer_menu_back": "Volver",
     "timer_current_time": "Tiempo actual",
-    "timer_press_enter_to_pause": "Presiona ENTER para pausar",
-    "timer_press_enter_to_start": "Presiona ENTER para iniciar"
+    "timer_press_enter_to_pause": "Presiona ENTER para parar",
+    "timer_press_enter_to_start": "Presiona ENTER para iniciar",
+    "timer_label_elapsed": "Tiempo transcurrido",
+    "timer_label_status": "Estado",
+    "timer_label_balance": "Saldo"
 }

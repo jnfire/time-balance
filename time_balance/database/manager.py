@@ -313,6 +313,7 @@ class DatabaseManager:
     def get_or_create_today_record(self, project_id: int) -> Dict[str, Any]:
         """
         Obtiene el record de hoy para el proyecto, o lo crea vacío (0h 0m).
+        Si lo crea, también inicializa el caché de balance (total_balance) del proyecto.
         
         Returns:
             {
@@ -348,9 +349,20 @@ class DatabaseManager:
                 "INSERT INTO records (project_id, date, hours, minutes, difference) VALUES (?, ?, ?, ?, ?)",
                 (project_id, today_date, 0, 0, 0)
             )
+            new_record_id = cursor.lastrowid
+            
+            # Initialize project total_balance cache (if it's NULL, set to 0; else leave as is)
+            cursor.execute(
+                """
+                UPDATE projects 
+                SET total_balance = COALESCE(total_balance, 0) 
+                WHERE id = ?
+                """,
+                (project_id,)
+            )
             
             return {
-                'record_id': cursor.lastrowid,
+                'record_id': new_record_id,
                 'hours': 0,
                 'minutes': 0,
                 'date': today_date
@@ -358,20 +370,20 @@ class DatabaseManager:
 
     def update_record_time(self, record_id: int, total_hours: int, total_minutes: int):
         """
-        Actualiza horas/minutos del record (llamado cada 5 seg durante timer).
+        Actualiza horas/minutos del record (llamado cada minuto durante timer).
         Calcula difference respecto a base_hours del proyecto.
-        NO actualiza total_balance (eso es solo al finalizar).
+        Actualiza total_balance del proyecto (caché incremental).
         """
         with self._get_connection() as connection:
             cursor = connection.cursor()
             
-            # Get the project_id and base_hours from the record
-            cursor.execute("SELECT project_id FROM records WHERE id = ?", (record_id,))
+            # Get the project_id and old difference
+            cursor.execute("SELECT project_id, difference FROM records WHERE id = ?", (record_id,))
             result = cursor.fetchone()
             if not result:
                 return
             
-            project_id = result[0]
+            project_id, old_difference = result
             
             # Get base_hours and base_minutes
             cursor.execute("SELECT base_hours, base_minutes FROM projects WHERE id = ?", (project_id,))
@@ -384,12 +396,23 @@ class DatabaseManager:
             # Calculate difference in minutes
             total_minutes_worked = total_hours * 60 + total_minutes
             base_total_minutes = base_hours * 60 + base_minutes
-            difference_minutes = total_minutes_worked - base_total_minutes
+            new_difference = total_minutes_worked - base_total_minutes
             
-            # Update record (WITHOUT updating balance)
+            # Update record with new values
             cursor.execute(
                 "UPDATE records SET hours = ?, minutes = ?, difference = ? WHERE id = ?",
-                (total_hours, total_minutes, difference_minutes, record_id)
+                (total_hours, total_minutes, new_difference, record_id)
+            )
+            
+            # Update project total_balance cache (incremental: subtract old, add new)
+            # Handle NULL case: if NULL, set to new_difference (first time)
+            cursor.execute(
+                """
+                UPDATE projects 
+                SET total_balance = COALESCE(total_balance, 0) - ? + ? 
+                WHERE id = ?
+                """,
+                (old_difference, new_difference, project_id)
             )
 
     def finalize_timer(self, record_id: int, total_hours: int, total_minutes: int):
