@@ -81,6 +81,7 @@ time-balance --list 10
 - ✅ **Caché de Alto Rendimiento**: Actualizaciones de saldo atómicas con manejo automático de valores NULL para datos importados.
 - ✅ **Backend SQLite**: Persistencia robusta siguiendo estándares XDG.
 - ✅ **Gestión Multiproyecto**: Administra diferentes contextos de trabajo de forma independiente con operaciones aisladas por proyecto.
+- ✅ **Contador en Tiempo Real**: Interfaz mínima e intuitiva con auto-guardado y seguimiento de balance en tiempo real.
 - ✅ **Eliminar Registros**: Borra jornadas con confirmación y recálculo inmediato del saldo.
 - ✅ **Recalcular Saldo**: Fuerza una reconstrucción completa de la caché de saldo con un único comando para corregir inconsistencias.
 - ✅ **Integridad de Datos**: Restricciones de clave foránea y transacciones atómicas garantizan integridad referencial.

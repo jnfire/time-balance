@@ -40,20 +40,32 @@ Every time you enter a menu, a central dashboard displays the current project co
 
 ## Submenus
 
-### 1. Register Workday
+### 1. Real-Time Timer
+A simplified, minimal interface for tracking your work in real-time:
+- **Activation**: Press `1` from the main menu to start the timer.
+- **Interface**: Shows elapsed time, current status (ACTIVE/PAUSED), and estimated balance.
+- **Colors**: Green for positive balance, red for negative balance; easily readable on both dark and light terminals.
+- **Workflow**:
+  - Press `1` to activate and start counting.
+  - Timer automatically saves progress every 60 seconds (saves only minutes; seconds precision isn't stored).
+  - Press `ENTER` to stop and save the current session, returning to the main menu.
+  - The timer persists today's record in the database automatically.
+- **Design**: Unified visual design across active and paused states with explanatory labels.
+
+### 2. Register Workday
 Interactive flow to log your hours. It automatically calculates the difference against your base workday. If a record already exists, it will ask for confirmation before overwriting.
 
-### 2. View History (Paginated)
+### 3. View History (Paginated)
 Displays your records in professional tables.
 - Use `N` and `P` to browse through your work history.
 - Use `V` to return to the main menu.
 
-### 3. Configuration
+### 4. Configuration
 Manage your project and data:
 - **Project Settings**: Edit name, adjust base time, and language.
 - **Data Management**: Bulk import and Export to JSON.
 
-### 4. Project Management
+### 5. Project Management
 Dedicated section to manage multiple work contexts:
 - Switch between existing projects.
 - Create new projects with custom base workdays.

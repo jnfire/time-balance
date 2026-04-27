@@ -12,20 +12,35 @@ Esta guía proporciona detalles técnicos para desarrolladores que deseen contri
 
 ### 1. Dominio de Persistencia (`database/`)
 - `DatabaseManager`: Centraliza todas las operaciones SQLite. Gestiona transacciones, actualizaciones atómicas de saldo e importaciones masivas.
+- Métodos clave para la integración del contador:
+  - `get_or_create_today_record(project_id)`: Crea o recupera el registro de hoy; inicializa el caché de `total_balance`.
+  - `update_record_time(record_id, hours, minutes)`: Actualiza el registro e incrementa el caché de `total_balance` del proyecto de forma atómica.
 - Instancia global `db`: Utilizada como un singleton en toda la aplicación.
 
 ### 2. Dominio de Presentación (`cli/`)
 - Orquestado por `cli/main.py`.
-- Dividido en módulos temáticos: `registration.py`, `history.py`, `projects.py`, etc.
+- Dividido en módulos temáticos: `registration.py`, `timer.py`, `history.py`, `projects.py`, etc.
+- `timer.py` demuestra el flujo completo: **menú** → **contador activo** → **pausa** → **guardar**.
+  - `show_timer_menu()`: Bucle principal mostrando el display del contador y opciones del menú.
+  - `_timer_loop()`: Ejecuta el contador activo, auto-guarda cada 60 segundos, espera ENTER para detener.
+  - Ambas funciones llaman a la capa de UI para renderizado.
 - Utiliza `ui/interface.py` para toda la E/S de consola.
 
 ### 3. Capa de Abstracción de UI (`ui/`)
 - `ui/interface.py`: El único módulo autorizado para importar librerías visuales (como `Rich`).
+- Componentes específicos del contador:
+  - `render_timer_running(hours, minutes, seconds, project_name, base_time, balance, lang)`: Muestra el contador activo con colores y etiquetas.
+  - `render_timer_menu_with_display(hours, minutes, seconds, project_name, base_time, balance, lang)`: Muestra el contador pausado con el mismo formato visual.
+  - Ambas funciones usan `clear_screen()` para evitar scrolling de terminal y aplican coloreado dinámico (verde/rojo para el saldo).
 - Proporciona componentes genéricos: `render_header`, `render_table`, `render_navigation_help`.
 
 ### 4. Dominio de Localización (`i18n/`)
 - `i18n/translator.py`: Motor de traducción con sistema de caché.
 - `i18n/locales/*.json`: Cadenas de texto externalizadas.
+- Claves de traducción del contador (nuevas en v0.6.0):
+  - `timer_label_elapsed`: Etiqueta descriptiva para tiempo transcurrido.
+  - `timer_label_status`: Etiqueta descriptiva para estado del contador.
+  - `timer_label_balance`: Etiqueta descriptiva para la visualización del saldo.
 
 ## Ejecución para Desarrollo
 
@@ -44,6 +59,15 @@ Utilizamos bases de datos SQLite temporales para las pruebas para asegurar el ai
 # Ejecutar todos los tests
 python3 -m unittest discover -v tests
 ```
+
+## Atomicidad del Caché de Saldo
+
+A partir de v0.6.0, el caché de saldo (`projects.total_balance`) se actualiza de forma atómica durante operaciones en tiempo real:
+
+- **Integración del Contador**: Cuando el contador actualiza un registro (cada 60 segundos o al presionar ENTER), `update_record_time()` actualiza inmediatamente el caché de `total_balance` del proyecto usando `COALESCE` para inicialización segura con NULL.
+- **Creación de Registros**: Cuando se crea un nuevo registro diario vía `get_or_create_today_record()`, el caché del proyecto se inicializa si es NULL.
+- **Actualizaciones Incrementales**: El caché usa aritmética delta: `saldo = COALESCE(saldo, 0) - diferencia_vieja + diferencia_nueva`, asegurando acceso O(1) sin recálculo completo.
+- **Seguridad**: Todas las actualizaciones usan el gestor de contexto `_get_connection()` para integridad transaccional con COMMIT automático en caso de éxito.
 
 ## Cómo añadir un nuevo comando CLI
 

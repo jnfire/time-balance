@@ -16,6 +16,7 @@ time-balance/
 │   ├── cli/                  # Presentation domain (Menu logic)
 │   │   ├── main.py           # CLI orchestrator and entry point
 │   │   ├── registration.py   # Workday entry flows
+│   │   ├── timer.py          # Real-time timer interface and logic
 │   │   ├── history.py        # Record visualization and pagination
 │   │   └── ...               # Submenus (projects, config, migration)
 │   ├── database/             # Persistence domain
@@ -47,6 +48,14 @@ The application is decoupled from the `Rich` library via `ui/interface.py`. All 
 ### 3. **Clean Code & Naming Standards**
 - **Descriptive Naming**: All variables and functions follow a strict "No single-letter" rule (minimum 3 characters).
 - **DRY (Don't Repeat Yourself)**: Bulk operations (like record imports) are centralized in the database layer.
+
+### 4. **Real-Time Timer Module**
+The timer (`cli/timer.py`) demonstrates the domain-driven architecture in action:
+- **Decoupled UI**: All display logic is in `ui/interface.py` (two render functions: `render_timer_running()` and `render_timer_menu_with_display()`).
+- **Database Integration**: Uses `update_record_time()` for incremental balance updates and `get_or_create_today_record()` for session management.
+- **Atomic Cache Updates**: Each timer tick updates the project's `total_balance` cache immediately and atomically.
+- **Localization**: All strings (timer status, labels, instructions) are translated via `i18n/locales/*.json` keys like `timer_label_elapsed`, `timer_label_status`, `timer_label_balance`.
+- **User Experience**: Minimal interface — press `1` to start, `ENTER` to stop. Auto-saves every 60 seconds (saves only minutes; seconds are not persisted).
 
 ## Data Flow and Performance
 

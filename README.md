@@ -80,6 +80,7 @@ time-balance --list 10
 - ✅ **High-Performance Caching**: Atomic balance updates with automatic NULL handling for imported data.
 - ✅ **SQLite Backend**: Robust persistence following XDG standards.
 - ✅ **Multi-project Management**: Manage different work contexts independently with project-isolated operations.
+- ✅ **Real-Time Timer**: Minimal, intuitive timer interface with automatic saves and real-time balance tracking.
 - ✅ **Delete Records**: Safely delete daily time records with confirmation and immediate balance recalculation.
 - ✅ **Balance Recalculation**: Force a full rebuild of the balance cache with a single command to fix any inconsistencies.
 - ✅ **Data Integrity**: Foreign key constraints and atomic transactions ensure referential integrity.

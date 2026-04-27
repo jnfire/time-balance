@@ -52,21 +52,33 @@ El menú principal es sobrio y directo, mostrando siempre el **Dashboard** del p
 
 ## Secciones Detalladas
 
-### 1. Registrar Jornada
+### 1. Contador en Tiempo Real
+Una interfaz simplificada y mínima para registrar tu trabajo en tiempo real:
+- **Activación**: Presiona `1` desde el menú principal para iniciar el contador.
+- **Interfaz**: Muestra tiempo transcurrido, estado actual (ACTIVO/PAUSADO) y saldo estimado.
+- **Colores**: Verde para saldo positivo, rojo para saldo negativo; fácil de leer en terminales claros y oscuros.
+- **Flujo de Trabajo**:
+  - Presiona `1` para activar e iniciar el contador.
+  - El contador guarda automáticamente el progreso cada 60 segundos (solo se guardan minutos; los segundos no se almacenan).
+  - Presiona `ENTER` para detener y guardar la sesión actual, volviendo al menú principal.
+  - El contador persiste el registro de hoy en la base de datos automáticamente.
+- **Diseño**: Diseño visual unificado entre estados activo y pausado con etiquetas explicativas.
+
+### 2. Registrar Jornada
 Permite anotar las horas trabajadas para una fecha (por defecto hoy). Calcula la diferencia respecto a la jornada base del proyecto activo.
 
-### 2. Ver Registros (Paginado)
+### 3. Ver Registros (Paginado)
 Muestra el historial completo del proyecto en tablas de 10 registros.
 - Usa `N` y `P` para navegar entre páginas.
 - Usa `V` para volver al menú principal.
 
-### 3. Configuración
+### 4. Configuración
 Submenú dividido en secciones para una gestión clara:
 - **Ajustes del Proyecto**: Editar nombre, ajustar jornada base (horas/minutos) e idioma.
 - **Gestión de Datos**: Opciones de Importación y Exportación de archivos JSON.
 - Usa `V` para volver.
 
-### 4. Cambiar Proyecto
+### 5. Cambiar Proyecto
 Sección dedicada a la gestión de multi-tenencia.
 - Permite seleccionar un proyecto existente de la lista.
 - Permite crear un nuevo proyecto desde cero.

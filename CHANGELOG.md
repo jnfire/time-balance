@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-04-27
+
+### Added
+- **Real-Time Timer Feature**: A minimal, intuitive timer interface for tracking work in real-time.
+  - Press `1` from main menu to activate timer.
+  - Timer auto-saves progress every 60 seconds (only minutes are persisted; seconds are not stored).
+  - Press `ENTER` to stop and save the session, returning to main menu.
+  - Unified visual design across active and paused states with explanatory labels.
+  - Colors: Green for positive balance, red for negative balance.
+  - Fully localized with new translation keys: `timer_label_elapsed`, `timer_label_status`, `timer_label_balance`.
+- **Atomic Balance Cache Updates During Timer**: The project's `total_balance` cache now updates incrementally and atomically as the timer progresses.
+  - `update_record_time()` now updates the cache using `COALESCE` for NULL-safe initialization.
+  - `get_or_create_today_record()` initializes the cache when creating new daily records.
+  - Delta-math approach ensures O(1) access without full recalculation.
+- **Improved Timer UI Readability**: 
+  - Time display changed from `cyan` (hard to read on light backgrounds) to `blue`.
+  - Status labels changed from `yellow`/`green` to `magenta` for better visibility on all terminal themes.
+  - Added descriptive labels for each data point, following the pattern used in dashboard headers.
+
+### Changed
+- **Enhanced Database Documentation**: Added detailed sections in `docs/DEVELOPMENT.md` and `docs/ARCHITECTURE.md` explaining timer integration and balance cache atomicity.
+- **Translation System**: Added 3 new timer-specific label keys to support localized explanatory text.
+
+### Fixed
+- **Balance Cache Initialization**: Fixed issue where `get_or_create_today_record()` created records without initializing the project's `total_balance` cache.
+- **Timer Balance Display**: Ensured real-time balance updates reflect accurately in both active timer and menu displays.
+- **UI Color Legibility**: Corrected color choices to be readable on both dark and light terminal backgrounds.
+
+### Testing
+- All 51 existing tests pass with zero regressions.
+- Timer balance cache updates validated with integration tests covering incremental updates and multi-project isolation.
+- UI rendering validated for readability and localization.
+
+### Quality Assurance
+- All changes validated against project standards defined in `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT.md`, and `GEMINI.md`.
+- Full compliance with UI Abstraction Layer, Domain-Driven Modularization, Atomic Cache Updates, and Naming Standards.
+- Code follows strict naming conventions (minimum 3 characters per variable/function).
+
 ## [0.5.0] - 2026-04-26
 
 ### Added

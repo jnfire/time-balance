@@ -16,6 +16,7 @@ time-balance/
 │   ├── cli/                  # Dominio de presentación (Lógica de menús)
 │   │   ├── main.py           # Orquestador CLI y punto de entrada
 │   │   ├── registration.py   # Flujos de entrada de jornada
+│   │   ├── timer.py          # Interfaz del contador en tiempo real
 │   │   ├── history.py        # Visualización de registros y paginación
 │   │   └── ...               # Submenús (proyectos, configuración, migración)
 │   ├── database/             # Dominio de persistencia
@@ -47,6 +48,14 @@ La aplicación está desacoplada de la librería `Rich` mediante `ui/interface.p
 ### 3. **Código Limpio y Estándares de Naming**
 - **Naming Descriptivo**: Todas las variables y funciones siguen una regla estricta de "No variables de una sola letra" (mínimo 3 caracteres).
 - **DRY (Don't Repeat Yourself)**: Las operaciones masivas (como la importación de registros) están centralizadas en la capa de base de datos.
+
+### 4. **Módulo del Contador en Tiempo Real**
+El contador (`cli/timer.py`) demuestra la arquitectura basada en dominios en acción:
+- **UI Desacoplada**: Toda la lógica de visualización está en `ui/interface.py` (dos funciones de render: `render_timer_running()` y `render_timer_menu_with_display()`).
+- **Integración con BD**: Usa `update_record_time()` para actualizaciones incrementales del saldo y `get_or_create_today_record()` para la gestión de sesiones.
+- **Actualizaciones Atómicas del Caché**: Cada ciclo del contador actualiza el caché de `total_balance` del proyecto de forma inmediata y atómica.
+- **Localización**: Todos los strings (estado del contador, etiquetas, instrucciones) se traducen mediante claves en `i18n/locales/*.json` como `timer_label_elapsed`, `timer_label_status`, `timer_label_balance`.
+- **Experiencia de Usuario**: Interfaz mínima — presiona `1` para iniciar, `ENTER` para detener. Auto-guarda cada 60 segundos (solo se guardan minutos; los segundos no se almacenan).
 
 ## Flujo de Datos y Rendimiento
 
