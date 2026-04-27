@@ -65,7 +65,7 @@
     "delete_date_prompt": "Enter the exact date of the record to delete (YYYY-MM-DD)",
     "delete_record_not_found": "❌ No record found for date {date}.",
     "delete_record_confirm": "You are about to delete the record for {date}:\n   Worked: {hours}h {minutes}m\n   Difference: {diff}\nConfirm deletion? (y/n)",
-    "delete_success": "\n✅ Record for {date} successfully deleted."
+    "delete_success": "\n✅ Record for {date} successfully deleted.",
     "timer.title": "Real-Time Timer",
     "timer.elapsed": "{hours}h {minutes}m {seconds}s",
     "timer.status_active": "● ACTIVE",
