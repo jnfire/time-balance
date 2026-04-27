@@ -77,5 +77,11 @@
     "timer_auto_finalized": "ℹ Contador finalizado automáticamente a medianoche",
     "timer_cancel_confirm": "¿Estás seguro de que quieres cancelar? (se perderán los cambios no guardados)",
     "timer_cancelled": "Contador cancelado (sin cambios guardados)",
-    "timer_error_create": "Error al crear sesión del contador"
+    "timer_error_create": "Error al crear sesión del contador",
+    "timer_menu_start": "Iniciar Contador",
+    "timer_menu_resume": "Reanudar Contador",
+    "timer_menu_back": "Volver",
+    "timer_current_time": "Tiempo actual",
+    "timer_press_enter_to_pause": "Presiona ENTER para pausar",
+    "timer_press_enter_to_start": "Presiona ENTER para iniciar"
 }

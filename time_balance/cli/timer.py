@@ -85,8 +85,7 @@ class TimerSession:
 def show_timer_menu(active_project_id: int):
     """
     Main timer menu interface.
-    
-    Displays the timer interface and handles user input for controlling the timer.
+    Displays a menu to start/resume timer or go back.
     """
     # Get language
     language_setting = db.get_setting("language", "auto")
@@ -101,41 +100,75 @@ def show_timer_menu(active_project_id: int):
     # Get or create today's record
     record_info = db.get_or_create_today_record(active_project_id)
     
-    # Create timer session
-    timer_session = TimerSession(
-        record_id=record_info['record_id'],
-        project_id=active_project_id,
-        project_name=project['name'],
-        base_hours=project['base_hours'],
-        base_minutes=project['base_minutes'],
-        initial_hours=record_info['hours'],
-        initial_minutes=record_info['minutes']
-    )
-    
-    # Run the timer loop
-    _timer_loop(timer_session, project, current_lang)
+    # Show timer menu and wait for user choice
+    while True:
+        # Render menu
+        interface.clear_screen()
+        interface.render_header(translate("timer_title", lang=current_lang))
+        
+        current_time_str = f"{record_info['hours']}h {record_info['minutes']}m"
+        interface.print_message(f"\n{translate('timer_current_time', lang=current_lang)}: {current_time_str}\n")
+        
+        # Determine menu options
+        if record_info['hours'] == 0 and record_info['minutes'] == 0:
+            menu_action = "1"
+            menu_label = translate("timer_menu_start", lang=current_lang)
+        else:
+            menu_action = "1"
+            menu_label = translate("timer_menu_resume", lang=current_lang)
+        
+        interface.print_message(f"  [bold blue]{menu_action}.[/bold blue] {menu_label}")
+        interface.print_message(f"  [bold blue]V.[/bold blue] {translate('timer_menu_back', lang=current_lang)}")
+        
+        # Get user choice
+        choice = interface.ask_string(f"\n{translate('choose_option', lang=current_lang)}", choices=["1", "v"]).lower()
+        
+        if choice == "1":
+            # Start/Resume timer
+            timer_session = TimerSession(
+                record_id=record_info['record_id'],
+                project_id=active_project_id,
+                project_name=project['name'],
+                base_hours=project['base_hours'],
+                base_minutes=project['base_minutes'],
+                initial_hours=record_info['hours'],
+                initial_minutes=record_info['minutes']
+            )
+            
+            # Run the timer loop
+            _timer_loop(timer_session, project, current_lang)
+            
+            # Refresh record info in case it was updated
+            record_info = db.get_record_by_date(active_project_id, str(date.today()))
+            if not record_info:
+                record_info = {'hours': 0, 'minutes': 0, 'record_id': 0}
+        
+        elif choice == "v":
+            # Go back
+            break
 
 
 def _timer_loop(timer_session: TimerSession, project: dict, current_lang: str):
     """
-    Main timer loop - handles real-time updates and user input.
-    Core logic:
-    - accumulated_seconds: stores seconds added in THIS session (in RAM)
-    - get_current_session_elapsed(): returns total to display (initial + accumulated)
-    - Every 5 sec: persist current total to DB
-    - Resume: reset run_start_time so new segment starts fresh
+    Main timer loop - simplified version with ENTER to control.
+    
+    States:
+    - PAUSED (initial): Press ENTER to start, or V to go back
+    - RUNNING: Press ENTER to pause
+    - Persist to DB every 5 seconds
     """
-    timer_running = True
+    in_timer = True
+    timer_is_running = False
     last_render_time = time.time()
     last_persist_time = time.time()
     
     try:
-        while timer_running:
+        while in_timer:
             now = time.time()
             
             # Render display every 1 second
             if now - last_render_time >= 1.0:
-                _render_timer_display(timer_session, current_lang)
+                _render_timer_display(timer_session, current_lang, timer_is_running)
                 last_render_time = now
             
             # Persist to database every 5 seconds (even if paused)
@@ -148,37 +181,23 @@ def _timer_loop(timer_session: TimerSession, project: dict, current_lang: str):
             user_input = _get_nonblocking_input()
             
             if user_input:
-                user_input = user_input.upper()
-                
-                if user_input == 'P':
-                    # Toggle pause/resume
-                    if timer_session.is_paused:
-                        # Resume
-                        timer_session.resume()
+                if user_input.lower() == '\r' or user_input == '\n':
+                    # ENTER: Toggle between running and paused
+                    if not timer_is_running:
+                        # Start timer
+                        timer_is_running = True
+                        timer_session.is_paused = False
+                        timer_session.run_start_time = time.time()
                     else:
-                        # Pause
+                        # Pause timer
+                        timer_is_running = False
                         timer_session.pause()
                 
-                elif user_input == 'F':
-                    # Finalize timer
+                elif user_input.lower() == 'v':
+                    # Go back (saves automatically due to persist)
                     total_h, total_m = timer_session.get_total_hours_minutes()
-                    db.finalize_timer(timer_session.record_id, total_h, total_m)
-                    
-                    # Calculate balance delta (only what was added in this session)
-                    added_seconds = timer_session.accumulated_seconds
-                    balance_delta_minutes = added_seconds // 60
-                    
-                    # Show summary and exit
-                    interface.render_timer_finalized_summary(total_h, total_m, balance_delta_minutes, timer_session.project_name, current_lang)
-                    _wait_for_key_press()
-                    timer_running = False
-                
-                elif user_input == 'C':
-                    # Cancel timer
-                    if interface.ask_confirm(translate("timer_cancel_confirm", lang=current_lang)):
-                        interface.print_panel_message("⏱ " + translate("timer_cancelled", lang=current_lang), "yellow")
-                        time.sleep(1)
-                        timer_running = False
+                    db.update_record_time(timer_session.record_id, total_h, total_m)
+                    in_timer = False
             
             # Check for midnight crossing
             if _has_crossed_midnight():
@@ -187,7 +206,7 @@ def _timer_loop(timer_session: TimerSession, project: dict, current_lang: str):
                 db.finalize_timer(timer_session.record_id, total_h, total_m)
                 interface.print_panel_message(translate("timer_auto_finalized", lang=current_lang), "blue")
                 time.sleep(1)
-                timer_running = False
+                in_timer = False
             
             # Small sleep to prevent CPU spinning (50ms)
             time.sleep(0.05)
@@ -196,8 +215,8 @@ def _timer_loop(timer_session: TimerSession, project: dict, current_lang: str):
         interface.print_panel_message("⏱ Timer interrupted", "yellow")
 
 
-def _render_timer_display(timer_session: TimerSession, current_lang: str):
-    """Render the timer display."""
+def _render_timer_display(timer_session: TimerSession, current_lang: str, is_running: bool):
+    """Render the timer display with simplified UI."""
     # Get current elapsed time in this session
     current_session_elapsed = timer_session.get_current_session_elapsed()
     session_hours = current_session_elapsed // 3600
@@ -206,8 +225,6 @@ def _render_timer_display(timer_session: TimerSession, current_lang: str):
     
     # Get total (initial + session)
     total_h, total_m = timer_session.get_total_hours_minutes()
-    
-    is_paused = timer_session.is_paused
     
     # Calculate balance vs base
     base_total_sec = timer_session.base_hours * 3600 + timer_session.base_minutes * 60
@@ -219,9 +236,9 @@ def _render_timer_display(timer_session: TimerSession, current_lang: str):
     balance_str = f"{'+' if balance_sec >= 0 else '-'}{balance_h}h {balance_m}m"
     base_time_str = f"{timer_session.base_hours}h {timer_session.base_minutes}m"
     
-    interface.render_timer_display(
+    interface.render_timer_display_simplified(
         total_h, total_m, session_seconds,
-        is_paused,
+        is_running,
         timer_session.project_name,
         base_time_str,
         balance_str,

@@ -160,6 +160,49 @@ def render_timer_display(total_hours: int, total_minutes: int, total_seconds: in
     _console.print(f"[bold magenta]{controls_text}[/bold magenta]")
     _console.print("")
 
+def render_timer_display_simplified(total_hours: int, total_minutes: int, total_seconds: int, 
+                                    is_running: bool, project_name: str, base_time_str: str, 
+                                    estimated_balance: str, current_lang: str = "en"):
+    """
+    Renderiza el display simplificado del timer con ENTER como control principal.
+    
+    Estados:
+    - RUNNING: Muestra "Press ENTER to pause"
+    - PAUSED: Muestra "Press ENTER to start"
+    """
+    clear_screen()
+    
+    # Get translated strings
+    status_active = translate("timer_status_active", lang=current_lang)
+    status_paused = translate("timer_status_paused", lang=current_lang)
+    timer_title = translate("timer_title", lang=current_lang)
+    press_enter_pause = translate("timer_press_enter_to_pause", lang=current_lang)
+    press_enter_start = translate("timer_press_enter_to_start", lang=current_lang)
+    
+    # Build the timer display
+    status_label = f"[bold green]{status_active}[/bold green]" if is_running else f"[bold yellow]{status_paused}[/bold yellow]"
+    instruction_text = press_enter_pause if is_running else press_enter_start
+    
+    timer_display = (
+        f"[bold {COLOR_PRIMARY}]{project_name.upper()}[/bold {COLOR_PRIMARY}]\n\n"
+        f"[bold]Total Time:[/bold]\n"
+        f"[bold cyan]{total_hours:02d}h {total_minutes:02d}m {total_seconds:02d}s[/bold cyan]\n\n"
+        f"[bold]Status:[/bold]\n{status_label}\n\n"
+        f"[bold]Base Workday:[/bold] {base_time_str}\n"
+        f"[bold]Balance:[/bold] {estimated_balance}\n\n"
+        f"[bold magenta]{instruction_text}[/bold magenta]\n"
+        f"[bold magenta]V - Go back[/bold magenta]"
+    )
+    
+    panel = Panel(
+        Align.center(timer_display),
+        title=f"[bold]⏱ {timer_title.upper()}[/bold]",
+        border_style=COLOR_PRIMARY,
+        box=box.ROUNDED,
+        padding=(2, 4)
+    )
+    _console.print(panel)
+
 def render_timer_finalized_summary(total_hours: int, total_minutes: int, 
                                     balance_delta: int, project_name: str, current_lang: str = "en"):
     """
