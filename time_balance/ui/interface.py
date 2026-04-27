@@ -6,6 +6,7 @@ from rich.prompt import Prompt, Confirm
 from rich.align import Align
 from rich.rule import Rule
 from rich import box
+from ..i18n.translator import translate
 
 # --- UI CONFIGURATION (Universal Palette) ---
 # We avoid bright cyan as it's hard to read on light backgrounds.
@@ -118,7 +119,7 @@ def print_panel_message(message: str, style: str = "blue"):
 
 def render_timer_display(total_hours: int, total_minutes: int, total_seconds: int, 
                          is_paused: bool, project_name: str, base_time_str: str, 
-                         estimated_balance: str):
+                         estimated_balance: str, current_lang: str = "en"):
     """
     Renderiza el display bloqueante del timer.
     - Contador grande y visible (total)
@@ -128,8 +129,14 @@ def render_timer_display(total_hours: int, total_minutes: int, total_seconds: in
     """
     clear_screen()
     
+    # Get translated strings
+    status_active = translate("timer_status_active", lang=current_lang)
+    status_paused = translate("timer_status_paused", lang=current_lang)
+    timer_title = translate("timer_title", lang=current_lang)
+    controls_text = translate("timer_controls", lang=current_lang)
+    
     # Build the timer display
-    status_label = "[bold yellow]⏸ PAUSED[/bold yellow]" if is_paused else "[bold green]● ACTIVE[/bold green]"
+    status_label = f"[bold yellow]{status_paused}[/bold yellow]" if is_paused else f"[bold green]{status_active}[/bold green]"
     timer_display = (
         f"[bold {COLOR_PRIMARY}]{project_name.upper()}[/bold {COLOR_PRIMARY}]\n\n"
         f"[bold]Time Tracked:[/bold]\n"
@@ -141,7 +148,7 @@ def render_timer_display(total_hours: int, total_minutes: int, total_seconds: in
     
     panel = Panel(
         Align.center(timer_display),
-        title="[bold]⏱ REAL-TIME TIMER[/bold]",
+        title=f"[bold]⏱ {timer_title.upper()}[/bold]",
         border_style=COLOR_PRIMARY,
         box=box.ROUNDED,
         padding=(2, 4)
@@ -150,19 +157,20 @@ def render_timer_display(total_hours: int, total_minutes: int, total_seconds: in
     
     # Display controls
     _console.print("")
-    _console.print("[bold magenta]Controls:[/bold magenta]")
-    _console.print("  [bold cyan]P[/bold cyan] - Pause/Resume")
-    _console.print("  [bold cyan]F[/bold cyan] - Finish & Save")
-    _console.print("  [bold cyan]C[/bold cyan] - Cancel")
+    _console.print(f"[bold magenta]{controls_text}[/bold magenta]")
     _console.print("")
 
 def render_timer_finalized_summary(total_hours: int, total_minutes: int, 
-                                    balance_delta: int, project_name: str):
+                                    balance_delta: int, project_name: str, current_lang: str = "en"):
     """
     Resumen final al terminar timer.
     Muestra: tiempo total, diferencia con base, nuevo balance.
     """
     clear_screen()
+    
+    # Get translated strings
+    finalized_text = translate("timer_finalized", lang=current_lang)
+    finalized_summary_template = translate("timer_finalized_summary", lang=current_lang)
     
     balance_color = COLOR_SUCCESS if balance_delta >= 0 else COLOR_ERROR
     balance_sign = "+" if balance_delta >= 0 else ""
@@ -170,8 +178,9 @@ def render_timer_finalized_summary(total_hours: int, total_minutes: int,
     balance_delta_hours = balance_delta_minutes_abs // 60
     balance_delta_mins = balance_delta_minutes_abs % 60
     
+    # Format the summary using the translation template
     summary_content = (
-        f"[bold green]✓ Timer Saved Successfully[/bold green]\n\n"
+        f"[bold green]{finalized_text}[/bold green]\n\n"
         f"[bold {COLOR_PRIMARY}]Project:[/bold {COLOR_PRIMARY}] {project_name.upper()}\n"
         f"[bold {COLOR_PRIMARY}]Total Time:[/bold {COLOR_PRIMARY}] {total_hours}h {total_minutes}m\n"
         f"[bold {COLOR_PRIMARY}]Balance Change:[/bold {COLOR_PRIMARY}] [{balance_color}]{balance_sign}{balance_delta_hours}h {balance_delta_mins}m[/{balance_color}]"

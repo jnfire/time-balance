@@ -10,6 +10,7 @@ from typing import Optional
 from .. import config
 from ..database.manager import db
 from ..ui import interface
+from ..i18n.translator import translate, resolve_language
 
 
 class TimerSession:
@@ -87,6 +88,10 @@ def show_timer_menu(active_project_id: int):
     
     Displays the timer interface and handles user input for controlling the timer.
     """
+    # Get language
+    language_setting = db.get_setting("language", "auto")
+    current_lang = resolve_language(language_setting)
+    
     # Get project info
     project = db.get_project_by_id(active_project_id)
     if not project:
@@ -108,10 +113,10 @@ def show_timer_menu(active_project_id: int):
     )
     
     # Run the timer loop
-    _timer_loop(timer_session, project)
+    _timer_loop(timer_session, project, current_lang)
 
 
-def _timer_loop(timer_session: TimerSession, project: dict):
+def _timer_loop(timer_session: TimerSession, project: dict, current_lang: str):
     """
     Main timer loop - handles real-time updates and user input.
     Core logic:
@@ -130,7 +135,7 @@ def _timer_loop(timer_session: TimerSession, project: dict):
             
             # Render display every 1 second
             if now - last_render_time >= 1.0:
-                _render_timer_display(timer_session)
+                _render_timer_display(timer_session, current_lang)
                 last_render_time = now
             
             # Persist to database every 5 seconds (even if paused)
@@ -164,14 +169,14 @@ def _timer_loop(timer_session: TimerSession, project: dict):
                     balance_delta_minutes = added_seconds // 60
                     
                     # Show summary and exit
-                    interface.render_timer_finalized_summary(total_h, total_m, balance_delta_minutes, timer_session.project_name)
+                    interface.render_timer_finalized_summary(total_h, total_m, balance_delta_minutes, timer_session.project_name, current_lang)
                     _wait_for_key_press()
                     timer_running = False
                 
                 elif user_input == 'C':
                     # Cancel timer
-                    if interface.ask_confirm("Are you sure you want to cancel? (unsaved changes will be lost)"):
-                        interface.print_panel_message("⏱ Timer cancelled (no changes saved)", "yellow")
+                    if interface.ask_confirm(translate("timer_cancel_confirm", lang=current_lang)):
+                        interface.print_panel_message("⏱ " + translate("timer_cancelled", lang=current_lang), "yellow")
                         time.sleep(1)
                         timer_running = False
             
@@ -180,7 +185,7 @@ def _timer_loop(timer_session: TimerSession, project: dict):
                 # Auto-finalize at midnight
                 total_h, total_m = timer_session.get_total_hours_minutes()
                 db.finalize_timer(timer_session.record_id, total_h, total_m)
-                interface.print_panel_message("ℹ Timer auto-finalized at midnight", "blue")
+                interface.print_panel_message(translate("timer_auto_finalized", lang=current_lang), "blue")
                 time.sleep(1)
                 timer_running = False
             
@@ -191,7 +196,7 @@ def _timer_loop(timer_session: TimerSession, project: dict):
         interface.print_panel_message("⏱ Timer interrupted", "yellow")
 
 
-def _render_timer_display(timer_session: TimerSession):
+def _render_timer_display(timer_session: TimerSession, current_lang: str):
     """Render the timer display."""
     # Get current elapsed time in this session
     current_session_elapsed = timer_session.get_current_session_elapsed()
@@ -219,7 +224,8 @@ def _render_timer_display(timer_session: TimerSession):
         is_paused,
         timer_session.project_name,
         base_time_str,
-        balance_str
+        balance_str,
+        current_lang
     )
 
 

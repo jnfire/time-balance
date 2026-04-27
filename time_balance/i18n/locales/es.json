@@ -75,6 +75,7 @@
     "timer_finalized": "✓ Contador guardado exitosamente",
     "timer_finalized_summary": "Total: {hours}h {minutes}m | Saldo: {balance}",
     "timer_auto_finalized": "ℹ Contador finalizado automáticamente a medianoche",
+    "timer_cancel_confirm": "¿Estás seguro de que quieres cancelar? (se perderán los cambios no guardados)",
     "timer_cancelled": "Contador cancelado (sin cambios guardados)",
     "timer_error_create": "Error al crear sesión del contador"
 }

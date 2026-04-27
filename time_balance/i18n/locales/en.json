@@ -75,6 +75,7 @@
     "timer_finalized": "✓ Timer saved successfully",
     "timer_finalized_summary": "Total: {hours}h {minutes}m | Balance: {balance}",
     "timer_auto_finalized": "ℹ Timer auto-finalized at midnight",
+    "timer_cancel_confirm": "Are you sure you want to cancel? (unsaved changes will be lost)",
     "timer_cancelled": "Timer cancelled (no record saved)",
     "timer_error_create": "Error creating timer session"
 }
