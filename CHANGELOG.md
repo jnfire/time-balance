@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-11-09
+
+The final release. time-balance was the first sketch of what became time-tracker, a web application. This version cleans it up, documents it and closes the project.
+
+### Changed
+- Balances and durations drop the empty parts: `+1h 15m`, `-25m`, `+2h` and `0m` instead of `+1h 15m`, `-0h 25m`, `+2h 0m` and `0h 0m`. The daily base is shown the same way (`8h`).
+- Labels are written in sentence case everywhere, and the project name is shown as it was typed.
+- Packaging moves to `pyproject.toml` alone, with a real author, the repository URL and Python 3.9 as the minimum. The command is defined in one place (`time_balance.cli.main:main`) and `setup.py` and `MANIFEST.in` are gone.
+- CI runs on every push to `main` and on pull requests, on Python 3.9 to 3.13, and checks that the translations end up inside the wheel.
+- The README is rewritten in English and Spanish, with screenshots, installation from the release files and a note that the project is finished and that time-tracker continues it.
+
+### Added
+- A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog.
+- A document with the export format (`docs/DATA-FORMAT.md`), in English and Spanish.
+- A `.gitignore` for Python build output and caches.
+
+### Fixed
+- Table headers (`Date`, `Name`, `Active`...), the language label in the settings, the repair option and the whole project-deletion flow were hard-coded in one language. They are now translated.
+
+### Removed
+- The contribution guides: the project is finished and no longer accepts changes.
+
 ## [0.5.0] - 2026-04-26
 
 ### Added

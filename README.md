@@ -1,98 +1,85 @@
-# time-balance 🕒
+# time-balance
 
-> A professional, global terminal tool to manage multiple projects, track workdays, and manage your hour balance.
+A small terminal tool to register your workdays and keep your hour balance, with one project per context.
 
-[Leer en español 🇪🇸](README.es.md)
+[Leer en español](README.es.md)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+> **Project status: finished.** time-balance was the first sketch of a bigger idea. That idea became **time-tracker**, a web application with tasks, real time blocks, an audit history and much more. time-balance stays here as the clean, final version of that first experiment: it works, it is tested, and it is no longer developed. The repository is archived.
 
-## Description
+![The dashboard](docs/screenshots/dashboard-en.png)
 
-`time-balance` is a **global** console application designed for productivity. It no longer depends on local files; all your projects and records are stored in a centralized SQLite database. It features a domain-driven modular architecture, a decoupled UI layer, and a robust localization system.
+## What it does
 
----
+- **Registers a workday** as hours and minutes and compares it with your daily base.
+- **Keeps an accumulated balance**: how many hours you are ahead or behind, per project.
+- **Several projects**, each with its own daily base and its own records.
+- **History** with pagination, and deletion of a day with confirmation.
+- **Export and import** the history of a project as a JSON file ([format](docs/DATA-FORMAT.md)).
+- **English and Spanish**, detected from your system or chosen from the settings.
+- **Local only**: one SQLite file on your computer, no accounts and no network.
 
-## Installation
+![The history](docs/screenshots/history-en.png)
 
-### From Distribution Files (Release)
-If you have downloaded the release files (e.g., `time_balance-0.5.0-py3-none-any.whl`), you can install it directly:
+## Install
+
+Requires Python 3.9 or newer. Download the wheel from the [latest release](https://github.com/jnfire/time-balance/releases/latest) and install it:
 
 ```bash
-# Install the Wheel file
-pip install time_balance-0.5.0-py3-none-any.whl
+pipx install ./time_balance-0.6.0-py3-none-any.whl
+# or, without pipx
+pip install ./time_balance-0.6.0-py3-none-any.whl
 ```
 
-### From Source
-To install the application from the source code:
+From the source code:
 
 ```bash
-# Clone and enter directory
-git clone <repo-url>
+git clone https://github.com/jnfire/time-balance.git
 cd time-balance
-
-# Install globally
 pip install .
 ```
 
-### For Developers
-If you want to contribute, we recommend using the direct entry point:
+To try it without installing, run `./main.py` from the project folder (it needs `rich`).
+
+## Use
 
 ```bash
-# Run without installing
-./main.py --version
+time-balance              # interactive menu
+time-balance --status     # accumulated balance of the active project
+time-balance --list 10    # last 10 records
+time-balance --lang es    # force the language
 ```
 
----
+In the menu, numbers choose an action and letters navigate: `V` goes back, `N` and `P` change the page of the history.
 
-## Usage
+Balances are shown as `+1h 15m`, `-25m` or `0m`.
 
-### 1. Control Center (Interactive Menu)
-Simply run the command from any folder to open the manager:
+## Where the data lives
 
-```bash
-time-balance
-```
+One SQLite file called `time_balance.db`:
 
-### 2. Intuitive Navigation
-The interface uses a standardized navigation system:
-- **Numbers (1-5)** to select main actions.
-- **Letters (V, N, P)** for navigation: `V` to go back, `N`/`P` to navigate history pages.
+| System | Folder |
+| --- | --- |
+| Linux | `~/.local/share/time-balance` (or `$XDG_DATA_HOME/time-balance`) |
+| macOS | `~/Library/Application Support/time-balance` |
+| Windows | `%APPDATA%\time-balance` |
 
-### 3. Quick Commands
-Check your status without entering the menu:
+## Where it came from
 
-```bash
-# Show balance for the active project
-time-balance --status
+| When | What happened |
+| --- | --- |
+| January 2026 | First commit: a script to count the hours of a workday. |
+| April 2026 | Version 0.5.0: SQLite storage, several projects, translations and a modular structure. |
+| June 2026 | The idea outgrew the terminal and started again as time-tracker, a web application. |
+| November 2026 | This cleanup and the final release, 0.6.0. |
 
-# List last 10 records for the active project
-time-balance --list 10
-```
+## Documentation
 
----
-
-## Main Features
-
-- ✅ **Domain-Driven Architecture**: Clean separation between CLI, Database, and UI logic.
-- ✅ **UI Abstraction**: Decoupled from visual libraries for maximum flexibility.
-- ✅ **JSON-Based Localization**: Easily add new languages via external JSON files.
-- ✅ **High-Performance Caching**: Atomic balance updates with automatic NULL handling for imported data.
-- ✅ **SQLite Backend**: Robust persistence following XDG standards.
-- ✅ **Multi-project Management**: Manage different work contexts independently with project-isolated operations.
-- ✅ **Delete Records**: Safely delete daily time records with confirmation and immediate balance recalculation.
-- ✅ **Balance Recalculation**: Force a full rebuild of the balance cache with a single command to fix any inconsistencies.
-- ✅ **Data Integrity**: Foreign key constraints and atomic transactions ensure referential integrity.
-
----
-
-## Development and Contributions
-
-If you want to contribute or understand the internals:
-- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md): System design, modules, and domain structure.
-- [**DEVELOPMENT.md**](docs/DEVELOPMENT.md): Technical guide for developers.
-- [**CONTRIBUTING.md**](docs/CONTRIBUTING.md): How to submit improvements and translations.
+- [Usage guide](docs/CLI-GUIDE.md)
+- [Data format](docs/DATA-FORMAT.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Development](docs/DEVELOPMENT.md)
+- [Changelog](CHANGELOG.md)
 
 ## License
 
-This project is Open Source under the [GPL-3.0](LICENSE) license.
+Free software under the [GNU GPL v3.0](LICENSE).

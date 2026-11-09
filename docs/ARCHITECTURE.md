@@ -11,7 +11,7 @@ The application has been restructured from a monolithic package into specialized
 ```
 time-balance/
 ├── main.py                   # Direct entry point for development
-├── setup.py                  # Packaging and distribution configuration
+├── pyproject.toml            # Packaging and distribution configuration
 ├── time_balance/             # Core application source
 │   ├── cli/                  # Presentation domain (Menu logic)
 │   │   ├── main.py           # CLI orchestrator and entry point

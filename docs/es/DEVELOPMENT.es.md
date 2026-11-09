@@ -1,6 +1,6 @@
 # Guía para Desarrolladores
 
-Esta guía proporciona detalles técnicos para desarrolladores que deseen contribuir a `time-balance` v0.5.x.
+Esta guía proporciona detalles técnicos para `time-balance` v0.6.x. El proyecto está terminado y archivado, así que esta guía es una referencia, no una invitación a contribuir.
 
 ## Filosofía del Proyecto
 

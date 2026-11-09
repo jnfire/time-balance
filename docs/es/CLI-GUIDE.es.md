@@ -63,7 +63,7 @@ Muestra el historial completo del proyecto en tablas de 10 registros.
 ### 3. Configuración
 Submenú dividido en secciones para una gestión clara:
 - **Ajustes del Proyecto**: Editar nombre, ajustar jornada base (horas/minutos) e idioma.
-- **Gestión de Datos**: Opciones de Importación y Exportación de archivos JSON.
+- **Gestión de datos**: importación masiva y exportación a JSON (ver [Formato de los datos](DATA-FORMAT.es.md)), y una opción de reparación que reconstruye el saldo a partir de los registros.
 - Usa `V` para volver.
 
 ### 4. Cambiar Proyecto

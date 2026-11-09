@@ -11,7 +11,7 @@ La aplicación ha sido reestructurada de un paquete monolítico a dominios funci
 ```
 time-balance/
 ├── main.py                   # Punto de entrada directo para desarrollo
-├── setup.py                  # Configuración de empaquetado y distribución
+├── pyproject.toml            # Configuración de empaquetado y distribución
 ├── time_balance/             # Código fuente principal
 │   ├── cli/                  # Dominio de presentación (Lógica de menús)
 │   │   ├── main.py           # Orquestador CLI y punto de entrada

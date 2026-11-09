@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide provides technical details for developers contributing to `time-balance` v0.5.x.
+This guide provides technical details for `time-balance` v0.6.x. The project is finished and archived, so this guide is a reference, not an invitation to contribute.
 
 ## Project Philosophy
 
