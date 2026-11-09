@@ -1,26 +1,52 @@
 name: CI
 
 on:
-  # Ejecutar únicamente en Pull Requests; no ejecutar en push
-  pull_request: {}
+  pull_request:
+  push:
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        
-    - name: Run Tests
-      run: |
-        python -m unittest discover -v
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the package
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+
+      - name: Run the tests
+        run: python -m unittest discover -v
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build the wheel and the source distribution
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Check that the translations are inside the wheel
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob('dist/*.whl')[0]).namelist()
+          missing = [n for n in ('time_balance/VERSION', 'time_balance/i18n/locales/en.json', 'time_balance/i18n/locales/es.json') if n not in names]
+          assert not missing, f'Missing from the wheel: {missing}'
+          PY
