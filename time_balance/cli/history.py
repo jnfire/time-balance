@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from ..utils.calculations import format_time, get_balance_color
+from ..utils.calculations import format_duration, format_time, get_balance_color
 from ..ui import interface as ui
 from ..i18n.translator import translate
 from ..database.manager import db
@@ -14,7 +14,7 @@ def _prepare_table_rows(records_list: List[Dict[str, Any]]) -> List[List[str]]:
         
         formatted_rows.append([
             record['date'], 
-            f"{record['hours']}h {record['minutes']}m", 
+            format_duration(record['hours'], record['minutes']), 
             f"[{row_color}]{time_balance_fmt}[/{row_color}]"
         ])
     return formatted_rows
@@ -23,7 +23,7 @@ def _prepare_table_rows(records_list: List[Dict[str, Any]]) -> List[List[str]]:
 def _delete_record_flow(active_project_id: int, lang: str):
     """Handles the workflow for deleting a record: show list, date input, confirmation, and deletion."""
     table_columns = [
-        ("Date", {"style": "dim", "justify": "center"}),
+        (translate("table_date", lang=lang), {"style": "dim", "justify": "center"}),
         (translate("work_label", lang=lang), {"justify": "right"}),
         (translate("balance_short_label", lang=lang), {"justify": "right"})
     ]
@@ -95,7 +95,7 @@ def view_history(limit: int = None, lang: str = "en"):
     active_project_id = db.get_active_project_id()
     
     table_columns = [
-        ("Date", {"style": "dim", "justify": "center"}),
+        (translate("table_date", lang=lang), {"style": "dim", "justify": "center"}),
         (translate("work_label", lang=lang), {"justify": "right"}),
         (translate("balance_short_label", lang=lang), {"justify": "right"})
     ]

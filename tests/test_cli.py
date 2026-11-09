@@ -111,7 +111,7 @@ class TestCLI(unittest.TestCase):
         # Check if project name and balance were printed
         calls = [call[0][0] for call in mock_print.call_args_list]
         self.assertTrue(any("ProyA" in str(c) for c in calls))
-        self.assertTrue(any("+0h 15m" in str(c) for c in calls))
+        self.assertTrue(any("+15m" in str(c) for c in calls))
 
 if __name__ == "__main__":
     unittest.main()

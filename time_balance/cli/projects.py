@@ -1,7 +1,7 @@
 from ..ui import interface as ui
 from ..i18n.translator import translate
 from ..database.manager import db
-from ..utils.calculations import format_time, get_balance_color
+from ..utils.calculations import format_duration, format_time, get_balance_color
 from .. import config
 
 def project_menu(lang: str = "en"):
@@ -14,11 +14,11 @@ def project_menu(lang: str = "en"):
         ui.render_header(translate('option_4_clean', lang=lang))
         
         table_columns = [
-            ("ID", {"justify": "center", "style": "dim"}),
-            ("Name", {"style": "bold"}),
-            ("Base", {"justify": "center", "style": "dim"}),
-            ("Balance", {"justify": "right"}),
-            ("Active", {"justify": "center"})
+            (translate("table_id", lang=lang), {"justify": "center", "style": "dim"}),
+            (translate("table_name", lang=lang), {"style": "bold"}),
+            (translate("table_base", lang=lang), {"justify": "center", "style": "dim"}),
+            (translate("table_balance", lang=lang), {"justify": "right"}),
+            (translate("table_active", lang=lang), {"justify": "center"})
         ]
         
         table_rows = []
@@ -33,7 +33,7 @@ def project_menu(lang: str = "en"):
             table_rows.append([
                 str(project['id']), 
                 project['name'], 
-                f"{project['base_hours']}h {project['base_minutes']}m", 
+                format_duration(project['base_hours'], project['base_minutes']), 
                 f"[{balance_color}]{balance_fmt}[/{balance_color}]",
                 is_active_marker
             ])
@@ -78,24 +78,24 @@ def project_menu(lang: str = "en"):
                     ui.print_message(translate('error_integers', lang=lang), style="bold red")
                     ui.ask_string(translate("press_enter", lang=lang), default="")
         elif user_choice == "d":
-            id_to_delete_input = ui.ask_string("Introduce ID para BORRAR")
+            id_to_delete_input = ui.ask_string(translate("delete_project_prompt", lang=lang))
             if id_to_delete_input.isdigit():
                 target_id = int(id_to_delete_input)
                 if target_id == active_project_id:
-                    ui.print_message("No puedes borrar el proyecto activo.", style="bold red")
+                    ui.print_message(translate("cannot_delete_active", lang=lang), style="bold red")
                 else:
                     target_project = next((project for project in projects_list if project['id'] == target_id), None)
                     if target_project:
-                        ui.print_message(f"\n⚠️  ¡ATENCIÓN! Vas a borrar '{target_project['name'].upper()}' y todos sus registros.", style="bold yellow")
-                        confirmation_name = ui.ask_string(f"Escribe el NOMBRE del proyecto para confirmar")
+                        ui.print_message(f"\n{translate('delete_project_warning', lang=lang, name=target_project['name'])}", style="bold yellow")
+                        confirmation_name = ui.ask_string(translate("delete_project_confirm_name", lang=lang))
                         
                         if confirmation_name == target_project['name']:
                             db.delete_project(target_id)
-                            ui.print_message(f"\n✅ Proyecto '{target_project['name']}' eliminado.", style="bold green")
+                            ui.print_message(f"\n{translate('project_deleted', lang=lang, name=target_project['name'])}", style="bold green")
                         else:
-                            ui.print_message("\n❌ El nombre no coincide. Operación cancelada.", style="bold red")
+                            ui.print_message(f"\n{translate('project_name_mismatch', lang=lang)}", style="bold red")
                     else:
-                        ui.print_message("\n❌ ID de proyecto no encontrado.", style="bold red")
+                        ui.print_message(f"\n{translate('project_not_found', lang=lang)}", style="bold red")
                 ui.ask_string(translate("press_enter", lang=lang), default="")
         elif user_choice == "v":
             break

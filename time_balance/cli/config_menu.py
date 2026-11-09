@@ -2,13 +2,14 @@ from ..ui import interface as ui
 from ..i18n.translator import translate, resolve_language
 from ..database.manager import db
 from ..utils import files
+from ..utils.calculations import format_duration
 from .. import config
 
 def _display_config_status(project_data: dict, current_lang_setting: str, lang: str):
     ui.render_header(translate('option_3_clean', lang=lang))
     ui.render_info_line(translate('project_label', lang=lang), project_data['name'])
-    ui.render_info_line(translate('base_day_label', lang=lang), f"{project_data['base_hours']}h {project_data['base_minutes']}m")
-    ui.render_info_line("Language", current_lang_setting)
+    ui.render_info_line(translate('base_day_label', lang=lang), format_duration(project_data['base_hours'], project_data['base_minutes']))
+    ui.render_info_line(translate('language_label', lang=lang), current_lang_setting)
 
 def _display_menu_options(lang: str):
     ui.render_section_title(translate('config_section_project', lang=lang))
@@ -19,7 +20,7 @@ def _display_menu_options(lang: str):
     ui.render_section_title(translate('config_section_data', lang=lang))
     ui.print_message(f"  [bold blue]4.[/bold blue] {translate('config_option_import', lang=lang)}")
     ui.print_message(f"  [bold blue]5.[/bold blue] {translate('config_option_export', lang=lang)}")
-    ui.print_message(f"  [bold blue]6.[/bold blue] Reparar/Recalcular saldos")
+    ui.print_message(f"  [bold blue]6.[/bold blue] {translate('config_option_repair', lang=lang)}")
     
     ui.render_navigation_help([("V", translate("config_option_back", lang=lang))])
 
@@ -105,9 +106,9 @@ def _handle_export_data(project_id: int, project_data: dict, lang: str):
 def _handle_recalculate_balances(lang: str):
     """Forces a recalculation of the active project balance."""
     active_project_id = db.get_active_project_id()
-    if ui.ask_confirm("¿Recalcular saldo del proyecto desde el historial?"):
+    if ui.ask_confirm(translate('recalculate_confirm', lang=lang)):
         db.recalculate_project_balance(active_project_id)
-        ui.print_message("\n✅ Saldo recalculado correctamente.", style="bold green")
+        ui.print_message(f"\n{translate('recalculate_done', lang=lang)}", style="bold green")
     ui.ask_string(translate('press_enter', lang=lang), default="")
 
 

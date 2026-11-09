@@ -6,6 +6,7 @@ from rich.prompt import Prompt, Confirm
 from rich.align import Align
 from rich.rule import Rule
 from rich import box
+from ..utils.calculations import format_duration
 
 # --- UI CONFIGURATION (Universal Palette) ---
 # We avoid bright cyan as it's hard to read on light backgrounds.
@@ -52,8 +53,8 @@ def render_navigation_help(options: List[Tuple[str, str]]):
 def render_dashboard(project_name: str, base_hours: int, base_minutes: int, balance_fmt: str, balance_color: str, version: str, labels: dict):
     """Renders the main dashboard header."""
     dashboard_content = (
-        f"[bold {COLOR_PRIMARY}]{labels['project']}:[/bold {COLOR_PRIMARY}] {project_name.upper()}\n"
-        f"[bold {COLOR_PRIMARY}]{labels['base_day']}:[/bold {COLOR_PRIMARY}] {base_hours}h {base_minutes}m\n"
+        f"[bold {COLOR_PRIMARY}]{labels['project']}:[/bold {COLOR_PRIMARY}] {project_name}\n"
+        f"[bold {COLOR_PRIMARY}]{labels['base_day']}:[/bold {COLOR_PRIMARY}] {format_duration(base_hours, base_minutes)}\n"
         f"[bold {COLOR_PRIMARY}]{labels['balance']}:[/bold {COLOR_PRIMARY}] [{balance_color}]{balance_fmt}[/{balance_color}]"
     )
     
