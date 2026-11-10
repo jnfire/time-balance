@@ -74,7 +74,7 @@ One SQLite file called `time_balance.db`:
 
 ## Development
 
-The code is typed and checked with ruff and mypy, and has 144 tests (98% coverage). See the [developer guide](docs/DEVELOPMENT.md) for the commands.
+The code is typed and checked with ruff and mypy, and has 144 tests (96% coverage). See the [developer guide](docs/DEVELOPMENT.md) for the commands.
 
 ## Documentation
 

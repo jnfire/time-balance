@@ -11,7 +11,7 @@ The final release. time-balance was the first sketch of what became time-tracker
 - Input validation: hours from 0 to 24 and minutes from 0 to 59 everywhere a duration is typed (registering a day, creating a project, editing the base).
 - A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog.
 - Documentation of the export format (`docs/DATA-FORMAT.md`), in English and Spanish.
-- Quality tooling: ruff (lint and format) and mypy, run in CI together with a coverage floor of 90%. Coverage went from 63% to 98% and the tests from 51 to 144.
+- Quality tooling: ruff (lint and format) and mypy, run in CI together with a coverage floor of 90%. Coverage went from 63% to 96% and the tests from 51 to 144.
 
 ### Changed
 - **Architecture.** Flows receive a `Context` (database and language) instead of using globals, so they are tested with a temporary database and a scripted terminal. The database is opened the first time it is needed: importing the package or running `--version` no longer creates files. Rows are typed (`Project`, `Record`), the validation and the page arithmetic are pure functions, and `files.py` uses `pathlib` and types.

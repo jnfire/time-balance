@@ -74,7 +74,7 @@ Un único archivo SQLite llamado `time_balance.db`:
 
 ## Desarrollo
 
-El código está tipado y comprobado con ruff y mypy, y tiene 144 tests (98 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
+El código está tipado y comprobado con ruff y mypy, y tiene 144 tests (96 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
 
 ## Documentación
 
