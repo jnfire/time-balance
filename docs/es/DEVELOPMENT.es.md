@@ -1,59 +1,66 @@
-# Guía para Desarrolladores
+# Guía de desarrollo
 
-Esta guía proporciona detalles técnicos para `time-balance` v0.6.x. El proyecto está terminado y archivado, así que esta guía es una referencia, no una invitación a contribuir.
+Notas técnicas de `time-balance` v0.6.x. El proyecto está terminado, así que esta guía es una referencia, no una invitación a contribuir. El diseño se describe en [ARCHITECTURE.es.md](ARCHITECTURE.es.md).
 
-## Filosofía del Proyecto
+## Filosofía
 
-- **Modularización Basada en Dominios**: La aplicación está dividida en dominios funcionales para asegurar la escalabilidad y mantenibilidad.
-- **Abstracción de UI**: La lógica de negocio está desacoplada de las librerías de renderizado de terminal.
-- **Estándares de Naming Estrictos**: No se permiten variables de una sola letra (excepto en list comprehensions obvias). Mínimo 3 caracteres.
+- **Capas que solo dependen hacia abajo**: los flujos (`cli/`) usan la base de datos, la capa de terminal, las traducciones y funciones puras; nada por debajo conoce los flujos.
+- **Lógica pura fuera de las pantallas**: interpretar, dar formato y calcular páginas son funciones simples con tests unitarios.
+- **Código tipado**: las funciones públicas están anotadas y `mypy` pasa sin excepciones.
+- **Sin efectos ocultos**: importar el paquete nunca toca el disco ni la terminal.
+- **Nombres descriptivos**: sin variables de una letra fuera de las comprensiones.
 
-## Estructura de Capas
-
-### 1. Dominio de Persistencia (`database/`)
-- `DatabaseManager`: Centraliza todas las operaciones SQLite. Gestiona transacciones, actualizaciones atómicas de saldo e importaciones masivas.
-- Instancia global `db`: Utilizada como un singleton en toda la aplicación.
-
-### 2. Dominio de Presentación (`cli/`)
-- Orquestado por `cli/main.py`.
-- Dividido en módulos temáticos: `registration.py`, `history.py`, `projects.py`, etc.
-- Utiliza `ui/interface.py` para toda la E/S de consola.
-
-### 3. Capa de Abstracción de UI (`ui/`)
-- `ui/interface.py`: El único módulo autorizado para importar librerías visuales (como `Rich`).
-- Proporciona componentes genéricos: `render_header`, `render_table`, `render_navigation_help`.
-
-### 4. Dominio de Localización (`i18n/`)
-- `i18n/translator.py`: Motor de traducción con sistema de caché.
-- `i18n/locales/*.json`: Cadenas de texto externalizadas.
-
-## Ejecución para Desarrollo
-
-Durante el desarrollo, utiliza el punto de entrada directo en el directorio raíz:
+## Preparación
 
 ```bash
-chmod +x main.py
-./main.py
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+./main.py          # o: time-balance
 ```
 
-## Ejecución de Tests
+## Comprobaciones
 
-Utilizamos bases de datos SQLite temporales para las pruebas para asegurar el aislamiento del entorno.
+La CI ejecuta todo esto en cada push y pull request:
 
 ```bash
-# Ejecutar todos los tests
-python3 -m unittest discover -v tests
+ruff check .                  # lint
+ruff format --check .         # formato
+mypy time_balance             # tipos
+python -m unittest discover   # tests
+coverage run -m unittest discover && coverage report --fail-under=90
 ```
 
-## Cómo añadir un nuevo comando CLI
+`ruff format .` y `ruff check --fix .` corrigen solos la mayoría de los avisos.
 
-1. Si es un flujo nuevo, crea un archivo en `time_balance/cli/`.
-2. Registra el comando en la función `main()` en `time_balance/cli/main.py`.
-3. Utiliza `ui.interface` para cualquier interacción con el usuario.
-4. Asegúrate de que la nueva lógica siga los estándares de naming y DRY.
+## Probar flujos
 
-## Gestión de la Base de Datos
+`tests/helpers.py` da a cada test una base de datos temporal y una terminal con respuestas guionizadas:
 
-La base de datos sigue los estándares XDG. El esquema se define en `DatabaseManager._initialize_database()`.
-- macOS: `~/Library/Application Support/time-balance/`
-- Linux: `~/.local/share/time-balance/`
+```python
+class TestRegisterDay(DatabaseTestCase):
+    def test_stores_the_day(self):
+        with ScriptedTerminal(["2026-04-24", "8", "15"]).active() as terminal:
+            register_day(self.ctx)
+        record = self.db.get_record_by_date(self.project_id, "2026-04-24")
+        self.assertEqual(record["difference"], 30)
+        self.assertIn("+30m", terminal.output)
+```
+
+Cada pregunta del flujo consume la siguiente respuesta; una respuesta vacía toma el valor por defecto. Un flujo que pide más de lo guionizado, o un test que deja respuestas sin usar, falla.
+
+## Añadir un flujo
+
+1. Pon la lógica que no necesita terminal en `utils/` como función pura y pruébala.
+2. Escribe el flujo en `cli/` como una función que recibe un `Context`. Usa `ctx.t(...)`, `ctx.pause()` y `ctx.confirm(...)`, y pasa por `ui.escape` todo lo que haya escrito el usuario antes de imprimirlo.
+3. Añade las claves de traducción a **los dos** `en.json` y `es.json`. Un test comprueba que coinciden, marcadores incluidos.
+4. Regístralo en el menú o en `build_parser()` de `cli/main.py`, y pruébalo con `ScriptedTerminal`.
+
+## Base de datos
+
+El esquema está en `database/manager.py`. La carpeta de datos es `~/.local/share/time-balance/` en Linux (o `$XDG_DATA_HOME`), `~/Library/Application Support/time-balance/` en macOS y `%APPDATA%\time-balance\` en Windows. Toda escritura pasa por `DatabaseManager`, que mantiene la caché del saldo coherente en la misma transacción.
+
+## Publicar una versión
+
+1. Actualiza `time_balance/VERSION` y añade una sección `## [x.y.z] - fecha` a `CHANGELOG.md`.
+2. Fusiona en `main` y sube el tag `vx.y.z`.
+3. El workflow Release comprueba que el tag coincide con `VERSION`, construye el wheel y la distribución de código fuente y crea la release con la sección del changelog como notas.

@@ -10,7 +10,7 @@ You can query your status or perform migrations without entering the menu:
 # View status of active project
 time-balance --status
 
-# List last 5 records
+# List last 5 records (use --list 0 for all of them)
 time-balance --list
 
 # Force UI language

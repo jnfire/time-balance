@@ -4,7 +4,7 @@ Una pequeña herramienta de terminal para registrar tus jornadas y llevar tu sal
 
 [Read in English](README.md)
 
-> **Estado del proyecto: terminado.** time-balance fue el primer boceto de una idea más grande. Esa idea acabó siendo **time-tracker**, una aplicación web con tareas, bloques de tiempo reales, historial auditable y mucho más. time-balance se queda aquí como la versión limpia y final de ese primer experimento: funciona, está probada y ya no se desarrolla. El repositorio está archivado.
+> **Estado del proyecto: terminado.** time-balance fue el primer boceto de una idea más grande. Esa idea acabó siendo **time-tracker**, una aplicación web con tareas, bloques de tiempo reales, historial auditable y mucho más. time-balance se queda aquí como la versión limpia y final de ese primer experimento: funciona, está probada y no se prevén funciones nuevas.
 
 ![El panel principal](docs/screenshots/dashboard-es.png)
 
@@ -71,6 +71,10 @@ Un único archivo SQLite llamado `time_balance.db`:
 | Abril de 2026 | Versión 0.5.0: almacenamiento en SQLite, varios proyectos, traducciones y una estructura modular. |
 | Junio de 2026 | La idea se quedó pequeña para la terminal y empezó de nuevo como time-tracker, una aplicación web. |
 | Noviembre de 2026 | Esta limpieza y la versión final, la 0.6.0. |
+
+## Desarrollo
+
+El código está tipado y comprobado con ruff y mypy, y tiene 144 tests (98 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
 
 ## Documentación
 

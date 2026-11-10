@@ -4,22 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [0.6.0] - 2026-11-09
 
-The final release. time-balance was the first sketch of what became time-tracker, a web application. This version cleans it up, documents it and closes the project.
+The final release. time-balance was the first sketch of what became time-tracker, a web application. This version cleans the code up, documents it and closes the project.
+
+### Added
+- The dashboard shows the last registered day.
+- Input validation: hours from 0 to 24 and minutes from 0 to 59 everywhere a duration is typed (registering a day, creating a project, editing the base).
+- A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog.
+- Documentation of the export format (`docs/DATA-FORMAT.md`), in English and Spanish.
+- Quality tooling: ruff (lint and format) and mypy, run in CI together with a coverage floor of 90%. Coverage went from 63% to 98% and the tests from 51 to 144.
 
 ### Changed
-- Balances and durations drop the empty parts: `+1h 15m`, `-25m`, `+2h` and `0m` instead of `+1h 15m`, `-0h 25m`, `+2h 0m` and `0h 0m`. The daily base is shown the same way (`8h`).
-- Labels are written in sentence case everywhere, and the project name is shown as it was typed.
-- Packaging moves to `pyproject.toml` alone, with a real author, the repository URL and Python 3.9 as the minimum. The command is defined in one place (`time_balance.cli.main:main`) and `setup.py` and `MANIFEST.in` are gone.
+- **Architecture.** Flows receive a `Context` (database and language) instead of using globals, so they are tested with a temporary database and a scripted terminal. The database is opened the first time it is needed: importing the package or running `--version` no longer creates files. Rows are typed (`Project`, `Record`), the validation and the page arithmetic are pure functions, and `files.py` uses `pathlib` and types.
+- `main()` takes the arguments and returns the exit code, so it can be called and tested without patching `sys.argv`.
+- Balances and durations drop the empty parts: `+1h 15m`, `-25m`, `+2h` and `0m` instead of `-0h 25m`, `+2h 0m` and `0h 0m`. Labels are in sentence case and project names are shown as typed.
+- Packaging is `pyproject.toml` alone, with a real author, the repository URL and Python 3.9 as the minimum. The command is defined in one place and `setup.py` and `MANIFEST.in` are gone.
 - CI runs on every push to `main` and on pull requests, on Python 3.9 to 3.13, and checks that the translations end up inside the wheel.
 - The README is rewritten in English and Spanish, with screenshots, installation from the release files and a note that the project is finished and that time-tracker continues it.
 
-### Added
-- A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog.
-- A document with the export format (`docs/DATA-FORMAT.md`), in English and Spanish.
-- A `.gitignore` for Python build output and caches.
-
 ### Fixed
-- Table headers (`Date`, `Name`, `Active`...), the language label in the settings, the repair option and the whole project-deletion flow were hard-coded in one language. They are now translated.
+- Creating or renaming a project to a name that already exists crashed the program with a database error. It now says so.
+- Hours and minutes outside a valid range (negative hours, 75 minutes) were accepted and stored.
+- Merging an import into a project that already had records left a wrong balance. The balance is now rebuilt from the records after every import.
+- A project whose name contains square brackets, such as `[bold]`, broke the screen. Text typed by the user is now escaped.
+- An invalid date when registering a day silently used today's date. The registration is cancelled instead.
+- `--lang` had no effect in the interactive menu.
+- If the active project no longer existed, the program crashed. The first project becomes the active one.
+- Table headers, the language label, the repair option, the whole project-deletion flow and the yes/no answers were hard-coded in one language. They are translated now.
 
 ### Removed
 - The contribution guides: the project is finished and no longer accepts changes.
