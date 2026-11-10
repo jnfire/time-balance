@@ -17,8 +17,8 @@ The final release. time-balance was the first sketch of what became time-tracker
 - **Architecture.** Flows receive a `Context` (database and language) instead of using globals, so they are tested with a temporary database and a scripted terminal. The database is opened the first time it is needed: importing the package or running `--version` no longer creates files. Rows are typed (`Project`, `Record`), the validation and the page arithmetic are pure functions, and `files.py` uses `pathlib` and types.
 - `main()` takes the arguments and returns the exit code, so it can be called and tested without patching `sys.argv`.
 - Balances and durations drop the empty parts: `+1h 15m`, `-25m`, `+2h` and `0m` instead of `-0h 25m`, `+2h 0m` and `0h 0m`. Labels are in sentence case and project names are shown as typed.
-- Packaging is `pyproject.toml` alone, with a real author, the repository URL and Python 3.9 as the minimum. The command is defined in one place and `setup.py` and `MANIFEST.in` are gone.
-- CI runs on every push to `main` and on pull requests, on Python 3.9 to 3.13, and checks that the translations end up inside the wheel.
+- Packaging is `pyproject.toml` alone, with a real author, the repository URL and Python 3.10 as the minimum (3.9 no longer receives security fixes and GitHub no longer provides it). The command is defined in one place and `setup.py` and `MANIFEST.in` are gone.
+- CI runs on every push to `main` and on pull requests, on Python 3.10 to 3.14, and checks that the translations end up inside the wheel.
 - The README is rewritten in English and Spanish, with screenshots, installation from the release files and a note that the project is finished and that time-tracker continues it.
 
 ### Fixed

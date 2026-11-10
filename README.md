@@ -22,7 +22,7 @@ A small terminal tool to register your workdays and keep your hour balance, with
 
 ## Install
 
-Requires Python 3.9 or newer. Download the wheel from the [latest release](https://github.com/jnfire/time-balance/releases/latest) and install it:
+Requires Python 3.10 or newer. Download the wheel from the [latest release](https://github.com/jnfire/time-balance/releases/latest) and install it:
 
 ```bash
 pipx install ./time_balance-0.6.0-py3-none-any.whl

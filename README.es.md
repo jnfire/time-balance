@@ -22,7 +22,7 @@ Una pequeña herramienta de terminal para registrar tus jornadas y llevar tu sal
 
 ## Instalación
 
-Requiere Python 3.9 o superior. Descarga el wheel de la [última versión](https://github.com/jnfire/time-balance/releases/latest) e instálalo:
+Requiere Python 3.10 o superior. Descarga el wheel de la [última versión](https://github.com/jnfire/time-balance/releases/latest) e instálalo:
 
 ```bash
 pipx install ./time_balance-0.6.0-py3-none-any.whl
