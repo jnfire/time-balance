@@ -4,7 +4,7 @@ A small terminal tool to register your workdays and keep your hour balance, with
 
 [Leer en español](README.es.md)
 
-> **Project status: finished.** time-balance was the first sketch of a bigger idea. That idea became **time-tracker**, a web application with tasks, real time blocks, an audit history and much more. time-balance stays here as the clean, final version of that first experiment: it works, it is tested, and no new features are planned.
+> **Project status: finished.** time-balance was the first sketch of a bigger idea. That idea became **[time-tracker](https://time-tracker.jnfire.dev/)**, a web application with tasks, real time blocks, an audit history and much more. time-balance stays here as the clean, final version of that first experiment: it works, it is tested, and no new features are planned.
 
 ![The dashboard](docs/screenshots/dashboard-en.png)
 
@@ -69,7 +69,7 @@ One SQLite file called `time_balance.db`:
 | --- | --- |
 | January 2026 | First commit: a script to count the hours of a workday. |
 | April 2026 | Version 0.5.0: SQLite storage, several projects, translations and a modular structure. |
-| June 2026 | The idea outgrew the terminal and started again as time-tracker, a web application. |
+| June 2026 | The idea outgrew the terminal and started again as [time-tracker](https://time-tracker.jnfire.dev/), a web application. |
 | November 2026 | This cleanup and the final release, 0.6.0. |
 
 ## Development

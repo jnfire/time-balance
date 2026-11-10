@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.0] - 2026-11-09
+## [0.6.0] - 2026-11-10
 
 The final release. time-balance was the first sketch of what became time-tracker, a web application. This version cleans the code up, documents it and closes the project.
 
