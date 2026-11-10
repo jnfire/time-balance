@@ -81,5 +81,12 @@
     "delete_project_confirm_name": "Escribe el nombre del proyecto para confirmar",
     "project_deleted": "Proyecto '{name}' eliminado.",
     "project_name_mismatch": "El nombre no coincide. Operación cancelada.",
-    "project_not_found": "No se encontró el ID del proyecto."
+    "project_not_found": "No se encontró el ID del proyecto.",
+    "choice_yes": "s",
+    "choice_no": "n",
+    "error_range": "Introduce horas de 0 a 24 y minutos de 0 a 59.",
+    "project_option_delete": "Borrar",
+    "project_name_default": "Nuevo",
+    "project_name_taken": "Ya existe un proyecto llamado '{name}'.",
+    "last_record_label": "Último registro"
 }

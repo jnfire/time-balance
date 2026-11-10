@@ -1,179 +1,168 @@
+"""Project settings, language, import and export."""
+
+from __future__ import annotations
+
+import sqlite3
+
 from .. import config
-from ..database.manager import db
-from ..i18n.translator import resolve_language, translate
+from ..database.manager import SETTING_LANGUAGE
+from ..database.models import Project
+from ..i18n.translator import resolve_language
 from ..ui import interface as ui
 from ..utils import files
 from ..utils.calculations import format_duration
+from ..utils.validation import InputError, parse_duration
+from .context import Context
+from .projects import name_is_taken
 
+LANGUAGE_CHOICES = ("en", "es", "auto")
 
-def _display_config_status(project_data: dict, current_lang_setting: str, lang: str):
-    ui.render_header(translate("option_3_clean", lang=lang))
-    ui.render_info_line(translate("project_label", lang=lang), project_data["name"])
-    ui.render_info_line(
-        translate("base_day_label", lang=lang),
-        format_duration(project_data["base_hours"], project_data["base_minutes"]),
-    )
-    ui.render_info_line(translate("language_label", lang=lang), current_lang_setting)
-
-
-def _display_menu_options(lang: str):
-    ui.render_section_title(translate("config_section_project", lang=lang))
-    ui.print_message(
-        f"  [bold blue]1.[/bold blue] {translate('config_option_edit_name', lang=lang)}"
-    )
-    ui.print_message(
-        f"  [bold blue]2.[/bold blue] {translate('config_option_edit_base', lang=lang)}"
-    )
-    ui.print_message(f"  [bold blue]3.[/bold blue] {translate('config_option_lang', lang=lang)}")
-
-    ui.render_section_title(translate("config_section_data", lang=lang))
-    ui.print_message(f"  [bold blue]4.[/bold blue] {translate('config_option_import', lang=lang)}")
-    ui.print_message(f"  [bold blue]5.[/bold blue] {translate('config_option_export', lang=lang)}")
-    ui.print_message(f"  [bold blue]6.[/bold blue] {translate('config_option_repair', lang=lang)}")
-
-    ui.render_navigation_help([("V", translate("config_option_back", lang=lang))])
-
-
-def _handle_edit_project_name(
-    project_id: int, current_name: str, base_hours: int, base_minutes: int, lang: str
-):
-    new_name = ui.ask_string(
-        translate("project_name_prompt", lang=lang, current=current_name), default=current_name
-    ).strip()
-    if new_name:
-        db.update_project(project_id, new_name, base_hours, base_minutes)
-
-
-def _handle_adjust_base_time(
-    project_id: int, project_name: str, current_h: int, current_m: int, lang: str
-):
-    try:
-        new_h = int(
-            ui.ask_string(
-                translate("base_hours_prompt", lang=lang, current=current_h), default=str(current_h)
-            )
-        )
-        new_m = int(
-            ui.ask_string(
-                translate("base_minutes_prompt", lang=lang, current=current_m),
-                default=str(current_m),
-            )
-        )
-        db.update_project(project_id, project_name, new_h, new_m)
-    except ValueError:
-        ui.print_message(translate("error_integers", lang=lang), style="bold red")
-        ui.ask_string(translate("press_enter", lang=lang), default="")
-
-
-def _handle_change_language(lang: str) -> str:
-    lang_opt = (
-        ui.ask_string(
-            translate("language_prompt", lang=lang, current=db.get_setting("language", "auto")),
-            choices=["en", "es", "auto"],
-            default="auto",
-        )
-        .strip()
-        .lower()
-    )
-    db.set_setting("language", lang_opt)
-    return resolve_language(lang_opt)
-
-
-def _handle_import_data(project_id: int, lang: str):
-    import_path = ui.ask_string(translate("import_src_prompt", lang=lang)).strip()
-    if not import_path:
-        return
-
-    import_mode = ui.ask_string(
-        translate(
-            "import_mode_prompt",
-            lang=lang,
-            merge=config.MODE_MERGE,
-            overwrite=config.MODE_OVERWRITE,
+# (key, translation of the option, section it belongs to)
+_MENU_SECTIONS = (
+    (
+        "config_section_project",
+        (
+            ("1", "config_option_edit_name"),
+            ("2", "config_option_edit_base"),
+            ("3", "config_option_lang"),
         ),
-        choices=[config.MODE_MERGE, config.MODE_OVERWRITE],
+    ),
+    (
+        "config_section_data",
+        (
+            ("4", "config_option_import"),
+            ("5", "config_option_export"),
+            ("6", "config_option_repair"),
+        ),
+    ),
+)
+
+
+def _render_menu(ctx: Context, project: Project) -> None:
+    ui.clear_screen()
+    ui.render_header(ctx.t("option_3_clean"))
+    ui.render_info_line(ctx.t("project_label"), project["name"])
+    ui.render_info_line(
+        ctx.t("base_day_label"), format_duration(project["base_hours"], project["base_minutes"])
+    )
+    ui.render_info_line(ctx.t("language_label"), ctx.db.get_setting(SETTING_LANGUAGE, "auto"))
+    for section_key, options in _MENU_SECTIONS:
+        ui.render_section_title(ctx.t(section_key))
+        for number, label_key in options:
+            ui.print_message(f"  [bold blue]{number}.[/bold blue] {ctx.t(label_key)}")
+    ui.render_navigation_help([("V", ctx.t("config_option_back"))])
+
+
+def _edit_name(ctx: Context, project: Project) -> None:
+    name = ui.ask_string(
+        ctx.t("project_name_prompt", current=ui.escape(project["name"])), default=project["name"]
+    ).strip()
+    if not name or name == project["name"]:
+        return
+    if name_is_taken(ctx.db.get_projects(), name, ignore_id=project["id"]):
+        ui.print_message(ctx.t("project_name_taken", name=ui.escape(name)), style="bold red")
+        ctx.pause()
+        return
+    ctx.db.update_project(project["id"], name, project["base_hours"], project["base_minutes"])
+
+
+def _edit_base(ctx: Context, project: Project) -> None:
+    try:
+        hours, minutes = parse_duration(
+            ui.ask_string(
+                ctx.t("base_hours_prompt", current=project["base_hours"]),
+                default=str(project["base_hours"]),
+            ),
+            ui.ask_string(
+                ctx.t("base_minutes_prompt", current=project["base_minutes"]),
+                default=str(project["base_minutes"]),
+            ),
+        )
+    except InputError as error:
+        ui.print_message(ctx.t(error.message_key), style="bold red")
+        ctx.pause()
+        return
+    ctx.db.update_project(project["id"], project["name"], hours, minutes)
+
+
+def _change_language(ctx: Context) -> Context:
+    """Stores the chosen language and returns a context that uses it."""
+    chosen = ui.ask_string(
+        ctx.t("language_prompt", current=ctx.db.get_setting(SETTING_LANGUAGE, "auto")),
+        choices=LANGUAGE_CHOICES,
+        default="auto",
+    ).lower()
+    ctx.db.set_setting(SETTING_LANGUAGE, chosen)
+    return ctx.with_lang(resolve_language(chosen))
+
+
+def _import_data(ctx: Context, project: Project) -> None:
+    path = ui.ask_string(ctx.t("import_src_prompt")).strip()
+    if not path:
+        return
+    mode = ui.ask_string(
+        ctx.t("import_mode_prompt", merge=config.MODE_MERGE, overwrite=config.MODE_OVERWRITE),
+        choices=config.VALID_IMPORT_MODES,
         default=config.MODE_MERGE,
     )
-
     try:
-        source_data = files.read_history_file(import_path)
-        if import_mode == config.MODE_OVERWRITE:
-            db.clear_project_records(project_id)
-        else:
-            db.reset_project_balance(project_id)
-
-        imported_count = db.import_records(project_id, source_data["records"])
-        ui.print_message(
-            translate("import_success", lang=lang, count=imported_count), style="bold green"
-        )
-    except Exception as err:
-        ui.print_message(translate("import_error", lang=lang, error=err), style="bold red")
-    ui.ask_string(translate("press_enter", lang=lang), default="")
+        source = files.read_history_file(path)
+        if mode == config.MODE_OVERWRITE:
+            ctx.db.clear_project_records(project["id"])
+        count = ctx.db.import_records(project["id"], source["records"])
+        ui.print_message(ctx.t("import_success", count=count), style="bold green")
+    except (ValueError, OSError, sqlite3.Error) as error:
+        ui.print_message(ctx.t("import_error", error=ui.escape(str(error))), style="bold red")
+    ctx.pause()
 
 
-def _handle_export_data(project_id: int, project_data: dict, lang: str):
-    export_path = ui.ask_string(translate("export_dest_prompt", lang=lang)).strip()
-    if not export_path:
+def _export_data(ctx: Context, project: Project) -> None:
+    path = ui.ask_string(ctx.t("export_dest_prompt")).strip()
+    if not path:
         return
-
+    data = {
+        "metadata": {
+            "project_name": project["name"],
+            "hours_base": project["base_hours"],
+            "minutes_base": project["base_minutes"],
+            "version": files.FORMAT_VERSION,
+            "language": ctx.db.get_setting(SETTING_LANGUAGE, "auto"),
+        },
+        "records": ctx.db.get_records_dict(project["id"]),
+    }
     try:
-        data_to_export = {
-            "metadata": {
-                "project_name": project_data["name"],
-                "hours_base": project_data["base_hours"],
-                "minutes_base": project_data["base_minutes"],
-                "version": "1.0",
-                "language": db.get_setting("language", "auto"),
-            },
-            "records": db.get_records_dict(project_id),
-        }
-        dest = files.export_history(data_to_export, export_path)
-        ui.print_message(translate("export_success", lang=lang, path=dest), style="bold green")
-    except Exception as err:
-        ui.print_message(translate("export_error", lang=lang, error=err), style="bold red")
-    ui.ask_string(translate("press_enter", lang=lang), default="")
+        destination = files.export_history(data, path)
+        ui.print_message(
+            ctx.t("export_success", path=ui.escape(str(destination))), style="bold green"
+        )
+    except (ValueError, OSError) as error:
+        ui.print_message(ctx.t("export_error", error=ui.escape(str(error))), style="bold red")
+    ctx.pause()
 
 
-def _handle_recalculate_balances(lang: str):
-    """Forces a recalculation of the active project balance."""
-    active_project_id = db.get_active_project_id()
-    if ui.ask_confirm(translate("recalculate_confirm", lang=lang)):
-        db.recalculate_project_balance(active_project_id)
-        ui.print_message(f"\n{translate('recalculate_done', lang=lang)}", style="bold green")
-    ui.ask_string(translate("press_enter", lang=lang), default="")
+def _repair_balance(ctx: Context, project: Project) -> None:
+    if ctx.confirm(ctx.t("recalculate_confirm")):
+        ctx.db.recalculate_project_balance(project["id"])
+        ui.print_message(f"\n{ctx.t('recalculate_done')}", style="bold green")
+    ctx.pause()
 
 
-def config_menu(lang: str = "en"):
-    """Submenu for project-specific and global configuration."""
+def config_menu(ctx: Context) -> Context:
+    """Settings screen. Returns the context, which carries the language if it was changed."""
+    handlers = {
+        "1": _edit_name,
+        "2": _edit_base,
+        "4": _import_data,
+        "5": _export_data,
+        "6": _repair_balance,
+    }
     while True:
-        active_id = db.get_active_project_id()
-        project = db.get_project_by_id(active_id)
-        lang_setting = db.get_setting("language", "auto")
-
-        ui.clear_screen()
-        _display_config_status(project, lang_setting, lang)
-        _display_menu_options(lang)
-
-        choice = ui.ask_string(
-            f"\n{translate('choose_option', lang=lang)}",
-            choices=["1", "2", "3", "4", "5", "6", "v"],
-        ).lower()
-
-        if choice == "1":
-            _handle_edit_project_name(
-                active_id, project["name"], project["base_hours"], project["base_minutes"], lang
-            )
-        elif choice == "2":
-            _handle_adjust_base_time(
-                active_id, project["name"], project["base_hours"], project["base_minutes"], lang
-            )
-        elif choice == "3":
-            lang = _handle_change_language(lang)
-        elif choice == "4":
-            _handle_import_data(active_id, lang)
-        elif choice == "5":
-            _handle_export_data(active_id, project, lang)
-        elif choice == "6":
-            _handle_recalculate_balances(lang)
-        elif choice == "v":
-            break
+        project = ctx.db.get_active_project()
+        _render_menu(ctx, project)
+        choice = ui.ask_string(f"\n{ctx.t('choose_option')}", choices=[*handlers, "3", "v"]).lower()
+        if choice == "3":
+            ctx = _change_language(ctx)
+        elif choice in handlers:
+            handlers[choice](ctx, project)
+        else:
+            return ctx

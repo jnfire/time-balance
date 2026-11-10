@@ -1,5 +1,3 @@
-
-
 def format_time(total_minutes: int) -> str:
     """Converts minutes to a signed, readable format: +1h 5m, -25m, +2h, 0m."""
     if total_minutes == 0:

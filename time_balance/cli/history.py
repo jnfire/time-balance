@@ -1,177 +1,135 @@
-from typing import Any
+"""Listing, browsing and deleting registered days."""
 
-from ..database.manager import db
-from ..i18n.translator import translate
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+from ..database.models import Record
 from ..ui import interface as ui
 from ..utils.calculations import format_duration, format_time, get_balance_color
+from ..utils.pagination import clamp_page, page_count
+from ..utils.validation import parse_date
+from .context import Context
+
+PAGE_SIZE = 10
 
 
-def _prepare_table_rows(records_list: list[dict[str, Any]]) -> list[list[str]]:
-    """Helper to format database records into displayable table rows."""
-    formatted_rows = []
-    for record in records_list:
-        difference_value = record["difference"]
-        time_balance_fmt = format_time(difference_value)
-        row_color = get_balance_color(difference_value)
+def _columns(ctx: Context) -> list[ui.Column]:
+    return [
+        (ctx.t("table_date"), {"style": "dim", "justify": "center"}),
+        (ctx.t("work_label"), {"justify": "right"}),
+        (ctx.t("balance_short_label"), {"justify": "right"}),
+    ]
 
-        formatted_rows.append(
+
+def format_rows(records: Sequence[Record]) -> list[list[str]]:
+    """Turns records into the rows of the history table."""
+    rows = []
+    for record in records:
+        color = get_balance_color(record["difference"])
+        rows.append(
             [
                 record["date"],
                 format_duration(record["hours"], record["minutes"]),
-                f"[{row_color}]{time_balance_fmt}[/{row_color}]",
+                f"[{color}]{format_time(record['difference'])}[/{color}]",
             ]
         )
-    return formatted_rows
+    return rows
 
 
-def _delete_record_flow(active_project_id: int, lang: str):
-    """Handles the workflow for deleting a record: show list, date input, confirmation, and deletion."""
-    table_columns = [
-        (translate("table_date", lang=lang), {"style": "dim", "justify": "center"}),
-        (translate("work_label", lang=lang), {"justify": "right"}),
-        (translate("balance_short_label", lang=lang), {"justify": "right"}),
-    ]
-
-    # Fetch recent records for reference
-    paged_records = db.get_records(active_project_id, limit=10)
-    if not paged_records:
-        ui.clear_screen()
-        ui.print_message(f"\n{translate('no_records', lang=lang)}", style="yellow")
-        ui.ask_string(translate("press_enter", lang=lang), default="")
+def list_records(ctx: Context, limit: int) -> None:
+    """Prints the last ``limit`` records of the active project (all of them if ``limit <= 0``)."""
+    project_id = ctx.db.get_active_project_id()
+    records = ctx.db.get_records(project_id, limit=limit if limit > 0 else None)
+    if not records:
+        ui.print_message(f"\n{ctx.t('no_records')}", style="yellow")
         return
-
-    # Display the records table for reference
-    ui.clear_screen()
-    ui.render_header(translate("delete_record_option", lang=lang))
-    display_rows = _prepare_table_rows(paged_records)
-    ui.render_table("", table_columns, display_rows)
-
-    # Request the exact date to delete
-    ui.print_message("")
-    user_date_input = ui.ask_string(translate("delete_date_prompt", lang=lang), default="")
-
-    if not user_date_input.strip():
-        ui.print_message(translate("op_cancelled", lang=lang), style="yellow")
-        ui.ask_string(translate("press_enter", lang=lang), default="")
-        return
-
-    # Fetch the record
-    record_to_delete = db.get_record_by_date(active_project_id, user_date_input)
-
-    if not record_to_delete:
-        ui.print_message(
-            translate("delete_record_not_found", lang=lang, date=user_date_input), style="red"
-        )
-        ui.ask_string(translate("press_enter", lang=lang), default="")
-        return
-
-    # Show confirmation with record details
-    difference_fmt = format_time(record_to_delete["difference"])
-    confirmation_message = translate(
-        "delete_record_confirm",
-        lang=lang,
-        date=record_to_delete["date"],
-        hours=record_to_delete["hours"],
-        minutes=record_to_delete["minutes"],
-        diff=difference_fmt,
+    title = (
+        ctx.t("full_history_header") if limit <= 0 else ctx.t("recent_records_header", limit=limit)
     )
-
-    user_confirmation = ui.ask_string(
-        confirmation_message, choices=["s", "n"] if lang == "es" else ["y", "n"]
-    )
-
-    if user_confirmation.lower() not in ("s", "y"):
-        ui.print_message(translate("op_cancelled", lang=lang), style="yellow")
-        ui.ask_string(translate("press_enter", lang=lang), default="")
-        return
-
-    # Delete the record
-    db.delete_record(active_project_id, record_to_delete["date"])
-    ui.print_message(
-        translate("delete_success", lang=lang, date=record_to_delete["date"]), style="green"
-    )
-    ui.ask_string(translate("press_enter", lang=lang), default="")
+    ui.render_header(title)
+    ui.render_table("", _columns(ctx), format_rows(records))
 
 
-def view_history(limit: int = None, lang: str = "en"):
-    """Displays records for the active project. Handles both static list and interactive pagination."""
-    active_project_id = db.get_active_project_id()
-
-    table_columns = [
-        (translate("table_date", lang=lang), {"style": "dim", "justify": "center"}),
-        (translate("work_label", lang=lang), {"justify": "right"}),
-        (translate("balance_short_label", lang=lang), {"justify": "right"}),
-    ]
-
-    if limit is not None:
-        # --- Static Mode (CLI --list argument) ---
-        history_records = db.get_records(active_project_id, limit=limit if limit > 0 else None)
-        if not history_records:
-            ui.print_message(f"\n{translate('no_records', lang=lang)}", style="yellow")
+def browse_history(ctx: Context) -> None:
+    """Interactive history: pages of ``PAGE_SIZE`` rows, with next, previous, delete and back."""
+    project_id = ctx.db.get_active_project_id()
+    page = 0
+    while True:
+        total = ctx.db.count_records(project_id)
+        if total == 0:
+            ui.print_message(f"\n{ctx.t('no_records')}", style="yellow")
+            ctx.pause()
             return
 
-        table_title = (
-            translate("full_history_header", lang=lang)
-            if limit <= 0
-            else translate("recent_records_header", lang=lang, limit=limit)
-        )
-        display_rows = _prepare_table_rows(history_records)
-
-        ui.render_header(table_title)
-        ui.render_table("", table_columns, display_rows)
-        return
-
-    # --- Interactive Pagination Mode ---
-    page_size_limit = 10
-    current_page_index = 0
-    while True:
-        total_records_count = db.count_records(active_project_id)
-        if total_records_count == 0:
-            ui.print_message(f"\n{translate('no_records', lang=lang)}", style="yellow")
-            ui.ask_string(translate("press_enter", lang=lang), default="")
-            break
-
-        total_pages_count = (total_records_count + page_size_limit - 1) // page_size_limit
-        offset_value = current_page_index * page_size_limit
-        paged_records = db.get_records(
-            active_project_id, limit=page_size_limit, offset=offset_value
-        )
+        page = clamp_page(page, total, PAGE_SIZE)
+        pages = page_count(total, PAGE_SIZE)
+        records = ctx.db.get_records(project_id, limit=PAGE_SIZE, offset=page * PAGE_SIZE)
 
         ui.clear_screen()
-        table_title = translate("full_history_header", lang=lang)
-        display_rows = _prepare_table_rows(paged_records)
-
-        ui.render_header(table_title)
-        ui.render_table("", table_columns, display_rows)
+        ui.render_header(ctx.t("full_history_header"))
+        ui.render_table("", _columns(ctx), format_rows(records))
         ui.print_message(
-            f"\n {translate('pagination_info', lang=lang, current=current_page_index + 1, total=total_pages_count, count=total_records_count)}"
+            f"\n {ctx.t('pagination_info', current=page + 1, total=pages, count=total)}"
         )
 
-        # Build navigation options
-        nav_options = [("V", translate("pagination_back", lang=lang))]
-        nav_choices = ["v"]
+        options = [("V", ctx.t("pagination_back"))]
+        if page < pages - 1:
+            options.append(("N", ctx.t("pagination_next")))
+        if page > 0:
+            options.append(("P", ctx.t("pagination_prev")))
+        options.append(("D", ctx.t("delete_record_option")))
+        ui.render_navigation_help(options)
 
-        if current_page_index < total_pages_count - 1:
-            nav_options.append(("N", translate("pagination_next", lang=lang)))
-            nav_choices.append("n")
-        if current_page_index > 0:
-            nav_options.append(("P", translate("pagination_prev", lang=lang)))
-            nav_choices.append("p")
-
-        nav_options.append(("D", translate("delete_record_option", lang=lang)))
-        nav_choices.append("d")
-
-        ui.render_navigation_help(nav_options)
-
-        user_navigation_choice = ui.ask_string(
-            translate("choose_option", lang=lang), default="v", choices=nav_choices
+        choice = ui.ask_string(
+            ctx.t("choose_option"), default="v", choices=[key.lower() for key, _ in options]
         ).lower()
+        if choice == "n":
+            page += 1
+        elif choice == "p":
+            page -= 1
+        elif choice == "d":
+            delete_record_flow(ctx, project_id)
+        else:
+            return
 
-        if user_navigation_choice == "n":
-            current_page_index += 1
-        elif user_navigation_choice == "p":
-            current_page_index -= 1
-        elif user_navigation_choice == "d":
-            _delete_record_flow(active_project_id, lang)
-        elif user_navigation_choice == "v":
-            break
+
+def delete_record_flow(ctx: Context, project_id: int) -> None:
+    """Shows the latest days, asks for one, confirms and deletes it."""
+    records = ctx.db.get_records(project_id, limit=PAGE_SIZE)
+    ui.clear_screen()
+    if not records:
+        ui.print_message(f"\n{ctx.t('no_records')}", style="yellow")
+        ctx.pause()
+        return
+
+    ui.render_header(ctx.t("delete_record_option"))
+    ui.render_table("", _columns(ctx), format_rows(records))
+    ui.print_message("")
+
+    typed_date = ui.ask_string(ctx.t("delete_date_prompt"), default="").strip()
+    if not typed_date:
+        ui.print_message(ctx.t("op_cancelled"), style="yellow")
+        ctx.pause()
+        return
+
+    target_date = parse_date(typed_date)
+    record = ctx.db.get_record_by_date(project_id, target_date) if target_date else None
+    if record is None:
+        ui.print_message(ctx.t("delete_record_not_found", date=ui.escape(typed_date)), style="red")
+        ctx.pause()
+        return
+
+    message = ctx.t(
+        "delete_record_confirm",
+        date=record["date"],
+        hours=record["hours"],
+        minutes=record["minutes"],
+        diff=format_time(record["difference"]),
+    )
+    if ctx.confirm(message):
+        ctx.db.delete_record(project_id, record["date"])
+        ui.print_message(ctx.t("delete_success", date=record["date"]), style="green")
+    else:
+        ui.print_message(ctx.t("op_cancelled"), style="yellow")
+    ctx.pause()

@@ -1,81 +1,56 @@
-from datetime import date, datetime
+"""Registering the hours worked on a day."""
 
-from ..database.manager import db
-from ..i18n.translator import translate
+from __future__ import annotations
+
+from datetime import date
+
 from ..ui import interface as ui
 from ..utils.calculations import calculate_balance_difference, format_time
+from ..utils.validation import InputError, parse_date, parse_duration
+from .context import Context
 
 
-def request_date(lang: str = "en") -> str:
-    """Requests date from user using UI interface."""
-    today_date_str = date.today().strftime("%Y-%m-%d")
-    ui.print_message(
-        f"\n{translate('date_prompt', lang=lang, today=today_date_str)}", style="bold yellow"
-    )
-
-    user_date_input = ui.ask_string(
-        translate("date_input", lang=lang), default=today_date_str
-    ).strip()
-
-    try:
-        datetime.strptime(user_date_input, "%Y-%m-%d")
-        return user_date_input
-    except ValueError:
-        ui.print_message(translate("invalid_date", lang=lang), style="bold red")
-        return today_date_str
+def request_date(ctx: Context) -> str | None:
+    """Asks for a date (today by default). Returns None, after saying so, if it is not valid."""
+    today = date.today().isoformat()
+    ui.print_message(f"\n{ctx.t('date_prompt', today=today)}", style="bold yellow")
+    parsed = parse_date(ui.ask_string(ctx.t("date_input"), default=today))
+    if parsed is None:
+        ui.print_message(ctx.t("invalid_date"), style="bold red")
+    return parsed
 
 
-def register_day(lang: str = "en"):
-    """Interactive flow to register working hours for the active project."""
-    active_project_id = db.get_active_project_id()
-    current_project = db.get_project_by_id(active_project_id)
-    target_work_date = request_date(lang=lang)
-
-    existing_time_record = db.get_record_by_date(active_project_id, target_work_date)
-    if existing_time_record:
-        ui.print_message(
-            f"\n{translate('duplicate_warning', lang=lang, date=target_work_date)}",
-            style="bold yellow",
-        )
-        ui.print_message(
-            f"   {translate('previous_record', lang=lang, hours=existing_time_record['hours'], minutes=existing_time_record['minutes'])}"
-        )
-
-        user_confirmed_overwrite = ui.ask_confirm(
-            translate("overwrite_confirm", lang=lang), default=False
-        )
-        if not user_confirmed_overwrite:
-            ui.print_message(translate("op_cancelled", lang=lang), style="blue")
-            return
-
-    ui.render_header(translate("input_header", lang=lang, date=target_work_date))
-    try:
-        worked_hours_input = int(ui.ask_string(translate("hours_worked", lang=lang), default="0"))
-        worked_minutes_input = int(
-            ui.ask_string(translate("minutes_worked", lang=lang), default="0")
-        )
-    except ValueError:
-        ui.print_message(translate("error_integers", lang=lang), style="bold red")
+def register_day(ctx: Context) -> None:
+    """Asks for a day and the time worked, and stores it for the active project."""
+    project = ctx.db.get_active_project()
+    target_date = request_date(ctx)
+    if target_date is None:
         return
 
-    balance_difference_minutes = calculate_balance_difference(
-        worked_hours=worked_hours_input,
-        worked_minutes=worked_minutes_input,
-        base_hours=current_project["base_hours"],
-        base_minutes=current_project["base_minutes"],
-    )
+    existing = ctx.db.get_record_by_date(project["id"], target_date)
+    if existing:
+        ui.print_message(f"\n{ctx.t('duplicate_warning', date=target_date)}", style="bold yellow")
+        ui.print_message(
+            f"   {ctx.t('previous_record', hours=existing['hours'], minutes=existing['minutes'])}"
+        )
+        if not ctx.confirm(ctx.t("overwrite_confirm")):
+            ui.print_message(ctx.t("op_cancelled"), style="blue")
+            return
 
-    db.upsert_record(
-        active_project_id,
-        target_work_date,
-        worked_hours_input,
-        worked_minutes_input,
-        balance_difference_minutes,
-    )
+    ui.render_header(ctx.t("input_header", date=target_date))
+    try:
+        hours, minutes = parse_duration(
+            ui.ask_string(ctx.t("hours_worked"), default="0"),
+            ui.ask_string(ctx.t("minutes_worked"), default="0"),
+        )
+    except InputError as error:
+        ui.print_message(ctx.t(error.message_key), style="bold red")
+        return
 
-    ui.print_message(
-        f"\n{translate('save_success', lang=lang, date=target_work_date)}", style="bold green"
+    difference = calculate_balance_difference(
+        hours, minutes, project["base_hours"], project["base_minutes"]
     )
-    ui.print_message(
-        f"   {translate('day_diff', lang=lang, diff=format_time(balance_difference_minutes))}"
-    )
+    ctx.db.upsert_record(project["id"], target_date, hours, minutes, difference)
+
+    ui.print_message(f"\n{ctx.t('save_success', date=target_date)}", style="bold green")
+    ui.print_message(f"   {ctx.t('day_diff', diff=format_time(difference))}")

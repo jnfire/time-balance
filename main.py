@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
+"""Run time-balance from a checkout, without installing it."""
+
 import pathlib
 import sys
 
-# Ensure the project root is in sys.path so we can import time_balance
-# even if it's not installed yet.
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from time_balance.cli.main import main
+from time_balance.cli.main import main  # noqa: E402
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

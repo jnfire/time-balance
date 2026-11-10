@@ -126,7 +126,7 @@ class TestCoalesceNullBalance(unittest.TestCase):
 
     def test_update_existing_record_from_null_base(self):
         """
-        Verify that updating (replacing) an existing record works correctly when base balance was NULL.
+        Verify that replacing an existing record works when the base balance was NULL.
         """
         project_id = self.db.create_project("Test Project", 8, 0)
 

@@ -24,7 +24,7 @@ class TestStorage(unittest.TestCase):
         self.assertEqual(self.db.get_active_project_id(), 1)
 
         # Should set default language
-        self.assertEqual(self.db.get_setting("language"), "auto")
+        self.assertEqual(self.db.get_setting("language", ""), "auto")
 
     def test_create_and_get_projects(self):
         """Verify project creation and retrieval."""
@@ -81,10 +81,10 @@ class TestStorage(unittest.TestCase):
     def test_settings_persistence(self):
         """Verify global settings can be saved and retrieved."""
         self.db.set_setting("language", "es")
-        self.assertEqual(self.db.get_setting("language"), "es")
+        self.assertEqual(self.db.get_setting("language", ""), "es")
 
         self.db.set_setting("last_run", "2026-04-24")
-        self.assertEqual(self.db.get_setting("last_run"), "2026-04-24")
+        self.assertEqual(self.db.get_setting("last_run", ""), "2026-04-24")
 
     def test_delete_project(self):
         """Verify project and its records are deleted."""

@@ -21,7 +21,8 @@ class TestBalanceCache(unittest.TestCase):
         # 1. Insertamos registro directamente por SQL para no disparar el cache update del Manager
         conn = sqlite3.connect(self.db_path)
         conn.execute(
-            "INSERT INTO records (project_id, date, hours, minutes, difference) VALUES (1, '2026-01-01', 8, 0, 15)"
+            "INSERT INTO records (project_id, date, hours, minutes, difference) "
+            "VALUES (1, '2026-01-01', 8, 0, 15)"
         )
         conn.commit()
         conn.close()

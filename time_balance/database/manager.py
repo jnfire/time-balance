@@ -1,352 +1,298 @@
+"""SQLite persistence for projects, daily records and settings."""
+
+from __future__ import annotations
+
 import contextlib
 import pathlib
 import sqlite3
-from typing import Any, Optional
+from collections.abc import Iterator, Sequence
+from typing import Any, cast
 
 from .. import config
+from .models import Project, Record, RecordData
+
+SETTING_ACTIVE_PROJECT = "active_project_id"
+SETTING_LANGUAGE = "language"
+DEFAULT_PROJECT_NAME = "General"
+
+_SCHEMA = (
+    """
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        base_hours INTEGER NOT NULL,
+        base_minutes INTEGER NOT NULL,
+        total_balance INTEGER DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        hours INTEGER NOT NULL,
+        minutes INTEGER NOT NULL,
+        difference INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+        UNIQUE(project_id, date)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )
+    """,
+)
 
 
 class DatabaseManager:
-    """Manages SQLite database operations for projects and time records."""
+    """Reads and writes the application data.
 
-    def __init__(self, db_path: pathlib.Path):
+    The balance of each project is cached in ``projects.total_balance``. A write
+    that changes a record adjusts the cache in the same transaction. A NULL cache
+    means "unknown" and is rebuilt from the records the next time it is read.
+    """
+
+    def __init__(self, db_path: pathlib.Path) -> None:
         self.db_path = db_path
-        # Ensure the directory exists (XDG standard)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._initialize_database()
 
+    # --- Connection and query helpers ---
+
     @contextlib.contextmanager
-    def _get_connection(self):
-        """Context manager that yields a database connection, handling transactions and closing."""
+    def _get_connection(self) -> Iterator[sqlite3.Connection]:
+        """Yields a connection that commits on success, rolls back on error and always closes."""
         connection = sqlite3.connect(self.db_path)
+        connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
         try:
-            # The connection object itself is a context manager for transactions
             with connection:
                 yield connection
         finally:
             connection.close()
 
-    def _initialize_database(self):
-        """Creates the necessary tables if they do not exist and handles migrations."""
+    def _fetch_all(self, sql: str, params: Sequence[Any] = ()) -> list[dict[str, Any]]:
         with self._get_connection() as connection:
-            cursor = connection.cursor()
+            return [dict(row) for row in connection.execute(sql, params).fetchall()]
 
-            # Projects table: configuration for different work contexts
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS projects (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT UNIQUE NOT NULL,
-                    base_hours INTEGER NOT NULL,
-                    base_minutes INTEGER NOT NULL,
-                    total_balance INTEGER DEFAULT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+    def _fetch_one(self, sql: str, params: Sequence[Any] = ()) -> dict[str, Any] | None:
+        with self._get_connection() as connection:
+            row = connection.execute(sql, params).fetchone()
+            return dict(row) if row else None
 
-            # Records table: daily time registrations
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS records (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    project_id INTEGER NOT NULL,
-                    date TEXT NOT NULL,
-                    hours INTEGER NOT NULL,
-                    minutes INTEGER NOT NULL,
-                    difference INTEGER NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
-                    UNIQUE(project_id, date)
-                )
-            """)
+    def _fetch_value(self, sql: str, params: Sequence[Any] = ()) -> Any:
+        """Returns the first column of the first row, or None when there is no row."""
+        with self._get_connection() as connection:
+            row = connection.execute(sql, params).fetchone()
+            return row[0] if row else None
 
-            # Settings table: global application state (active project, language)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS settings (
-                    key TEXT PRIMARY KEY,
-                    value TEXT
-                )
-            """)
-
-            # Seed initial data if empty
-            cursor.execute("SELECT COUNT(*) FROM projects")
-            projects_count = cursor.fetchone()[0]
-            if projects_count == 0:
-                cursor.execute(
+    def _initialize_database(self) -> None:
+        """Creates the tables and, on the first run, the default project."""
+        with self._get_connection() as connection:
+            for statement in _SCHEMA:
+                connection.execute(statement)
+            if connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 0:
+                cursor = connection.execute(
                     "INSERT INTO projects (name, base_hours, base_minutes) VALUES (?, ?, ?)",
-                    ("General", config.BASE_HOURS, config.BASE_MINUTES),
+                    (DEFAULT_PROJECT_NAME, config.BASE_HOURS, config.BASE_MINUTES),
                 )
-                # Set the first project as active by default
-                cursor.execute(
-                    "INSERT OR IGNORE INTO settings (key, value) VALUES ('active_project_id', '1')"
+                connection.execute(
+                    "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
+                    (SETTING_ACTIVE_PROJECT, str(cursor.lastrowid)),
                 )
-                cursor.execute(
-                    "INSERT OR IGNORE INTO settings (key, value) VALUES ('language', 'auto')"
+                connection.execute(
+                    "INSERT OR IGNORE INTO settings (key, value) VALUES (?, 'auto')",
+                    (SETTING_LANGUAGE,),
                 )
 
-    def _get_record_difference(
-        self, cursor: sqlite3.Cursor, project_id: int, record_date: str
-    ) -> int:
-        """Helper to get the difference value of an existing record."""
-        cursor.execute(
-            "SELECT difference FROM records WHERE project_id = ? AND date = ?",
-            (project_id, record_date),
-        )
-        record_row = cursor.fetchone()
-        return record_row[0] if record_row else 0
+    # --- Projects ---
 
     def create_project(self, name: str, base_hours: int, base_minutes: int) -> int:
-        """Creates a new project and returns its ID."""
+        """Creates a project and returns its id."""
         with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute(
+            cursor = connection.execute(
                 "INSERT INTO projects (name, base_hours, base_minutes) VALUES (?, ?, ?)",
                 (name, base_hours, base_minutes),
             )
-            return cursor.lastrowid
+            return cast(int, cursor.lastrowid)
 
-    def update_project(self, project_id: int, name: str, base_hours: int, base_minutes: int):
-        """Updates project configuration."""
+    def update_project(
+        self, project_id: int, name: str, base_hours: int, base_minutes: int
+    ) -> None:
         with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute(
+            connection.execute(
                 "UPDATE projects SET name = ?, base_hours = ?, base_minutes = ? WHERE id = ?",
                 (name, base_hours, base_minutes, project_id),
             )
 
-    def get_projects(self) -> list[dict[str, Any]]:
-        """Returns a list of all projects."""
-        with self._get_connection() as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute("SELECT * FROM projects ORDER BY name")
-            return [dict(project_row) for project_row in cursor.fetchall()]
+    def get_projects(self) -> list[Project]:
+        """All projects, ordered by name."""
+        return cast("list[Project]", self._fetch_all("SELECT * FROM projects ORDER BY name"))
 
-    def get_project_by_id(self, project_id: int) -> Optional[dict[str, Any]]:
-        """Retrieves a single project by ID."""
+    def get_project_by_id(self, project_id: int) -> Project | None:
+        row = self._fetch_one("SELECT * FROM projects WHERE id = ?", (project_id,))
+        return cast("Project | None", row)
+
+    def delete_project(self, project_id: int) -> None:
+        """Deletes a project. Its records go with it (``ON DELETE CASCADE``)."""
         with self._get_connection() as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute("SELECT * FROM projects WHERE id = ?", (project_id,))
-            project_row = cursor.fetchone()
-            return dict(project_row) if project_row else None
+            connection.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+
+    # --- Active project and settings ---
 
     def get_active_project_id(self) -> int:
-        """Gets the ID of the project currently in use."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT value FROM settings WHERE key = 'active_project_id'")
-            setting_row = cursor.fetchone()
-            if setting_row:
-                return int(setting_row[0])
-            return 1
+        """Id of the project in use, or 1 if none has been chosen yet."""
+        stored_id = self.get_setting(SETTING_ACTIVE_PROJECT, "")
+        return int(stored_id) if stored_id else 1
 
-    def set_active_project_id(self, project_id: int):
-        """Updates the active project ID in settings."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute(
-                "INSERT OR REPLACE INTO settings (key, value) VALUES ('active_project_id', ?)",
-                (str(project_id),),
-            )
+    def set_active_project_id(self, project_id: int) -> None:
+        self.set_setting(SETTING_ACTIVE_PROJECT, str(project_id))
 
-    def get_setting(self, key: str, default: str = None) -> Optional[str]:
-        """Retrieves a global setting."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
-            setting_row = cursor.fetchone()
-            return setting_row[0] if setting_row else default
+    def get_active_project(self) -> Project:
+        """The project in use.
 
-    def set_setting(self, key: str, value: str):
-        """Saves a global setting."""
+        If the stored id no longer exists (for example the project was deleted
+        from another process), the first project becomes the active one.
+        """
+        project = self.get_project_by_id(self.get_active_project_id())
+        if project is not None:
+            return project
+        fallback = self.get_projects()[0]
+        self.set_active_project_id(fallback["id"])
+        return fallback
+
+    def get_setting(self, key: str, default: str) -> str:
+        value = self._fetch_value("SELECT value FROM settings WHERE key = ?", (key,))
+        return default if value is None else str(value)
+
+    def set_setting(self, key: str, value: str) -> None:
         with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute(
+            connection.execute(
                 "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value)
             )
 
+    # --- Records ---
+
     def upsert_record(
         self, project_id: int, record_date: str, hours: int, minutes: int, difference: int
-    ):
-        """Inserts or updates a daily time record and updates project total balance cache."""
+    ) -> None:
+        """Inserts or replaces a day and adjusts the cached balance in the same transaction."""
         with self._get_connection() as connection:
-            cursor = connection.cursor()
-
-            # 1. Get old difference to adjust balance
-            old_difference = self._get_record_difference(cursor, project_id, record_date)
-
-            # 2. Upsert the record
-            cursor.execute(
+            previous = connection.execute(
+                "SELECT difference FROM records WHERE project_id = ? AND date = ?",
+                (project_id, record_date),
+            ).fetchone()
+            previous_difference = previous[0] if previous else 0
+            connection.execute(
                 """
                 INSERT OR REPLACE INTO records (project_id, date, hours, minutes, difference)
                 VALUES (?, ?, ?, ?, ?)
-            """,
+                """,
                 (project_id, record_date, hours, minutes, difference),
             )
-
-            # 3. Update project total balance cache
-            cursor.execute(
-                """
-                UPDATE projects
-                SET total_balance = COALESCE(total_balance, 0) - ? + ?
-                WHERE id = ?
-            """,
-                (old_difference, difference, project_id),
+            connection.execute(
+                "UPDATE projects SET total_balance = COALESCE(total_balance, 0) - ? + ? "
+                "WHERE id = ?",
+                (previous_difference, difference, project_id),
             )
 
-    def delete_record(self, project_id: int, record_date: str):
-        """Deletes a record and updates project total balance cache."""
+    def delete_record(self, project_id: int, record_date: str) -> None:
+        """Deletes a day and takes its difference out of the cached balance."""
         with self._get_connection() as connection:
-            cursor = connection.cursor()
-
-            # 1. Get difference to subtract from total
-            cursor.execute(
+            row = connection.execute(
                 "SELECT difference FROM records WHERE project_id = ? AND date = ?",
                 (project_id, record_date),
-            )
-            record_row = cursor.fetchone()
-            if not record_row:
+            ).fetchone()
+            if row is None:
                 return
-
-            current_difference = record_row[0]
-
-            # 2. Delete the record
-            cursor.execute(
+            connection.execute(
                 "DELETE FROM records WHERE project_id = ? AND date = ?", (project_id, record_date)
             )
-
-            # 3. Update project total balance cache
-            cursor.execute(
-                """
-                UPDATE projects
-                SET total_balance = COALESCE(total_balance, 0) - ?
-                WHERE id = ?
-            """,
-                (current_difference, project_id),
+            connection.execute(
+                "UPDATE projects SET total_balance = COALESCE(total_balance, 0) - ? WHERE id = ?",
+                (row[0], project_id),
             )
 
-    def clear_project_records(self, project_id: int):
-        """Removes all records for a project and resets its balance cache."""
+    def clear_project_records(self, project_id: int) -> None:
+        """Removes every record of a project and zeroes its balance."""
         with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
-            cursor.execute("UPDATE projects SET total_balance = 0 WHERE id = ?", (project_id,))
-
-    def delete_project(self, project_id: int):
-        """Deletes a project and all its records."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            # Records are deleted automatically due to ON DELETE CASCADE if supported,
-            # but we do it explicitly to be safe and clear.
-            cursor.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
-            cursor.execute("DELETE FROM projects WHERE id = ?", (project_id,))
-
-    def recalculate_all_balances(self):
-        """Forces a full recalculation for all projects in the database."""
-        projects = self.get_projects()
-        for project in projects:
-            self.recalculate_project_balance(project["id"])
+            connection.execute("DELETE FROM records WHERE project_id = ?", (project_id,))
+            connection.execute("UPDATE projects SET total_balance = 0 WHERE id = ?", (project_id,))
 
     def get_records(
-        self, project_id: int, limit: Optional[int] = None, offset: int = 0
-    ) -> list[dict[str, Any]]:
-        """Returns records for a specific project, sorted by date descending with pagination support."""
-        query = "SELECT * FROM records WHERE project_id = ? ORDER BY date DESC"
-        parameters = [project_id]
-
+        self, project_id: int, limit: int | None = None, offset: int = 0
+    ) -> list[Record]:
+        """Records of a project, newest first. ``limit`` and ``offset`` paginate."""
+        sql = "SELECT * FROM records WHERE project_id = ? ORDER BY date DESC"
+        params: list[Any] = [project_id]
         if limit:
-            query += " LIMIT ?"
-            parameters.append(limit)
-            if offset > 0:
-                query += " OFFSET ?"
-                parameters.append(offset)
+            sql += " LIMIT ? OFFSET ?"
+            params += [limit, max(offset, 0)]
+        return cast("list[Record]", self._fetch_all(sql, params))
 
-        with self._get_connection() as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute(query, tuple(parameters))
-            return [dict(record_row) for record_row in cursor.fetchall()]
-
-    def get_record_by_date(self, project_id: int, record_date: str) -> Optional[dict[str, Any]]:
-        """Retrieves a specific record for a project and date."""
-        with self._get_connection() as connection:
-            connection.row_factory = sqlite3.Row
-            cursor = connection.cursor()
-            cursor.execute(
-                "SELECT * FROM records WHERE project_id = ? AND date = ?", (project_id, record_date)
-            )
-            record_row = cursor.fetchone()
-            return dict(record_row) if record_row else None
-
-    def get_total_balance(self, project_id: int) -> int:
-        """Retrieves the cached balance or calculates it if NULL."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-
-            # Try to get cached balance
-            cursor.execute("SELECT total_balance FROM projects WHERE id = ?", (project_id,))
-            project_row = cursor.fetchone()
-
-            if project_row and project_row[0] is not None:
-                return project_row[0]
-
-        # Recalculate if NULL
-        return self.recalculate_project_balance(project_id)
-
-    def recalculate_project_balance(self, project_id: int) -> int:
-        """Forces a full recalculation of the balance from all records and updates the cache."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute(
-                "SELECT SUM(difference) FROM records WHERE project_id = ?", (project_id,)
-            )
-            sum_result = cursor.fetchone()[0]
-            total_sum = sum_result if sum_result is not None else 0
-
-            cursor.execute(
-                "UPDATE projects SET total_balance = ? WHERE id = ?", (total_sum, project_id)
-            )
-            return total_sum
-
-    def reset_project_balance(self, project_id: int):
-        """Resets the project balance cache to NULL, forcing a recalculation on next access."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute("UPDATE projects SET total_balance = NULL WHERE id = ?", (project_id,))
+    def get_record_by_date(self, project_id: int, record_date: str) -> Record | None:
+        row = self._fetch_one(
+            "SELECT * FROM records WHERE project_id = ? AND date = ?", (project_id, record_date)
+        )
+        return cast("Record | None", row)
 
     def count_records(self, project_id: int) -> int:
-        """Returns the total number of records for a specific project."""
-        with self._get_connection() as connection:
-            cursor = connection.cursor()
-            cursor.execute("SELECT COUNT(*) FROM records WHERE project_id = ?", (project_id,))
-            return cursor.fetchone()[0]
+        return int(
+            self._fetch_value("SELECT COUNT(*) FROM records WHERE project_id = ?", (project_id,))
+        )
 
-    def import_records(self, project_id: int, records_dict: dict[str, dict]) -> int:
-        """Imports a dictionary of records into the database. Returns count of imported items."""
-        imported_count = 0
-        for record_date, record_info in records_dict.items():
-            self.upsert_record(
-                project_id,
-                record_date,
-                record_info["hours"],
-                record_info["minutes"],
-                record_info["difference"],
-            )
-            imported_count += 1
-        return imported_count
-
-    def get_records_dict(self, project_id: int) -> dict[str, dict]:
-        """Returns all records for a project as a dictionary formatted for JSON export."""
-        all_records = self.get_records(project_id)
+    def get_records_dict(self, project_id: int) -> dict[str, RecordData]:
+        """Every record keyed by date, in the shape the export file uses."""
         return {
             record["date"]: {
                 "hours": record["hours"],
                 "minutes": record["minutes"],
                 "difference": record["difference"],
             }
-            for record in all_records
+            for record in self.get_records(project_id)
         }
 
+    def import_records(self, project_id: int, records_dict: dict[str, RecordData]) -> int:
+        """Adds or replaces the given days and rebuilds the balance. Returns the day count."""
+        for record_date, record in records_dict.items():
+            self.upsert_record(
+                project_id, record_date, record["hours"], record["minutes"], record["difference"]
+            )
+        self.recalculate_project_balance(project_id)
+        return len(records_dict)
 
-# --- GLOBAL SINGLETON ---
-db = DatabaseManager(config.DATABASE_PATH)
+    # --- Balance cache ---
+
+    def get_total_balance(self, project_id: int) -> int:
+        """The cached balance, rebuilt from the records if the cache is empty."""
+        cached = self._fetch_value("SELECT total_balance FROM projects WHERE id = ?", (project_id,))
+        if cached is not None:
+            return int(cached)
+        return self.recalculate_project_balance(project_id)
+
+    def recalculate_project_balance(self, project_id: int) -> int:
+        """Rebuilds the cached balance of a project from its records."""
+        with self._get_connection() as connection:
+            total = connection.execute(
+                "SELECT COALESCE(SUM(difference), 0) FROM records WHERE project_id = ?",
+                (project_id,),
+            ).fetchone()[0]
+            connection.execute(
+                "UPDATE projects SET total_balance = ? WHERE id = ?", (total, project_id)
+            )
+            return int(total)
+
+    def recalculate_all_balances(self) -> None:
+        for project in self.get_projects():
+            self.recalculate_project_balance(project["id"])
+
+    def reset_project_balance(self, project_id: int) -> None:
+        """Marks the cached balance as unknown so the next read rebuilds it."""
+        with self._get_connection() as connection:
+            connection.execute(
+                "UPDATE projects SET total_balance = NULL WHERE id = ?", (project_id,)
+            )

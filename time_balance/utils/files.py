@@ -1,135 +1,119 @@
+"""Reading and writing the history file (see docs/DATA-FORMAT.md)."""
+
+from __future__ import annotations
+
 import contextlib
 import errno
 import json
 import os
+import pathlib
 import shutil
 import tempfile
-from datetime import datetime
+from typing import Any
+
+from .validation import parse_date
+
+FORMAT_VERSION = "1.0"
 
 
-def validate_history(data):
-    """Validates basic history structure and metadata types."""
-    if not isinstance(data, dict):
-        raise ValueError("History must be a JSON object/dict")
+def _require_int(
+    value: Any, label: str, minimum: int | None = None, maximum: int | None = None
+) -> None:
+    """Checks that ``value`` is an integer (a bool is not one) inside the optional bounds."""
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{label} must be an integer")
+    if minimum is not None and value < minimum:
+        raise ValueError(f"{label} must be greater than or equal to {minimum}")
+    if maximum is not None and value > maximum:
+        raise ValueError(f"{label} must be less than or equal to {maximum}")
 
-    if "metadata" not in data or "records" not in data:
-        raise ValueError("History missing required structured keys (metadata, records)")
 
-    # Validate metadata
-    metadata = data["metadata"]
+def _validate_metadata(metadata: Any) -> None:
     if not isinstance(metadata, dict):
         raise ValueError("Metadata must be an object")
-
-    required_meta = ("project_name", "hours_base", "minutes_base")
-    for key in required_meta:
+    for key in ("project_name", "hours_base", "minutes_base"):
         if key not in metadata:
             raise ValueError(f"Metadata missing required key: {key}")
-
-    # Type and range validation for base time
-    hours_base = metadata["hours_base"]
-    minutes_base = metadata["minutes_base"]
-
-    if not isinstance(hours_base, int) or isinstance(hours_base, bool):
-        raise ValueError("Metadata 'hours_base' must be an integer")
-    if hours_base < 0:
-        raise ValueError("Metadata 'hours_base' must be greater than or equal to 0")
-
-    if not isinstance(minutes_base, int) or isinstance(minutes_base, bool):
-        raise ValueError("Metadata 'minutes_base' must be an integer")
-    if minutes_base < 0 or minutes_base > 59:
-        raise ValueError("Metadata 'minutes_base' must be between 0 and 59")
-
-    # Validate records
-    records = data["records"]
-    if not isinstance(records, dict):
-        raise ValueError("Records must be an object")
-    for date_key, info in records.items():
-        _validate_record_entry(date_key, info)
+    _require_int(metadata["hours_base"], "Metadata 'hours_base'", minimum=0)
+    _require_int(metadata["minutes_base"], "Metadata 'minutes_base'", minimum=0, maximum=59)
 
 
-def _validate_record_entry(date_key, info):
-    """Validates a single record entry."""
-    if not isinstance(date_key, str):
-        raise ValueError("History keys must be strings (YYYY-MM-DD)")
-
-    try:
-        datetime.strptime(date_key, "%Y-%m-%d")
-    except ValueError:
+def _validate_record(date_key: Any, info: Any) -> None:
+    if not isinstance(date_key, str) or parse_date(date_key) != date_key:
         raise ValueError(f"Invalid date key: {date_key}. Must be YYYY-MM-DD")
-
     if not isinstance(info, dict):
         raise ValueError(f"Entry for {date_key} must be an object with hour/minute data.")
-
-    required_keys = ("hours", "minutes", "difference")
-    for key in required_keys:
+    for key in ("hours", "minutes", "difference"):
         if key not in info:
             raise ValueError(f"Entry for {date_key} is missing required key: {key}")
-        if not isinstance(info[key], int) or isinstance(info[key], bool):
-            raise ValueError(f"'{key}' in {date_key} must be an integer")
+        _require_int(info[key], f"'{key}' in {date_key}")
 
 
-def export_history(data, dest_path):
-    """Exports provided data dictionary to external JSON with atomic safety."""
+def validate_history(data: Any) -> None:
+    """Raises ``ValueError``, with a message naming the problem, if ``data`` is not valid."""
+    if not isinstance(data, dict):
+        raise ValueError("History must be a JSON object/dict")
+    if "metadata" not in data or "records" not in data:
+        raise ValueError("History missing required structured keys (metadata, records)")
+    _validate_metadata(data["metadata"])
+    if not isinstance(data["records"], dict):
+        raise ValueError("Records must be an object")
+    for date_key, info in data["records"].items():
+        _validate_record(date_key, info)
+
+
+def _fsync_directory(directory: pathlib.Path) -> None:
+    """Best effort: not every platform lets a directory be opened and synced."""
+    with contextlib.suppress(AttributeError, OSError):
+        directory_fd = os.open(directory, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+
+
+def export_history(data: dict[str, Any], dest_path: str | os.PathLike[str]) -> pathlib.Path:
+    """Writes ``data`` as JSON and returns the final path.
+
+    The file is written next to the destination and then renamed over it, so an
+    interrupted export never leaves a half-written file behind.
+    """
     validate_history(data)
-    dest = os.path.expanduser(dest_path)
-    dest = os.path.abspath(dest)
-    dest_dir = os.path.dirname(dest) or "."
-    if dest_dir != "." and not os.path.exists(dest_dir):
-        os.makedirs(dest_dir, exist_ok=True)
+    destination = pathlib.Path(dest_path).expanduser().resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
 
     content = json.dumps(data, indent=4, ensure_ascii=False)
-    fd, temp_path = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dest_dir)
+    descriptor, temp_name = tempfile.mkstemp(
+        prefix="export_", suffix=".json", dir=destination.parent
+    )
+    temp_path = pathlib.Path(temp_name)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as temp_file:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as temp_file:
             temp_file.write(content)
             temp_file.flush()
             with contextlib.suppress(OSError):
                 os.fsync(temp_file.fileno())
-
         try:
-            os.replace(temp_path, dest)
+            os.replace(temp_path, destination)
         except OSError as error:
-            if getattr(error, "errno", None) == errno.EXDEV:
-                shutil.copy2(temp_path, dest)
-                os.remove(temp_path)
-            else:
+            if error.errno != errno.EXDEV:
                 raise
-
-        # Best-effort directory fsync
-        try:
-            dir_fd = os.open(dest_dir, os.O_RDONLY)
-            try:
-                os.fsync(dir_fd)
-            finally:
-                os.close(dir_fd)
-        except (AttributeError, OSError):
-            pass
-
+            shutil.copy2(temp_path, destination)
+        _fsync_directory(destination.parent)
     finally:
-        if "temp_path" in locals() and os.path.exists(temp_path):
-            with contextlib.suppress(OSError):
-                os.remove(temp_path)
-
-    return dest
+        with contextlib.suppress(OSError):
+            temp_path.unlink()
+    return destination
 
 
-def read_history_file(source_path):
-    """Reads and validates a history file from disk."""
-    source = os.path.expanduser(source_path)
-    source = os.path.abspath(source)
-    if not os.path.exists(source):
+def read_history_file(source_path: str | os.PathLike[str]) -> dict[str, Any]:
+    """Reads and validates a history file. Raises ``FileNotFoundError`` or ``ValueError``."""
+    source = pathlib.Path(source_path).expanduser().resolve()
+    if not source.exists():
         raise FileNotFoundError(f"File not found: {source}")
-
     try:
-        with open(source, encoding="utf-8") as json_file:
-            source_data = json.load(json_file)
+        data = json.loads(source.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
-        raise ValueError(f"Invalid JSON in file: {error}")
-
-    validate_history(source_data)
-    return source_data
-
-
-# import_history was previously handling backups and saving.
-# Now cli.py will handle database interaction.
-# We keep a simpler version or remove it if cli.py handles everything.
+        raise ValueError(f"Invalid JSON in file: {error}") from error
+    validate_history(data)
+    return data
