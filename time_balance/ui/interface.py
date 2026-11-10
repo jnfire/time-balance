@@ -133,9 +133,8 @@ def render_simple_table(columns: Sequence[Column], rows: Sequence[Sequence[str]]
 
 def ask_string(message: str, default: str = "", choices: Sequence[str] | None = None) -> str:
     """Asks for a line of text. If ``choices`` is given, only those answers are accepted."""
-    prompt_message = message if message.endswith(" ") or not message else f"{message} "
     return Prompt.ask(
-        prompt_message,
+        message,
         default=default,
         choices=list(choices) if choices is not None else None,
         show_choices=False,
