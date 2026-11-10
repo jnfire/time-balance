@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import sys
 import pathlib
+import sys
 
 # Ensure the project root is in sys.path so we can import time_balance
 # even if it's not installed yet.

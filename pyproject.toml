@@ -38,3 +38,21 @@ include = ["time_balance*"]
 
 [tool.setuptools.package-data]
 time_balance = ["VERSION", "i18n/locales/*.json"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+extend-exclude = ["build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP", "SIM", "C4", "RET", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["time_balance"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true

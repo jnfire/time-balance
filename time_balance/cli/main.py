@@ -1,16 +1,17 @@
 import argparse
-import sys
-from ..utils.calculations import format_time, get_balance_color
-from ..ui import interface as ui
-from ..database.manager import db
-from ..i18n.translator import translate, resolve_language
+
 from .. import config
+from ..database.manager import db
+from ..i18n.translator import resolve_language, translate
+from ..ui import interface as ui
+from ..utils.calculations import format_time, get_balance_color
+from .config_menu import config_menu
+from .history import view_history
+from .projects import project_menu
 
 # Import sibling modules
 from .registration import register_day
-from .history import view_history
-from .config_menu import config_menu
-from .projects import project_menu
+
 
 def get_current_lang() -> str:
     """Determines the active language based on settings or system."""
@@ -24,20 +25,20 @@ def display_dashboard(project_data: dict, current_balance: int, lang: str):
     balance_color = get_balance_color(current_balance)
 
     labels_dict = {
-        'project': translate('project_label', lang=lang),
-        'base_day': translate('base_day_label', lang=lang),
-        'balance': translate('balance_label', lang=lang),
-        'dashboard_title': translate('dashboard_title', lang=lang)
+        "project": translate("project_label", lang=lang),
+        "base_day": translate("base_day_label", lang=lang),
+        "balance": translate("balance_label", lang=lang),
+        "dashboard_title": translate("dashboard_title", lang=lang),
     }
-    
+
     ui.render_dashboard(
-        project_name=project_data['name'],
-        base_hours=project_data['base_hours'],
-        base_minutes=project_data['base_minutes'],
+        project_name=project_data["name"],
+        base_hours=project_data["base_hours"],
+        base_minutes=project_data["base_minutes"],
         balance_fmt=balance_fmt,
         balance_color=balance_color,
         version=config.VERSION,
-        labels=labels_dict
+        labels=labels_dict,
     )
 
 
@@ -52,18 +53,30 @@ def interactive_menu():
         ui.clear_screen()
         display_dashboard(current_project, total_project_balance, current_lang)
 
-        ui.print_message(f"\n [bold blue]1.[/bold blue] {translate('option_1_clean', lang=current_lang)}")
-        ui.print_message(f" [bold blue]2.[/bold blue] {translate('option_2_clean', lang=current_lang)}")
-        ui.print_message(f" [bold blue]3.[/bold blue] {translate('option_3_clean', lang=current_lang)}")
-        ui.print_message(f" [bold blue]4.[/bold blue] {translate('option_4_clean', lang=current_lang)}")
-        ui.print_message(f" [bold blue]5.[/bold blue] {translate('option_5_clean', lang=current_lang)}")
+        ui.print_message(
+            f"\n [bold blue]1.[/bold blue] {translate('option_1_clean', lang=current_lang)}"
+        )
+        ui.print_message(
+            f" [bold blue]2.[/bold blue] {translate('option_2_clean', lang=current_lang)}"
+        )
+        ui.print_message(
+            f" [bold blue]3.[/bold blue] {translate('option_3_clean', lang=current_lang)}"
+        )
+        ui.print_message(
+            f" [bold blue]4.[/bold blue] {translate('option_4_clean', lang=current_lang)}"
+        )
+        ui.print_message(
+            f" [bold blue]5.[/bold blue] {translate('option_5_clean', lang=current_lang)}"
+        )
 
-        user_option = ui.ask_string(f"\n{translate('choose_option', lang=current_lang)}", choices=["1", "2", "3", "4", "5"])
+        user_option = ui.ask_string(
+            f"\n{translate('choose_option', lang=current_lang)}", choices=["1", "2", "3", "4", "5"]
+        )
 
         try:
             if user_option == "1":
                 register_day(lang=current_lang)
-                ui.ask_string(translate('press_enter', lang=current_lang), default="")
+                ui.ask_string(translate("press_enter", lang=current_lang), default="")
             elif user_option == "2":
                 view_history(lang=current_lang)
             elif user_option == "3":
@@ -74,7 +87,9 @@ def interactive_menu():
                 ui.print_message(f"\n{translate('exit_msg', lang=current_lang)}", style="bold blue")
                 break
         except KeyboardInterrupt:
-            ui.print_message(f"\n\n {translate('op_cancelled', lang=current_lang)} ", style="yellow")
+            ui.print_message(
+                f"\n\n {translate('op_cancelled', lang=current_lang)} ", style="yellow"
+            )
             break
 
 
@@ -82,10 +97,20 @@ def main():
     parser = argparse.ArgumentParser(
         description="time-balance: A professional tool to track your working hours balance globally."
     )
-    parser.add_argument("-s", "--status", action="store_true", help="Show only the accumulated balance.")
-    parser.add_argument("-l", "--list", type=int, nargs="?", const=5, help="List last N records (default 5).")
+    parser.add_argument(
+        "-s", "--status", action="store_true", help="Show only the accumulated balance."
+    )
+    parser.add_argument(
+        "-l", "--list", type=int, nargs="?", const=5, help="List last N records (default 5)."
+    )
     parser.add_argument("--version", action="store_true", help="Show application version.")
-    parser.add_argument("--lang", type=str, choices=["en", "es", "auto"], default="auto", help="Force interface language.")
+    parser.add_argument(
+        "--lang",
+        type=str,
+        choices=["en", "es", "auto"],
+        default="auto",
+        help="Force interface language.",
+    )
 
     args = parser.parse_args()
 
@@ -104,9 +129,19 @@ def main():
         total_project_balance = db.get_total_balance(active_project_id)
         balance_display_fmt = format_time(total_project_balance)
         balance_display_color = get_balance_color(total_project_balance)
-        
-        ui.print_message(translate('status_project', lang=active_lang, name=current_project['name']), style="bold blue")
-        ui.print_message(translate('status_balance', lang=active_lang, balance=f'[{balance_display_color}]{balance_display_fmt}[/{balance_display_color}]'), style="bold")
+
+        ui.print_message(
+            translate("status_project", lang=active_lang, name=current_project["name"]),
+            style="bold blue",
+        )
+        ui.print_message(
+            translate(
+                "status_balance",
+                lang=active_lang,
+                balance=f"[{balance_display_color}]{balance_display_fmt}[/{balance_display_color}]",
+            ),
+            style="bold",
+        )
         return
 
     if args.list is not None:

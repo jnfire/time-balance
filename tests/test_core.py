@@ -1,5 +1,7 @@
 import unittest
+
 import time_balance.utils.calculations as core
+
 
 class TestCore(unittest.TestCase):
     def test_format_time_positive(self):
@@ -20,11 +22,9 @@ class TestCore(unittest.TestCase):
         self.assertEqual(core.format_time(0), "0m")
 
     def test_calculate_total_balance(self):
-        records = {
-            "2026-01-01": {"difference": 15},
-            "2026-01-02": {"difference": -10}
-        }
+        records = {"2026-01-01": {"difference": 15}, "2026-01-02": {"difference": -10}}
         self.assertEqual(core.calculate_total_balance_from_records(records), 5)
+
 
 if __name__ == "__main__":
     unittest.main()

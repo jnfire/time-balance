@@ -1,17 +1,17 @@
-import os
-import json
-import tempfile
-import shutil
+import contextlib
 import errno
+import json
+import os
+import shutil
+import tempfile
 from datetime import datetime
-from .. import config
 
 
 def validate_history(data):
     """Validates basic history structure and metadata types."""
     if not isinstance(data, dict):
         raise ValueError("History must be a JSON object/dict")
-    
+
     if "metadata" not in data or "records" not in data:
         raise ValueError("History missing required structured keys (metadata, records)")
 
@@ -19,7 +19,7 @@ def validate_history(data):
     metadata = data["metadata"]
     if not isinstance(metadata, dict):
         raise ValueError("Metadata must be an object")
-    
+
     required_meta = ("project_name", "hours_base", "minutes_base")
     for key in required_meta:
         if key not in metadata:
@@ -60,7 +60,7 @@ def _validate_record_entry(date_key, info):
     if not isinstance(info, dict):
         raise ValueError(f"Entry for {date_key} must be an object with hour/minute data.")
 
-    required_keys = ('hours', 'minutes', 'difference')
+    required_keys = ("hours", "minutes", "difference")
     for key in required_keys:
         if key not in info:
             raise ValueError(f"Entry for {date_key} is missing required key: {key}")
@@ -80,18 +80,16 @@ def export_history(data, dest_path):
     content = json.dumps(data, indent=4, ensure_ascii=False)
     fd, temp_path = tempfile.mkstemp(prefix="export_", suffix=".json", dir=dest_dir)
     try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as temp_file:
+        with os.fdopen(fd, "w", encoding="utf-8") as temp_file:
             temp_file.write(content)
             temp_file.flush()
-            try:
+            with contextlib.suppress(OSError):
                 os.fsync(temp_file.fileno())
-            except OSError:
-                pass
 
         try:
             os.replace(temp_path, dest)
         except OSError as error:
-            if getattr(error, 'errno', None) == errno.EXDEV:
+            if getattr(error, "errno", None) == errno.EXDEV:
                 shutil.copy2(temp_path, dest)
                 os.remove(temp_path)
             else:
@@ -108,11 +106,9 @@ def export_history(data, dest_path):
             pass
 
     finally:
-        if 'temp_path' in locals() and os.path.exists(temp_path):
-            try:
+        if "temp_path" in locals() and os.path.exists(temp_path):
+            with contextlib.suppress(OSError):
                 os.remove(temp_path)
-            except OSError:
-                pass
 
     return dest
 
@@ -125,7 +121,7 @@ def read_history_file(source_path):
         raise FileNotFoundError(f"File not found: {source}")
 
     try:
-        with open(source, 'r', encoding='utf-8') as json_file:
+        with open(source, encoding="utf-8") as json_file:
             source_data = json.load(json_file)
     except json.JSONDecodeError as error:
         raise ValueError(f"Invalid JSON in file: {error}")
@@ -133,6 +129,7 @@ def read_history_file(source_path):
     validate_history(source_data)
     return source_data
 
-# import_history was previously handling backups and saving. 
-# Now cli.py will handle database interaction. 
+
+# import_history was previously handling backups and saving.
+# Now cli.py will handle database interaction.
 # We keep a simpler version or remove it if cli.py handles everything.
