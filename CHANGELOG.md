@@ -10,7 +10,7 @@ The final release. time-balance was the first sketch of what became time-tracker
 - The dashboard shows the last registered day.
 - Input validation: hours from 0 to 24 and minutes from 0 to 59 everywhere a duration is typed (registering a day, creating a project, editing the base).
 - A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog.
-- Documentation of the export format (`docs/DATA-FORMAT.md`) and of why the tool exists and what was tried (`docs/HISTORY.md`), in English and Spanish. The code of the discarded live-timer experiment is kept as `docs/experiments/live-tracking.patch`.
+- Documentation of the export format (`docs/DATA-FORMAT.md`) and the story of the project, with why it exists and what was tried (`docs/evolution/`), in English and Spanish. The code of the discarded live-timer experiment is kept as `docs/experiments/live-tracking.patch`.
 - Quality tooling: ruff (lint and format) and mypy, run in CI together with a coverage floor of 90%. Coverage went from 63% to 96% and the tests from 51 to 144.
 
 ### Changed

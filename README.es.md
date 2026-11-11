@@ -63,27 +63,13 @@ Un único archivo SQLite llamado `time_balance.db`:
 | macOS | `~/Library/Application Support/time-balance` |
 | Windows | `%APPDATA%\time-balance` |
 
-## Por qué existe
-
-La herramienta de control horario que se usaba en el trabajo no era transparente, y no era sencillo saber desde el lado del trabajador si un día había sido más corto o más largo de lo que tocaba. Esta herramienta hace solo eso: escribes las horas de cada día y lleva tu saldo. La historia completa, y un experimento que se dejó fuera, está en [Por qué existe y qué se probó](docs/es/HISTORY.es.md).
-
-## De dónde viene
-
-| Cuándo | Qué pasó |
-| --- | --- |
-| Enero de 2026 | Primer commit: un script para contar las horas de una jornada. |
-| Abril de 2026 | Versión 0.5.0: almacenamiento en SQLite, varios proyectos, traducciones y una estructura modular. |
-| Abril de 2026 | Se probó un temporizador en vivo en una rama aparte y se dejó fuera ([historia](docs/es/HISTORY.es.md)). |
-| Junio de 2026 | La idea se quedó pequeña para la terminal y empezó de nuevo como [time-tracker](https://time-tracker.jnfire.dev/), una aplicación web. |
-| Noviembre de 2026 | Esta limpieza y la versión final, la 0.6.0. |
-
 ## Desarrollo
 
 El código está tipado y comprobado con ruff y mypy, y tiene 144 tests (96 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
 
 ## Documentación
 
-- [Por qué existe y qué se probó](docs/es/HISTORY.es.md)
+- [Evolución](docs/evolution/README-es.md): cómo ha cambiado el proyecto, por qué existe y qué se probó
 - [Guía de uso](docs/es/CLI-GUIDE.es.md)
 - [Formato de los datos](docs/es/DATA-FORMAT.es.md)
 - [Arquitectura](docs/es/ARCHITECTURE.es.md)
