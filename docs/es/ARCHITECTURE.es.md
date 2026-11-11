@@ -1,67 +1,76 @@
-# Arquitectura del Proyecto
+# Arquitectura del proyecto
 
-## Visión General
+## Visión general
 
-`time-balance` es una aplicación de terminal profesional diseñada para registrar jornadas laborales y gestionar saldos horarios acumulados. A partir de la versión 0.5.0, la aplicación cuenta con una **arquitectura modular basada en dominios**, una capa de UI desacoplada y un sistema de localización robusto basado en archivos JSON.
+`time-balance` registra jornadas y lleva un saldo de horas desde la terminal. El código se divide en capas que solo dependen hacia abajo, de modo que cada capa se puede probar sin las de encima.
 
-## Estructura del Proyecto
+```
+cli ──► database, ui, i18n, utils
+ ui ──► Rich (y nada más)
+database ──► SQLite
+```
 
-La aplicación ha sido reestructurada de un paquete monolítico a dominios funcionales especializados:
+## Estructura del proyecto
 
 ```
 time-balance/
-├── main.py                   # Punto de entrada directo para desarrollo
-├── setup.py                  # Configuración de empaquetado y distribución
-├── time_balance/             # Código fuente principal
-│   ├── cli/                  # Dominio de presentación (Lógica de menús)
-│   │   ├── main.py           # Orquestador CLI y punto de entrada
-│   │   ├── registration.py   # Flujos de entrada de jornada
-│   │   ├── history.py        # Visualización de registros y paginación
-│   │   └── ...               # Submenús (proyectos, configuración, migración)
-│   ├── database/             # Dominio de persistencia
-│   │   └── manager.py        # DatabaseManager SQLite (lógica DRY)
-│   ├── i18n/                 # Dominio de localización
-│   │   ├── translator.py     # Motor de traducción con caché
-│   │   └── locales/*.json    # Definiciones de cadenas externas
-│   ├── ui/                   # Capa de abstracción de UI
-│   │   └── interface.py      # Puente de desacoplamiento (implementación Rich)
-│   ├── utils/                # Funcionalidades transversales
-│   │   ├── calculations.py   # Cálculos y formateo
-│   │   └── files.py          # Operaciones de E/S atómicas
-│   ├── config.py             # Configuración global de la aplicación
-│   └── VERSION               # Fuente única de verdad para la versión
-├── tests/                    # Suite de tests adaptada a los dominios
-└── docs/                     # Documentación técnica
+├── main.py                   # Ejecutar desde el código, sin instalar
+├── pyproject.toml            # Empaquetado y configuración de ruff y mypy
+├── time_balance/
+│   ├── cli/                  # Los flujos que ve el usuario
+│   │   ├── main.py           # Parser de argumentos, panel y bucle del centro de control
+│   │   ├── context.py        # Context: base de datos + idioma, que recibe cada flujo
+│   │   ├── registration.py   # Registrar un día
+│   │   ├── history.py        # Listar, recorrer y borrar días
+│   │   ├── projects.py       # Cambiar, crear y borrar proyectos
+│   │   └── config_menu.py    # Ajustes del proyecto, idioma, importar y exportar
+│   ├── database/
+│   │   ├── manager.py        # DatabaseManager: todo el SQL
+│   │   ├── models.py         # Project, Record y RecordData (filas tipadas)
+│   │   └── __init__.py       # get_database(): abre la base de datos al primer uso
+│   ├── ui/interface.py       # El único módulo que habla con Rich
+│   ├── i18n/                 # Traductor y los JSON en/es
+│   ├── utils/
+│   │   ├── calculations.py   # Diferencias, formato y colores del saldo (puro)
+│   │   ├── validation.py     # Interpretar lo que escribe el usuario (puro)
+│   │   ├── pagination.py     # Aritmética de páginas (puro)
+│   │   └── files.py          # El archivo de historial: validación y exportación atómica
+│   ├── config.py             # Versión, carpeta de datos, valores por defecto
+│   └── VERSION               # Única fuente de la versión
+├── tests/
+└── docs/
 ```
 
-## Principios Arquitectónicos
+## Principios
 
-### 1. **Desacoplamiento de UI (Capa de Abstracción)**
-La aplicación está desacoplada de la librería `Rich` mediante `ui/interface.py`. Todos los componentes visuales (cabeceras, tablas, prompts) se invocan a través de métodos genéricos. Esto permite futuras migraciones de frontend (ej. a Textual o una API web) sin tocar la lógica de negocio.
+### Los flujos reciben un contexto
+Cada flujo interactivo recibe un `Context` (la base de datos y el idioma) en lugar de usar globales. `ctx.t("clave")` traduce, `ctx.pause()` espera a Enter y `ctx.confirm(...)` pregunta sí o no con las letras del idioma de la sesión. Así un flujo se prueba con una base de datos temporal y una terminal guionizada, sin parchear nada.
 
-### 2. **Modularización Basada en Dominios**
-- **`cli/`**: Maneja el flujo del usuario y la validación de entradas. Dividido en archivos pequeños y tematizados.
-- **`database/`**: Centraliza toda la lógica de persistencia. El `DatabaseManager` maneja actualizaciones atómicas y caché de saldos.
-- **`i18n/`**: Un dominio independiente para la localización. Soporta carga dinámica de JSON, caché y fallback automático al inglés.
+### La base de datos se abre cuando hace falta
+`get_database()` crea el archivo SQLite la primera vez que alguien lo pide. Importar el paquete, o ejecutar `time-balance --version`, nunca toca el disco. Los tests instalan su propia instancia con `set_database()`.
 
-### 3. **Código Limpio y Estándares de Naming**
-- **Naming Descriptivo**: Todas las variables y funciones siguen una regla estricta de "No variables de una sola letra" (mínimo 3 caracteres).
-- **DRY (Don't Repeat Yourself)**: Las operaciones masivas (como la importación de registros) están centralizadas en la capa de base de datos.
+### La lógica vive fuera de las pantallas
+Interpretar fechas y duraciones (`validation.py`), la aritmética de páginas (`pagination.py`) y las reglas para borrar un proyecto (`projects.find_deletable_project`) son funciones simples. Los flujos solo preguntan, las llaman e imprimen.
 
-## Flujo de Datos y Rendimiento
+### Un solo módulo habla con la biblioteca de terminal
+`ui/interface.py` es el único sitio que importa Rich. El texto que escribe el usuario (nombres de proyecto, rutas) pasa por `ui.escape` antes de ir dentro de un mensaje, porque Rich lee los corchetes como marcado.
 
-La aplicación utiliza una **estrategia de caché incremental** para los saldos totales:
-- **Acceso O(1)**: El saldo total se cachea en la tabla `projects`.
-- **Actualizaciones Atómicas**: Cada operación de registro dispara una actualización delta del saldo del proyecto.
-- **Persistencia**: Impulsada por SQLite con resolución de rutas estándar del sistema (cumplimiento XDG).
+### Filas tipadas
+La base de datos devuelve diccionarios tipados `Project` y `Record`. `get_active_project()` siempre devuelve un proyecto: si el id guardado ya no existe, el primer proyecto pasa a ser el activo.
 
-## Estrategia de Testing
+## Caché del saldo
 
-La suite de pruebas sigue la arquitectura modular:
-- **Tests Unitarios**: Lógica matemática en `test_core`.
-- **Tests de Integración**: Transacciones de base de datos en `test_storage` y `test_balance_cache`.
-- **Mocking de UI**: `test_cli` utiliza la capa de abstracción de UI para simular interacciones sin requerir una terminal real.
+`projects.total_balance` guarda la suma de las diferencias de un proyecto.
+- Una escritura que cambia un registro ajusta la caché en la misma transacción.
+- Una caché NULL significa "desconocido" y se reconstruye desde los registros la próxima vez que se lee.
+- `import_records` y la opción de reparar la reconstruyen desde los registros.
+
+## Pruebas
+
+- `tests/helpers.py` ofrece `DatabaseTestCase` (una base de datos temporal y un contexto) y `ScriptedTerminal`, que responde a las preguntas desde una lista y registra lo que se imprime. Un flujo que pide más entrada de la prevista hace fallar el test.
+- Los flujos se prueban de principio a fin con esa terminal; las funciones puras con tests unitarios; `test_translator.py` comprueba que los dos idiomas definen las mismas claves y los mismos marcadores.
+- `tests/test_main.py` ejecuta el programa en un subproceso para comprobar que importarlo o pedir la versión no crea nada en disco.
 
 ## Distribución
 
-Como herramienta profesional, `time-balance` se distribuye como un paquete de Python pero funciona como un ejecutable independiente. El archivo `setup.py` y el `MANIFEST.in` aseguran que todos los recursos no-Python (JSON de idiomas, archivos de versión) se incluyan correctamente.
+El proyecto es un paquete de Python definido por completo en `pyproject.toml`. Las traducciones y el archivo `VERSION` son datos del paquete, y la CI comprueba que acaban dentro del wheel. Un tag `v*` construye el wheel y la distribución de código fuente y los adjunta a una release de GitHub.

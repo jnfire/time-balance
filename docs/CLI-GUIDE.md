@@ -10,7 +10,7 @@ You can query your status or perform migrations without entering the menu:
 # View status of active project
 time-balance --status
 
-# List last 5 records
+# List last 5 records (use --list 0 for all of them)
 time-balance --list
 
 # Force UI language
@@ -51,7 +51,7 @@ Displays your records in professional tables.
 ### 3. Configuration
 Manage your project and data:
 - **Project Settings**: Edit name, adjust base time, and language.
-- **Data Management**: Bulk import and Export to JSON.
+- **Data Management**: Bulk import and export to JSON (see [Data format](DATA-FORMAT.md)), and a repair option that rebuilds the balance from the records.
 
 ### 4. Project Management
 Dedicated section to manage multiple work contexts:

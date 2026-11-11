@@ -1,99 +1,81 @@
-# time-balance 🕒
+# time-balance
 
-> Una herramienta de terminal profesional y global para gestionar múltiples proyectos, registrar jornadas laborales y controlar tu saldo de horas.
+Una pequeña herramienta de terminal para registrar tus jornadas y llevar tu saldo de horas, con un proyecto por contexto.
 
-[Read in English 🇺🇸](README.md)
+[Read in English](README.md)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+> **Estado del proyecto: terminado.** time-balance fue el primer boceto de una idea más grande. Esa idea acabó siendo **[time-tracker](https://time-tracker.jnfire.dev/)**, una aplicación web con tareas, bloques de tiempo reales, historial auditable y mucho más. time-balance se queda aquí como la versión limpia y final de ese primer experimento: funciona, está probada y no se prevén funciones nuevas.
 
-## Descripción
+![El panel principal](docs/screenshots/dashboard-es.png)
 
-`time-balance` es una aplicación de terminal **global** diseñada para la productividad. Ya no depende de archivos locales; todos tus proyectos y registros se almacenan en una base de datos SQLite centralizada. Cuenta con una arquitectura modular basada en dominios, una capa de UI desacoplada y un sistema de localización robusto basado en JSON.
+## Qué hace
 
----
+- **Registra una jornada** en horas y minutos y la compara con tu base diaria.
+- **Mantiene un saldo acumulado**: cuántas horas llevas de más o de menos, por proyecto.
+- **Varios proyectos**, cada uno con su base diaria y sus propios registros.
+- **Historial** con paginación y borrado de un día con confirmación.
+- **Exportar e importar** el historial de un proyecto en un archivo JSON ([formato](docs/es/DATA-FORMAT.es.md)).
+- **Español e inglés**, detectados desde tu sistema o elegidos en la configuración.
+- **Solo local**: un archivo SQLite en tu equipo, sin cuentas y sin red.
+
+![El historial](docs/screenshots/history-es.png)
 
 ## Instalación
 
-### Desde archivos de distribución (Release)
-Si has descargado los archivos de la versión (ej: `time_balance-0.5.0-py3-none-any.whl`), puedes instalarlo directamente:
+Requiere Python 3.10 o superior. Descarga el wheel de la [última versión](https://github.com/jnfire/time-balance/releases/latest) e instálalo:
 
 ```bash
-# Instalar el archivo Wheel
-pip install time_balance-0.5.0-py3-none-any.whl
+pipx install ./time_balance-0.6.0-py3-none-any.whl
+# o, sin pipx
+pip install ./time_balance-0.6.0-py3-none-any.whl
 ```
 
-### Desde el código fuente
-Para instalar la aplicación desde el código:
+Desde el código fuente:
 
 ```bash
-# Clonar y entrar al directorio
-git clone <repo-url>
+git clone https://github.com/jnfire/time-balance.git
 cd time-balance
-
-# Instalar globalmente
 pip install .
 ```
 
-
-### Para Desarrolladores
-Si deseas contribuir, recomendamos usar el punto de entrada directo:
-
-```bash
-# Ejecutar sin instalar
-./main.py --version
-```
-
----
+Para probarlo sin instalar, ejecuta `./main.py` desde la carpeta del proyecto (necesita `rich`).
 
 ## Uso
 
-### 1. Centro de Control (Menú Interactivo)
-Simplemente ejecuta el comando desde cualquier carpeta:
-
 ```bash
-time-balance
+time-balance              # menú interactivo
+time-balance --status     # saldo acumulado del proyecto activo
+time-balance --list 10    # últimos 10 registros
+time-balance --lang es    # forzar el idioma
 ```
 
-### 2. Navegación Intuitiva
-La interfaz utiliza un sistema de navegación estandarizado:
-- **Números (1-5)** para seleccionar acciones principales.
-- **Letras (V, N, P)** para navegación: `V` para volver, `N`/`P` para paginar el historial.
+En el menú, los números eligen una acción y las letras navegan: `V` vuelve atrás y `N` y `P` cambian de página en el historial.
 
-### 3. Comandos Rápidos
-Consulta tu estado sin entrar al menú:
+Los saldos se muestran como `+1h 15m`, `-25m` o `0m`.
 
-```bash
-# Saldo del proyecto activo
-time-balance --status
+## Dónde se guardan los datos
 
-# Últimos 10 registros del proyecto activo
-time-balance --list 10
-```
+Un único archivo SQLite llamado `time_balance.db`:
 
----
+| Sistema | Carpeta |
+| --- | --- |
+| Linux | `~/.local/share/time-balance` (o `$XDG_DATA_HOME/time-balance`) |
+| macOS | `~/Library/Application Support/time-balance` |
+| Windows | `%APPDATA%\time-balance` |
 
-## Características Principales
+## Desarrollo
 
-- ✅ **Arquitectura por Dominios**: Separación clara entre CLI, Base de Datos e interfaz.
-- ✅ **Abstracción de UI**: Desacoplada de librerías visuales para máxima flexibilidad.
-- ✅ **Localización en JSON**: Añade idiomas fácilmente mediante archivos externos.
-- ✅ **Caché de Alto Rendimiento**: Actualizaciones de saldo atómicas con manejo automático de valores NULL para datos importados.
-- ✅ **Backend SQLite**: Persistencia robusta siguiendo estándares XDG.
-- ✅ **Gestión Multiproyecto**: Administra diferentes contextos de trabajo de forma independiente con operaciones aisladas por proyecto.
-- ✅ **Eliminar Registros**: Borra jornadas con confirmación y recálculo inmediato del saldo.
-- ✅ **Recalcular Saldo**: Fuerza una reconstrucción completa de la caché de saldo con un único comando para corregir inconsistencias.
-- ✅ **Integridad de Datos**: Restricciones de clave foránea y transacciones atómicas garantizan integridad referencial.
+El código está tipado y comprobado con ruff y mypy, y tiene 144 tests (96 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
 
----
+## Documentación
 
-## Desarrollo y Contribuciones
-
-Si quieres contribuir o entender el funcionamiento interno:
-- [**ARCHITECTURE.es.md**](docs/es/ARCHITECTURE.es.md): Diseño del sistema, módulos y dominios.
-- [**DEVELOPMENT.es.md**](docs/es/DEVELOPMENT.es.md): Guía técnica para desarrolladores.
-- [**CONTRIBUTING.es.md**](docs/es/CONTRIBUTING.es.md): Cómo enviar mejoras y traducciones.
+- [Evolución](docs/evolution/README-es.md): cómo ha cambiado el proyecto, por qué existe y qué se probó
+- [Guía de uso](docs/es/CLI-GUIDE.es.md)
+- [Formato de los datos](docs/es/DATA-FORMAT.es.md)
+- [Arquitectura](docs/es/ARCHITECTURE.es.md)
+- [Desarrollo](docs/es/DEVELOPMENT.es.md)
+- [Registro de cambios](CHANGELOG.md)
 
 ## Licencia
 
-Este proyecto es Open Source bajo la licencia [GPL-3.0](LICENSE).
+Software libre bajo la [GNU GPL v3.0](LICENSE).
