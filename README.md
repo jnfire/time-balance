@@ -63,12 +63,17 @@ One SQLite file called `time_balance.db`:
 | macOS | `~/Library/Application Support/time-balance` |
 | Windows | `%APPDATA%\time-balance` |
 
+## Why it exists
+
+The time-tracking tool used at work was not transparent, and it was not simple to know from the worker's side whether a day had been shorter or longer than it should have been. This tool does only that: you type the hours of each day and it keeps your balance. The full story, and an experiment that was left out, is in [Why it exists and what was tried](docs/HISTORY.md).
+
 ## Where it came from
 
 | When | What happened |
 | --- | --- |
 | January 2026 | First commit: a script to count the hours of a workday. |
 | April 2026 | Version 0.5.0: SQLite storage, several projects, translations and a modular structure. |
+| April 2026 | A live timer was tried on a separate branch and left out ([history](docs/HISTORY.md)). |
 | June 2026 | The idea outgrew the terminal and started again as [time-tracker](https://time-tracker.jnfire.dev/), a web application. |
 | November 2026 | This cleanup and the final release, 0.6.0. |
 
@@ -78,6 +83,7 @@ The code is typed and checked with ruff and mypy, and has 144 tests (96% coverag
 
 ## Documentation
 
+- [Why it exists and what was tried](docs/HISTORY.md)
 - [Usage guide](docs/CLI-GUIDE.md)
 - [Data format](docs/DATA-FORMAT.md)
 - [Architecture](docs/ARCHITECTURE.md)
