@@ -73,4 +73,4 @@ The database returns `Project` and `Record` typed dictionaries. `get_active_proj
 
 ## Distribution
 
-The project is a Python package defined entirely in `pyproject.toml`. The translations and the `VERSION` file are package data, and CI checks that they end up inside the wheel. A `v*` tag builds the wheel and the source distribution and attaches them to a GitHub release.
+The project is a Python package defined entirely in `pyproject.toml` (built with Hatchling, the version read from `time_balance/VERSION`), with its dependencies locked in `uv.lock`. The translations and the `VERSION` file are package data, and CI checks that they end up inside the wheel. A `v*` tag builds the wheel and the source distribution and attaches them to a GitHub release.

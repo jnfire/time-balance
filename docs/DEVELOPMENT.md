@@ -12,25 +12,35 @@ Technical notes for `time-balance` v0.6.x. The project is finished, so this guid
 
 ## Setup
 
+The project uses [uv](https://docs.astral.sh/uv/) (install it with `brew install uv` or from its website). It installs Python, creates the environment and keeps the dependencies locked in `uv.lock`, so there is nothing else to install.
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-./main.py          # or: time-balance
+git clone https://github.com/jnfire/time-balance.git
+cd time-balance
+uv sync                    # creates .venv with the package and the development tools
+uv run time-balance        # run the application
 ```
+
+`uv run` creates and updates the environment by itself, so `uv sync` is only needed once, or to refresh it. Python 3.10 or newer is required; `.python-version` selects 3.13 for development, and `uv run --python 3.10 ...` runs a command on another version.
 
 ## Checks
 
 CI runs all of these on every push and pull request:
 
 ```bash
-ruff check .                  # lint
-ruff format --check .         # formatting
-mypy time_balance             # types
-python -m unittest discover   # tests
-coverage run -m unittest discover && coverage report --fail-under=90
+uv run ruff check .                                     # lint
+uv run ruff format --check .                            # formatting
+uv run mypy time_balance                                # types
+uv run python -m unittest discover                      # tests
+uv run coverage run -m unittest discover && uv run coverage report --fail-under=90
+uv lock --check                                         # the lockfile is up to date
 ```
 
-`ruff format .` and `ruff check --fix .` fix most findings on their own.
+`uv run ruff format .` and `uv run ruff check --fix .` fix most findings on their own.
+
+## Dependencies
+
+The only runtime dependency is `rich`. The development tools (`ruff`, `mypy`, `coverage`) are in the `dev` dependency group of `pyproject.toml`. After changing a dependency run `uv lock` and commit `uv.lock`; CI fails if it is out of date.
 
 ## Testing flows
 
@@ -63,4 +73,4 @@ The schema is in `database/manager.py`. The data folder is `~/.local/share/time-
 
 1. Update `time_balance/VERSION` and add a `## [x.y.z] - date` section to `CHANGELOG.md`.
 2. Merge to `main`, then push the tag `vx.y.z`.
-3. The Release workflow checks that the tag matches `VERSION`, builds the wheel and the source distribution and creates the release with the changelog section as its notes.
+3. The Release workflow (`scripts/release_notes.py`) checks that the tag matches `VERSION` and that the changelog has a section for it, builds the wheel and the source distribution (`uv build`) and creates the release with that section as its notes. If you created the release by hand from the web page, it attaches the files to it instead. CI runs the same check on every push, so a missing changelog entry never waits for the release day. To build the files by hand: `uv build`, and they appear in `dist/`.

@@ -22,23 +22,29 @@ A small terminal tool to register your workdays and keep your hour balance, with
 
 ## Install
 
-Requires Python 3.10 or newer. Download the wheel from the [latest release](https://github.com/jnfire/time-balance/releases/latest) and install it:
+Requires Python 3.10 or newer. The easiest way is [uv](https://docs.astral.sh/uv/), which installs Python too if you do not have it.
+
+Download the wheel from the [latest release](https://github.com/jnfire/time-balance/releases/latest) and install it as a tool:
 
 ```bash
-pipx install ./time_balance-0.6.0-py3-none-any.whl
-# or, without pipx
-pip install ./time_balance-0.6.0-py3-none-any.whl
+uv tool install ./time_balance-0.6.0-py3-none-any.whl
 ```
+
+Or install it straight from the release, without downloading anything first:
+
+```bash
+uv tool install https://github.com/jnfire/time-balance/releases/download/v0.6.0/time_balance-0.6.0-py3-none-any.whl
+```
+
+To try it once without installing it, use `uvx --from ./time_balance-0.6.0-py3-none-any.whl time-balance`. If you prefer `pipx` or `pip`, `pipx install ./time_balance-0.6.0-py3-none-any.whl` works the same way.
 
 From the source code:
 
 ```bash
 git clone https://github.com/jnfire/time-balance.git
 cd time-balance
-pip install .
+uv run time-balance
 ```
-
-To try it without installing, run `./main.py` from the project folder (it needs `rich`).
 
 ## Use
 
@@ -65,7 +71,7 @@ One SQLite file called `time_balance.db`:
 
 ## Development
 
-The code is typed and checked with ruff and mypy, and has 144 tests (96% coverage). See the [developer guide](docs/DEVELOPMENT.md) for the commands.
+The code is typed and checked with ruff and mypy, and has 151 tests (96% coverage). See the [developer guide](docs/DEVELOPMENT.md) for the commands.
 
 ## Documentation
 

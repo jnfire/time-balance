@@ -41,7 +41,7 @@ The last commit of the branch was `3867dc0`.
 
 | | Version 0.5.0 | Final version (0.6.0) |
 | --- | --- | --- |
-| Automated tests | 51 | 144 |
+| Automated tests | 51 | 151 |
 | Test coverage | 63% | 96% |
 | Lint findings (ruff, with the rules the project uses now) | 488 | 0 |
 | Type errors (mypy) | 16 | 0 |

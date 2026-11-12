@@ -9,16 +9,18 @@ The final release. time-balance was the first sketch of what became time-tracker
 ### Added
 - The dashboard shows the last registered day.
 - Input validation: hours from 0 to 24 and minutes from 0 to 59 everywhere a duration is typed (registering a day, creating a project, editing the base).
-- A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog.
+- A release workflow: pushing a `v*` tag builds the wheel and the source distribution and creates the GitHub release with the notes of this changelog. If the release already exists, the files are attached to it. The notes come from `scripts/release_notes.py`, which CI also runs on every push.
 - Documentation of the export format (`docs/DATA-FORMAT.md`) and the story of the project, with why it exists and what was tried (`docs/evolution/`), in English and Spanish. The code of the discarded live-timer experiment is kept as `docs/experiments/live-tracking.patch`.
-- Quality tooling: ruff (lint and format) and mypy, run in CI together with a coverage floor of 90%. Coverage went from 63% to 96% and the tests from 51 to 144.
+- Quality tooling: ruff (lint and format) and mypy, run in CI together with a coverage floor of 90%. Coverage went from 63% to 96% and the tests from 51 to 151.
 
 ### Changed
 - **Architecture.** Flows receive a `Context` (database and language) instead of using globals, so they are tested with a temporary database and a scripted terminal. The database is opened the first time it is needed: importing the package or running `--version` no longer creates files. Rows are typed (`Project`, `Record`), the validation and the page arithmetic are pure functions, and `files.py` uses `pathlib` and types.
 - `main()` takes the arguments and returns the exit code, so it can be called and tested without patching `sys.argv`.
 - Balances and durations drop the empty parts: `+1h 15m`, `-25m`, `+2h` and `0m` instead of `-0h 25m`, `+2h 0m` and `0h 0m`. Labels are in sentence case and project names are shown as typed.
 - Packaging is `pyproject.toml` alone, with a real author, the repository URL and Python 3.10 as the minimum (3.9 no longer receives security fixes and GitHub no longer provides it). The command is defined in one place and `setup.py` and `MANIFEST.in` are gone.
-- CI runs on every push to `main` and on pull requests, on Python 3.10 to 3.14, and checks that the translations end up inside the wheel.
+- Development and CI use [uv](https://docs.astral.sh/uv/) with a lockfile (`uv.lock`): `uv run`, `uv sync` and `uv build` replace `pip` and `venv`, the development tools live in a `dev` dependency group, and CI fails if the lockfile is out of date.
+- The package is built with Hatchling instead of setuptools: no package-data lists to maintain, the version still comes from `time_balance/VERSION`, and the metadata uses the SPDX license expression. `pyproject.toml` declares the minimum `uv` version.
+- CI runs on every push to `main` and on pull requests, on Python 3.10 to 3.14, validates the package metadata (`twine check --strict`), checks that the translations end up inside the wheel, installs the built wheel in a clean environment and runs it, and checks that the changelog has notes for the current version.
 - The README is rewritten in English and Spanish, with screenshots, installation from the release files and a note that the project is finished and that time-tracker continues it.
 
 ### Fixed

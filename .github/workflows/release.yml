@@ -2,7 +2,8 @@ name: Release
 
 # Pushing a tag such as v0.6.0 creates the GitHub release, with the matching
 # section of CHANGELOG.md as its notes and the wheel and the source
-# distribution attached. See docs/DEVELOPMENT.md.
+# distribution attached. If the release was already created by hand from the web
+# page, the files are attached to it. See docs/DEVELOPMENT.md.
 on:
   push:
     tags:
@@ -18,38 +19,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v6
         with:
-          python-version: '3.x'
+          python-version: '3.13'
 
-      - name: Check that the tag matches the version
-        run: |
-          package_version="v$(cat time_balance/VERSION)"
-          if [ "$package_version" != "$GITHUB_REF_NAME" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match time_balance/VERSION ($package_version)."
-            exit 1
-          fi
-
-      - name: Extract the release notes from CHANGELOG.md
-        run: |
-          version="${GITHUB_REF_NAME#v}"
-          awk -v heading="## [$version]" 'index($0, heading) == 1 { found = 1; next } found && /^## / { exit } found' CHANGELOG.md > release-notes.md
-          if [ ! -s release-notes.md ]; then
-            echo "No section for $version in CHANGELOG.md."
-            exit 1
-          fi
+      - name: Check the tag and extract the release notes from CHANGELOG.md
+        run: uv run --no-project python scripts/release_notes.py --tag "$GITHUB_REF_NAME" > release-notes.md
 
       - name: Build the wheel and the source distribution
-        run: |
-          python -m pip install --upgrade pip build
-          python -m build
+        run: uv build
 
       - name: Create the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            echo "The release $GITHUB_REF_NAME already exists (for example, it was created by hand from the GitHub web page). Nothing to do."
+            echo "The release $GITHUB_REF_NAME already exists (for example, it was created by hand from the GitHub web page). Attaching the files to it."
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
             exit 0
           fi
           gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md --verify-tag dist/*

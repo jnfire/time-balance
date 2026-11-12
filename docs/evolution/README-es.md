@@ -41,7 +41,7 @@ El último commit de la rama fue `3867dc0`.
 
 | | Versión 0.5.0 | Versión final (0.6.0) |
 | --- | --- | --- |
-| Tests automáticos | 51 | 144 |
+| Tests automáticos | 51 | 151 |
 | Cobertura de tests | 63 % | 96 % |
 | Avisos de lint (ruff, con las reglas que usa ahora el proyecto) | 488 | 0 |
 | Errores de tipos (mypy) | 16 | 0 |

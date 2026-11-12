@@ -12,25 +12,35 @@ Notas técnicas de `time-balance` v0.6.x. El proyecto está terminado, así que 
 
 ## Preparación
 
+El proyecto usa [uv](https://docs.astral.sh/uv/) (se instala con `brew install uv` o desde su web). Instala Python, crea el entorno y mantiene las dependencias bloqueadas en `uv.lock`, así que no hay que instalar nada más.
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-./main.py          # o: time-balance
+git clone https://github.com/jnfire/time-balance.git
+cd time-balance
+uv sync                    # crea .venv con el paquete y las herramientas de desarrollo
+uv run time-balance        # ejecutar la aplicación
 ```
+
+`uv run` crea y actualiza el entorno por sí mismo, así que `uv sync` solo hace falta una vez, o para refrescarlo. Se necesita Python 3.10 o superior; `.python-version` elige la 3.13 para desarrollar, y `uv run --python 3.10 ...` ejecuta un comando en otra versión.
 
 ## Comprobaciones
 
 La CI ejecuta todo esto en cada push y pull request:
 
 ```bash
-ruff check .                  # lint
-ruff format --check .         # formato
-mypy time_balance             # tipos
-python -m unittest discover   # tests
-coverage run -m unittest discover && coverage report --fail-under=90
+uv run ruff check .                                     # lint
+uv run ruff format --check .                            # formato
+uv run mypy time_balance                                # tipos
+uv run python -m unittest discover                      # tests
+uv run coverage run -m unittest discover && uv run coverage report --fail-under=90
+uv lock --check                                         # el fichero de bloqueo está al día
 ```
 
-`ruff format .` y `ruff check --fix .` corrigen solos la mayoría de los avisos.
+`uv run ruff format .` y `uv run ruff check --fix .` corrigen solos la mayoría de los avisos.
+
+## Dependencias
+
+La única dependencia de ejecución es `rich`. Las herramientas de desarrollo (`ruff`, `mypy`, `coverage`) están en el grupo de dependencias `dev` de `pyproject.toml`. Tras cambiar una dependencia ejecuta `uv lock` y sube `uv.lock`; la CI falla si no está al día.
 
 ## Probar flujos
 
@@ -63,4 +73,4 @@ El esquema está en `database/manager.py`. La carpeta de datos es `~/.local/shar
 
 1. Actualiza `time_balance/VERSION` y añade una sección `## [x.y.z] - fecha` a `CHANGELOG.md`.
 2. Fusiona en `main` y sube el tag `vx.y.z`.
-3. El workflow Release comprueba que el tag coincide con `VERSION`, construye el wheel y la distribución de código fuente y crea la release con la sección del changelog como notas.
+3. El workflow Release (`scripts/release_notes.py`) comprueba que el tag coincide con `VERSION` y que el changelog tiene una sección para él, construye el wheel y la distribución de código fuente (`uv build`) y crea la release con esa sección como notas. Si creaste la release a mano desde la web, adjunta los archivos a esa release. La CI ejecuta la misma comprobación en cada push, así que una entrada que falte en el changelog nunca espera al día de la release. Para construir los archivos a mano: `uv build`, y aparecen en `dist/`.

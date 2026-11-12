@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
 
 [project]
 name = "time-balance"
@@ -23,8 +23,6 @@ classifiers = [
 ]
 dependencies = ["rich>=10.0.0"]
 
-[project.optional-dependencies]
-dev = ["ruff", "mypy", "coverage", "build"]
 
 [project.urls]
 Repository = "https://github.com/jnfire/time-balance"
@@ -33,14 +31,31 @@ Changelog = "https://github.com/jnfire/time-balance/blob/main/CHANGELOG.md"
 [project.scripts]
 time-balance = "time_balance.cli.main:main"
 
-[tool.setuptools.dynamic]
-version = { file = "time_balance/VERSION" }
+[dependency-groups]
+dev = ["ruff", "mypy", "coverage"]
 
-[tool.setuptools.packages.find]
-include = ["time_balance*"]
+[tool.hatch.version]
+path = "time_balance/VERSION"
+pattern = "(?P<version>\\S+)"
 
-[tool.setuptools.package-data]
-time_balance = ["VERSION", "i18n/locales/*.json"]
+[tool.hatch.build.targets.wheel]
+packages = ["time_balance"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/time_balance",
+    "/tests",
+    "/docs",
+    "/examples",
+    "/scripts",
+    "/README.md",
+    "/README.es.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+]
+
+[tool.uv]
+required-version = ">=0.8.0"
 
 [tool.ruff]
 line-length = 100

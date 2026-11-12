@@ -73,4 +73,4 @@ La base de datos devuelve diccionarios tipados `Project` y `Record`. `get_active
 
 ## Distribución
 
-El proyecto es un paquete de Python definido por completo en `pyproject.toml`. Las traducciones y el archivo `VERSION` son datos del paquete, y la CI comprueba que acaban dentro del wheel. Un tag `v*` construye el wheel y la distribución de código fuente y los adjunta a una release de GitHub.
+El proyecto es un paquete de Python definido por completo en `pyproject.toml` (construido con Hatchling, con la versión leída de `time_balance/VERSION`), con sus dependencias bloqueadas en `uv.lock`. Las traducciones y el archivo `VERSION` son datos del paquete, y la CI comprueba que acaban dentro del wheel. Un tag `v*` construye el wheel y la distribución de código fuente y los adjunta a una release de GitHub.

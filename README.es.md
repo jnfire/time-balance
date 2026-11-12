@@ -22,23 +22,29 @@ Una pequeña herramienta de terminal para registrar tus jornadas y llevar tu sal
 
 ## Instalación
 
-Requiere Python 3.10 o superior. Descarga el wheel de la [última versión](https://github.com/jnfire/time-balance/releases/latest) e instálalo:
+Requiere Python 3.10 o superior. Lo más cómodo es [uv](https://docs.astral.sh/uv/), que además instala Python si no lo tienes.
+
+Descarga el wheel de la [última versión](https://github.com/jnfire/time-balance/releases/latest) e instálalo como herramienta:
 
 ```bash
-pipx install ./time_balance-0.6.0-py3-none-any.whl
-# o, sin pipx
-pip install ./time_balance-0.6.0-py3-none-any.whl
+uv tool install ./time_balance-0.6.0-py3-none-any.whl
 ```
+
+O instálalo directamente desde la release, sin descargar nada antes:
+
+```bash
+uv tool install https://github.com/jnfire/time-balance/releases/download/v0.6.0/time_balance-0.6.0-py3-none-any.whl
+```
+
+Para probarlo una vez sin instalarlo, usa `uvx --from ./time_balance-0.6.0-py3-none-any.whl time-balance`. Si prefieres `pipx` o `pip`, `pipx install ./time_balance-0.6.0-py3-none-any.whl` funciona igual.
 
 Desde el código fuente:
 
 ```bash
 git clone https://github.com/jnfire/time-balance.git
 cd time-balance
-pip install .
+uv run time-balance
 ```
-
-Para probarlo sin instalar, ejecuta `./main.py` desde la carpeta del proyecto (necesita `rich`).
 
 ## Uso
 
@@ -65,7 +71,7 @@ Un único archivo SQLite llamado `time_balance.db`:
 
 ## Desarrollo
 
-El código está tipado y comprobado con ruff y mypy, y tiene 144 tests (96 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
+El código está tipado y comprobado con ruff y mypy, y tiene 151 tests (96 % de cobertura). Los comandos están en la [guía de desarrollo](docs/es/DEVELOPMENT.es.md).
 
 ## Documentación
 
